@@ -927,7 +927,16 @@ export default function App() {
     const [products, setProducts] = useState(PRODUCTS_DATA);
     const [inventory, setInventory] = useState(DUMMY_INVENTORY);
     const [orders, setOrders] = useState(DUMMY_ORDERS);
+   function App() {
     const [cart, setCart] = useState({});
+
+    const removeFromCart = (id) => {
+        setCart(prev => {
+            const updatedCart = { ...prev };
+            delete updatedCart[id];
+            return updatedCart;
+        });
+    };
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
     const [orderData, setOrderData] = useState(null);
