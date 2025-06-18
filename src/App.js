@@ -34,11 +34,11 @@ const DUMMY_ORDERS = [
     {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 50, unengravedStock: 221, defective: 2 },
-    'byot-002': { totalStock: 69, engravedStock: 10, unengravedStock: 59, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 5, unengravedStock: 27, defective: 1 },
-    'byot-004': { totalStock: 8, engravedStock: 2, unengravedStock: 6, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 15, unengravedStock: 18, defective: 3 },
+    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -168,7 +168,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
         </main> 
     ); 
 };
-const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack }) => { const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-4 space-y-4"> {Object.keys(cart).length === 0 ? <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500"><CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p></div> : Object.values(cart).map(item => ( <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> <input type="number" value={item.quantity} onChange={(e) => updateCartQuantity(item.id, parseInt(e.target.value))} className="w-12 text-center border rounded-md mx-2" min="1"/> <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> </div> ))} </main> {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} </div> ); };
+const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack }) => { const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-4 space-y-4"> {Object.keys(cart).length === 0 ? <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500"><CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p></div> : Object.values(cart).map(item => ( <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> <input type="number" value={item.quantity || ''} onChange={(e) => updateCartQuantity(item.id, parseInt(e.target.value))} className="w-12 text-center border rounded-md mx-2" min="1"/> <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> </div> ))} </main> {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} </div> ); };
 const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
     const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
@@ -627,7 +627,6 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                     {PRODUCTS_DATA.map(p => <option key={p.id} value={p.id}>{p.name}</option>)} 
                                 </select> 
                                 <input 
-                                    name={`quantity-${index}`} 
                                     type="number" 
                                     placeholder="Qty" 
                                     className="w-20 p-2 border rounded" 
