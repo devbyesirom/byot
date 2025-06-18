@@ -84,27 +84,43 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
         const [quantity, setQuantity] = useState(1);
         const availableStock = inventory[product.id]?.unengravedStock || 0; // Assuming customer buys unengraved stock
 
-        const handleQuantityChange = (change) => {
+        // Enforce quantity limits on change directly
+        const handleQuantityInputChange = (e) => {
+            let newQuantity = parseInt(e.target.value) || 0;
+            newQuantity = Math.max(1, Math.min(newQuantity, availableStock));
+            setQuantity(newQuantity);
+        };
+
+        const handleQuantityStepperChange = (change) => {
             setQuantity(prevQuantity => {
                 const newQuantity = prevQuantity + change;
-                // Cap the quantity at the available stock
                 return Math.max(1, Math.min(newQuantity, availableStock));
             });
         };
 
         const handleAddToCartClick = () => {
+            if (quantity === 0) {
+                alert("Please select a quantity greater than 0.");
+                return;
+            }
             if (quantity > availableStock) {
-                onAddToCart(product, availableStock); // Add max available if user attempts to add more
+                // This case should ideally be prevented by min/max and stepper, but as a fallback
                 alert(`Only ${availableStock} of ${product.name} are available. Adding max available to cart.`);
+                onAddToCart(product, availableStock); 
             } else {
                 onAddToCart(product, quantity);
             }
         };
 
         const handleBuyNowClick = () => {
+            if (quantity === 0) {
+                alert("Please select a quantity greater than 0.");
+                return;
+            }
             if (quantity > availableStock) {
-                onBuyNow(product, availableStock); // Buy max available if user attempts to buy more
+                // This case should ideally be prevented by min/max and stepper, but as a fallback
                 alert(`Only ${availableStock} of ${product.name} are available. Proceeding with max available.`);
+                onBuyNow(product, availableStock); 
             } else {
                 onBuyNow(product, quantity);
             }
@@ -122,29 +138,30 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
                         <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
                     )}
                     <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit"> 
-                        <button onClick={() => handleQuantityChange(-1)} className="p-2 text-white">-</button> 
+                        <button onClick={() => handleQuantityStepperChange(-1)} className="p-2 text-white" disabled={quantity <= 1 || availableStock === 0}>-</button> 
                         <input 
                             type="number" 
-                            readOnly 
                             className="w-12 bg-transparent text-white text-center font-bold" 
                             value={quantity} 
+                            onChange={handleQuantityInputChange} // Allow direct input but validate
                             min="1" 
-                            max={availableStock} // Set max quantity based on available stock
+                            max={availableStock} 
+                            disabled={availableStock === 0} // Disable input if out of stock
                         /> 
-                        <button onClick={() => handleQuantityChange(1)} className="p-2 text-white">+</button> 
+                        <button onClick={() => handleQuantityStepperChange(1)} className="p-2 text-white" disabled={quantity >= availableStock}>+</button> 
                     </div> 
                     <div className="flex items-center space-x-2 mt-4"> 
                         <button 
                             onClick={handleAddToCartClick} 
                             className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg"
-                            disabled={availableStock === 0} // Disable if out of stock
+                            disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
                         >
                             Add to Cart
                         </button> 
                         <button 
                             onClick={handleBuyNowClick} 
                             className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}
-                            disabled={availableStock === 0} // Disable if out of stock
+                            disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
                         >
                             Buy Now
                         </button> 
@@ -168,7 +185,56 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
         </main> 
     ); 
 };
-const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack }) => { const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-4 space-y-4"> {Object.keys(cart).length === 0 ? <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500"><CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p></div> : Object.values(cart).map(item => ( <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> <input type="number" value={item.quantity || ''} onChange={(e) => updateCartQuantity(item.id, parseInt(e.target.value))} className="w-12 text-center border rounded-md mx-2" min="1"/> <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> </div> ))} </main> {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} </div> ); };
+const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack, inventory }) => { // Added inventory prop
+    const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); 
+    
+    // Updated updateCartQuantity to respect available stock
+    const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
+        const productInInventory = inventory[id];
+        const availableStock = productInInventory ? productInInventory.unengravedStock : 0;
+        
+        let quantityToSet = newQuantity;
+        if (newQuantity < 1) {
+            quantityToSet = 1; // Minimum quantity is 1 unless removed
+        }
+        if (newQuantity > availableStock) {
+            alert(`Only ${availableStock} of this item are available. Quantity capped to ${availableStock}.`);
+            quantityToSet = availableStock;
+        }
+
+        updateCartQuantity(id, quantityToSet);
+    };
+
+    return ( 
+        <div className="view active bg-gray-100"> 
+            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> 
+            <main className="flex-grow overflow-y-auto p-4 space-y-4"> 
+                {Object.keys(cart).length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
+                        <CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p>
+                    </div>
+                ) : (
+                    Object.values(cart).map(item => ( 
+                        <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> 
+                            <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> 
+                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> 
+                            <input 
+                                type="number" 
+                                value={item.quantity || 0} // Ensure value is a number, default to 0
+                                onChange={(e) => handleUpdateCartQuantityWithStock(item.id, parseInt(e.target.value))} 
+                                className="w-12 text-center border rounded-md mx-2" 
+                                min="1"
+                                max={inventory[item.id]?.unengravedStock || 0} // Set max based on available inventory
+                            /> 
+                            <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> 
+                        </div> 
+                    ))
+                )} 
+            </main> 
+            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} 
+        </div> 
+    ); 
+};
 const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
     const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
@@ -909,7 +975,7 @@ export default function App() {
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; {/* Pass inventory to ShopView */}
-            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} />;
+            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; {/* Pass inventory to CartView */}
             case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
             case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
