@@ -267,7 +267,6 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         const email = formData.get('email');
         const phone = formData.get('phone');
         // knutsfordLocation is only relevant if fulfillmentMethod is 'knutsford'
-        const knutsfordLocation = formData.get('knutsford_location'); // This variable is now used
 
         placeOrder({
             customerInfo: {
