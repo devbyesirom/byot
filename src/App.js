@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'; // Removed useCallback as it was unused
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // --- SVGs as React Components ---
@@ -27,9 +27,11 @@ const PRODUCTS_DATA = [
     { id: 'byot-005', name: 'Pink Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Pink.png', colorStart: '#ec4899', colorEnd: '#fce7f3', buttonTextColor: 'text-pink-800', description: 'A soft and stylish pink for an elegant touch.' },
 ];
 const DUMMY_ORDERS = [
-    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe'}, items: {'byot-001': {name: 'Dark Blue Kit', quantity: 2}}, total: 5000, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
-    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith'}, items: {'byot-005': {name: 'Pink Kit', quantity: 1}}, total: 2500, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending' },
-    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan'}, items: {'byot-002': {name: 'Teal Kit', quantity: 1}, 'byot-003': {name: 'Mint Kit', quantity:1}}, total: 5000, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
+    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe'}, items: {'byot-001': {name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
+    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith'}, items: {'byot-005': {name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending' },
+    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan'}, items: {'byot-002': {name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {name: 'Mint Kit', quantity:1, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
+    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown'}, items: {'byot-001': {name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned' },
+    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
     'byot-001': { totalStock: 271, engravedStock: 50, unengravedStock: 221, defective: 2 },
@@ -82,7 +84,6 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
         placeOrder({
             customerInfo: {
                 name: formData.get('fullName'),
@@ -114,10 +115,14 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
     // Function to handle date change and ensure it's a weekday
     const handleDateChange = (e) => {
         const selectedDateValue = e.target.value;
+        if (!selectedDateValue) { // Allow clearing the date input
+            setPickupDate('');
+            return;
+        }
         const selectedDate = new Date(selectedDateValue);
         const dayOfWeek = selectedDate.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
 
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
+        if (dayOfWeek === 0 || dayOfWeek === 6) { 
             alert("Pickups are only available Monday - Friday. Please select a weekday.");
             setPickupDate(''); // Clear the invalid date visually in the input
         } else {
@@ -307,28 +312,68 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     const [showManualForm, setShowManualForm] = useState(false);
 
     const handleStatusUpdate = (orderId, field, value) => {
-        setOrders(prevOrders => prevOrders.map(o => {
-            if (o.id === orderId) {
-                // If payment status is changed to 'Refunded' or fulfillment to 'Returned', adjust inventory
-                if ((field === 'paymentStatus' && value === 'Refunded' && o.paymentStatus !== 'Refunded') ||
-                    (field === 'fulfillmentStatus' && value === 'Returned' && o.fulfillmentStatus !== 'Returned')) {
-                    
-                    const updatedInventory = { ...inventory.current }; // Use inventory.current from useRef
-                    Object.values(o.items).forEach(item => {
+        setOrders(prevOrders => {
+            const oldOrder = prevOrders.find(o => o.id === orderId);
+            if (!oldOrder) return prevOrders; // Should not happen
+
+            const updatedOrder = { ...oldOrder, [field]: value };
+
+            // Determine inventory changes based on status transition
+            setInventory(prevInventory => {
+                const newInventory = { ...prevInventory }; // Clone for immutability
+
+                // Inventory decrease for 'Completed' fulfillment
+                if (field === 'fulfillmentStatus' && value === 'Completed' && oldOrder.fulfillmentStatus !== 'Completed') {
+                    console.log(`Decreasing stock for order ${orderId} becoming Completed.`);
+                    Object.values(oldOrder.items).forEach(item => {
                         const productId = item.id;
-                        const quantityReturned = item.quantity;
-                        if (updatedInventory[productId]) {
-                            updatedInventory[productId].totalStock += quantityReturned;
-                            updatedInventory[productId].unengravedStock += quantityReturned; // Assuming unengraved stock is returned
+                        const quantityOrdered = item.quantity;
+                        if (newInventory[productId]) {
+                            newInventory[productId].totalStock = Math.max(0, newInventory[productId].totalStock - quantityOrdered);
+                            newInventory[productId].unengravedStock = Math.max(0, newInventory[productId].unengravedStock - quantityOrdered);
+                            console.log(`  Product ${productId}: -${quantityOrdered}. New stock: ${newInventory[productId].totalStock}`);
                         }
                     });
-                    setInventory(updatedInventory); // Update global inventory state
-                    showToast(`Stock updated for returned/refunded order ${orderId}`);
+                    showToast(`Stock decreased for completed order ${orderId}`);
                 }
-                return {...o, [field]: value};
-            }
-            return o;
-        }));
+                // Inventory increase for 'Returned' or 'Cancelled' fulfillment
+                else if (field === 'fulfillmentStatus' && (value === 'Returned' || value === 'Cancelled') && 
+                         oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
+                    console.log(`Increasing stock for order ${orderId} becoming ${value}.`);
+                    Object.values(oldOrder.items).forEach(item => {
+                        const productId = item.id;
+                        const quantityAdjust = item.quantity;
+                        if (newInventory[productId]) {
+                            newInventory[productId].totalStock += quantityAdjust;
+                            newInventory[productId].unengravedStock += quantityAdjust;
+                            console.log(`  Product ${productId}: +${quantityAdjust}. New stock: ${newInventory[productId].totalStock}`);
+                        }
+                    });
+                    showToast(`Stock updated for ${value.toLowerCase()} order ${orderId}`);
+                }
+                // Inventory increase for 'Refunded' payment (if not already handled by fulfillment status)
+                else if (field === 'paymentStatus' && value === 'Refunded' && oldOrder.paymentStatus !== 'Refunded') {
+                     if (oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
+                        console.log(`Increasing stock for order ${orderId} becoming Refunded (not returned/cancelled).`);
+                        Object.values(oldOrder.items).forEach(item => {
+                            const productId = item.id;
+                            const quantityAdjust = item.quantity;
+                            if (newInventory[productId]) {
+                                newInventory[productId].totalStock += quantityAdjust;
+                                newInventory[productId].unengravedStock += quantityAdjust;
+                                console.log(`  Product ${productId}: +${quantityAdjust}. New stock: ${newInventory[productId].totalStock}`);
+                            }
+                        });
+                        setInventory(newInventory);
+                        showToast(`Stock updated for refunded order ${orderId}`);
+                    }
+                }
+                return newInventory;
+            });
+
+            // Return the updated orders array
+            return prevOrders.map(o => o.id === orderId ? updatedOrder : o);
+        });
     };
 
     const handleDeleteOrder = (orderId) => {
@@ -345,10 +390,20 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         const formData = new FormData(e.target);
         const items = {};
         // Iterate over the manualOrderItems state to get product IDs and quantities
-        manualOrderItems.forEach((item, index) => {
-            if(item.productId) {
-                const product = PRODUCTS_DATA.find(p => p.id === item.productId);
-                items[item.productId] = { ...product, quantity: parseInt(item.quantity) || 1 };
+        manualOrderItems.forEach((itemInput) => { // Renamed 'item' to 'itemInput' to avoid conflict with PRODUCTS_DATA item
+            if(itemInput.productId) {
+                const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
+                if (product) { // Ensure product is found before adding to items
+                    items[product.id] = {
+                        name: product.name,
+                        price: product.price,
+                        image: product.image, // Ensure image is carried over
+                        quantity: parseInt(itemInput.quantity) || 1
+                    };
+                } else {
+                    console.warn(`Product with ID ${itemInput.productId} not found in PRODUCTS_DATA.`);
+                    showToast(`Product with ID ${itemInput.productId} not found and skipped.`);
+                }
             }
         });
 
@@ -400,7 +455,8 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                         <select defaultValue={order.paymentStatus} onChange={(e) => handleStatusUpdate(order.id, 'paymentStatus', e.target.value)} className="p-1 border rounded-md"> 
                             <option>Pending</option> 
                             <option>Paid</option>
-                            <option>Refunded</option> {/* Added Refunded status */}
+                            <option>Refunded</option> 
+                            <option>Cancelled</option> {/* Added Cancelled status */}
                         </select> 
                     </div> 
                     <div className="flex items-center"> 
@@ -408,9 +464,20 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                         <select defaultValue={order.fulfillmentStatus} onChange={(e) => handleStatusUpdate(order.id, 'fulfillmentStatus', e.target.value)} className="p-1 border rounded-md"> 
                             <option>Pending</option> 
                             <option>Completed</option>
-                            <option>Returned</option> {/* Added Returned status */}
+                            <option>Returned</option> 
+                            <option>Cancelled</option> {/* Added Cancelled status */}
                         </select> 
                     </div> 
+                    {/* Display order items with quantity and price */}
+                    <h4 className="font-semibold mt-4">Items:</h4>
+                    <ul className="list-disc pl-5">
+                        {/* Ensure item properties are safely accessed with fallback values */}
+                        {Object.values(order.items).map(item => (
+                            <li key={item.id || item.name || Math.random()}> {/* Added Math.random() fallback for key */}
+                                {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price || 0).toLocaleString()}
+                            </li>
+                        ))}
+                    </ul>
                 </div> 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
                     <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm">
@@ -514,7 +581,136 @@ const AdminProductsView = ({products, setProducts, showToast}) => { const [editi
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
     return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {products.map(p => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> ))} </div> </div> ) }
-const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({ productCost: 1000, alibabaShipping: 200, mailpacShipping: 50, numSets: 1 }); const handleCostChange = (e) => setCosts(prev => ({...prev, [e.target.name]: Number(e.target.value)})); const costPerSet = useMemo(() => { const totalCost = costs.productCost + costs.alibabaShipping + costs.mailpacShipping; return costs.numSets > 0 ? totalCost / costs.numSets : 0; }, [costs]); const salesData = useMemo(() => { const data = { 'This Month': { sales: 0, income: 0 }, 'Last Month': { sales: 0, income: 0 } }; const now = new Date(); orders.forEach(order => { const orderDate = new Date(order.createdAt); const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth(); const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null); if (key) { const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0); data[key].sales += orderQty; data[key].income += order.total; } } ); return [ { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].income - (data['Last Month'].sales * costPerSet) }, { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].income - (data['This Month'].sales * costPerSet) } ]; }, [orders, costPerSet]); const popularColors = useMemo(() => { const colorCounts = {}; orders.forEach(order => { Object.values(order.items).forEach(item => { if (item.name && item.name.includes('Kit')) { const color = item.name.replace(' Kit', ''); colorCounts[color] = (colorCounts[color] || 0) + item.quantity; } }); }); return Object.entries(colorCounts).map(([name, count]) => ({name, count})).sort((a,b) => b.count - a.count); }, [orders]); return ( <div> <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="text-gray-500">Total Income</h3> <p className="text-3xl font-bold">J${orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()}</p></div> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="text-gray-500">Sales (This Month)</h3> <p className="text-3xl font-bold">{salesData[1].Sales}</p></div> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="text-gray-500">Profit (This Month)</h3> <p className="text-3xl font-bold">J${salesData[1].Profit.toLocaleString()}</p></div> </div> <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="font-bold mb-4">Cost Calculation</h3> <div className="space-y-2 text-sm"> <div className="flex justify-between"><label>Product Cost (Alibaba)</label><input name="productCost" value={costs.productCost} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> <div className="flex justify-between"><label>Shipping Cost (Alibaba)</label><input name="alibabaShipping" value={costs.alibabaShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> <div className="flex justify-between"><label>Shipping Cost (Mailpac)</label><input name="mailpacShipping" value={costs.mailpacShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> <div className="flex justify-between"><label>Total Number of Sets</label><input name="numSets" value={costs.numSets} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> <div className="flex justify-between font-bold border-t pt-2 mt-2"><label>Cost Per Set</label><span>J${costPerSet.toFixed(2)}</span></div> </div> </div> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="font-bold mb-4">Profitability</h3> <ResponsiveContainer width="100%" height={200}> <BarChart data={salesData}> <CartesianGrid strokeDasharray="3 3" /> <XAxis dataKey="name" /> <YAxis /> <Tooltip formatter={(value) => `J$${value.toLocaleString()}`} /> <Legend /> <Bar dataKey="Profit" fill="#8884d8" /> <Bar dataKey="Income" fill="#82ca9d" /> </BarChart> </ResponsiveContainer> </div> <div className="p-4 bg-white rounded-lg shadow"> <h3 className="font-bold mb-4">Most Popular Colors</h3> <ResponsiveContainer width="100%" height={200}> <BarChart data={popularColors} layout="vertical"> <CartesianGrid strokeDasharray="3 3" /> <XAxis type="number" /> <YAxis type="category" dataKey="name" width={80} /> <Tooltip /> <Bar dataKey="count" fill="#3b82f6" name="Units Sold" /> </BarChart> </ResponsiveContainer> </div> </div> </div> ) }
+const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({ productCost: 1000, alibabaShipping: 200, mailpacShipping: 50, numSets: 1 }); const handleCostChange = (e) => setCosts(prev => ({...prev, [e.target.name]: Number(e.target.value)})); const costPerSet = useMemo(() => { const totalCost = costs.productCost + costs.alibabaShipping + costs.mailpacShipping; return costs.numSets > 0 ? totalCost / costs.numSets : 0; }, [costs]); 
+    const salesData = useMemo(() => { 
+        const data = { 'This Month': { sales: 0, income: 0 }, 'Last Month': { sales: 0, income: 0 } }; 
+        const now = new Date(); 
+        orders.forEach(order => { 
+            // Only count orders that are Paid AND Completed (or were never cancelled/returned)
+            if (order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
+                const orderDate = new Date(order.createdAt); 
+                const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth(); 
+                const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null); 
+                if (key) { 
+                    const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0); 
+                    data[key].sales += orderQty; 
+                    data[key].income += order.total; 
+                }
+            } 
+        }); 
+        return [ 
+            { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].income - (data['Last Month'].sales * costPerSet) }, 
+            { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].income - (data['This Month'].sales * costPerSet) } 
+        ]; 
+    }, [orders, costPerSet]); 
+    
+    const popularColors = useMemo(() => { 
+        const colorCounts = {}; 
+        orders.forEach(order => { 
+            // Only count items from orders that are Paid AND Completed
+            if (order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
+                Object.values(order.items).forEach(item => { 
+                    if (item.name && item.name.includes('Kit')) { 
+                        const color = item.name.replace(' Kit', ''); 
+                        colorCounts[color] = (colorCounts[color] || 0) + item.quantity; 
+                    } 
+                });
+            } 
+        }); 
+        return Object.entries(colorCounts).map(([name, count]) => ({name, count})).sort((a,b) => b.count - a.count); 
+    }, [orders]); 
+    
+    // Calculate values for canceled/returned/refunded orders
+    const cancelledReturnedValue = useMemo(() => {
+        return orders.reduce((sum, order) => {
+            if (order.fulfillmentStatus === 'Returned' || order.fulfillmentStatus === 'Cancelled') {
+                return sum + order.total;
+            }
+            return sum;
+        }, 0);
+    }, [orders]);
+
+    const refundedValue = useMemo(() => {
+        return orders.reduce((sum, order) => {
+            if (order.paymentStatus === 'Refunded') {
+                // Ensure we don't double count if also returned/cancelled
+                if (order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
+                    return sum + order.total;
+                }
+            }
+            return sum;
+        }, 0);
+    }, [orders]);
+
+    return ( 
+        <div> 
+            <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="text-gray-500">Total Income</h3> 
+                    <p className="text-3xl font-bold">J${orders
+                        .filter(order => order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled')
+                        .reduce((sum, o) => sum + o.total, 0).toLocaleString()}
+                    </p>
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="text-gray-500">Sales (This Month)</h3> 
+                    <p className="text-3xl font-bold">{salesData[1].Sales}</p>
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="text-gray-500">Profit (This Month)</h3> 
+                    <p className="text-3xl font-bold">J${salesData[1].Profit.toLocaleString()}</p>
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> {/* New card for Canceled/Returned */}
+                    <h3 className="text-gray-500">Canceled/Returned Value</h3> 
+                    <p className="text-3xl font-bold text-red-500">J${cancelledReturnedValue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow"> {/* New card for Refunded */}
+                    <h3 className="text-gray-500">Refunded Value</h3> 
+                    <p className="text-3xl font-bold text-red-500">J${refundedValue.toLocaleString()}</p>
+                </div>
+            </div> 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="font-bold mb-4">Cost Calculation</h3> 
+                    <div className="space-y-2 text-sm"> 
+                        <div className="flex justify-between"><label>Product Cost (Alibaba)</label><input name="productCost" value={costs.productCost} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
+                        <div className="flex justify-between"><label>Shipping Cost (Alibaba)</label><input name="alibabaShipping" value={costs.alibabaShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
+                        <div className="flex justify-between"><label>Shipping Cost (Mailpac)</label><input name="mailpacShipping" value={costs.mailpacShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
+                        <div className="flex justify-between"><label>Total Number of Sets</label><input name="numSets" value={costs.numSets} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
+                        <div className="flex justify-between font-bold border-t pt-2 mt-2"><label>Cost Per Set</label><span>J${costPerSet.toFixed(2)}</span></div> 
+                    </div> 
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="font-bold mb-4">Profitability</h3> 
+                    <ResponsiveContainer width="100%" height={200}> 
+                        <BarChart data={salesData}> 
+                            <CartesianGrid strokeDasharray="3 3" /> 
+                            <XAxis dataKey="name" /> 
+                            <YAxis /> 
+                            <Tooltip formatter={(value) => `J$${value.toLocaleString()}`} /> 
+                            <Legend /> 
+                            <Bar dataKey="Profit" fill="#8884d8" /> 
+                            <Bar dataKey="Income" fill="#82ca9d" /> 
+                        </BarChart> 
+                    </ResponsiveContainer> 
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="font-bold mb-4">Most Popular Colors</h3> 
+                    <ResponsiveContainer width="100%" height={200}> 
+                        <BarChart data={popularColors} layout="vertical"> 
+                            <CartesianGrid strokeDasharray="3 3" /> 
+                            <XAxis type="number" /> 
+                            <YAxis type="category" dataKey="name" width={80} /> 
+                            <Tooltip /> 
+                            <Bar dataKey="count" fill="#3b82f6" name="Units Sold" /> 
+                        </BarChart> 
+                    </ResponsiveContainer> 
+                </div> 
+            </div> 
+        </div> 
+    ) 
+}
 
 // --- Main App Component ---
 export default function App() {
