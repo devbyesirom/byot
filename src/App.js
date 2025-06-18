@@ -34,11 +34,11 @@ const DUMMY_ORDERS = [
     {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 50, unengravedStock: 221, defective: 2 },
-    'byot-002': { totalStock: 69, engravedStock: 10, unengravedStock: 59, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 5, unengravedStock: 27, defective: 1 },
-    'byot-004': { totalStock: 8, engravedStock: 2, unengravedStock: 6, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 15, unengravedStock: 18, defective: 3 },
+    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -927,49 +927,7 @@ export default function App() {
     const [products, setProducts] = useState(PRODUCTS_DATA);
     const [inventory, setInventory] = useState(DUMMY_INVENTORY);
     const [orders, setOrders] = useState(DUMMY_ORDERS);
-function App() {
     const [cart, setCart] = useState({});
-
-    // --- Add this inside the App component where state and functions are declared ---
-    const removeFromCart = (id) => {
-        setCart(prev => {
-            const updatedCart = { ...prev };
-            delete updatedCart[id];
-            return updatedCart;
-        });
-    };
-
-    const updateCartQuantity = (id, quantity) => {
-        setCart(prev => ({
-            ...prev,
-            [id]: { ...prev[id], quantity }
-        }));
-    };
-
-    const handleGoToCheckout = () => {
-        // handle checkout logic
-    };
-
-    const handleBack = () => {
-        // handle back navigation
-    };
-
-    const inventory = {}; // placeholder
-
-    return (
-        <CartView
-            cart={cart}
-            updateCartQuantity={updateCartQuantity}
-            removeFromCart={removeFromCart}
-            onGoToCheckout={handleGoToCheckout}
-            onBack={handleBack}
-            inventory={inventory}
-        />
-    );
-}
-
-export default App;
-
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
     const [orderData, setOrderData] = useState(null);
