@@ -27,11 +27,11 @@ const PRODUCTS_DATA = [
     { id: 'byot-005', name: 'Pink Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Pink.png', colorStart: '#ec4899', colorEnd: '#fce7f3', buttonTextColor: 'text-pink-800', description: 'A soft and stylish pink for an elegant touch.' },
 ];
 const DUMMY_ORDERS = [
-    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe'}, items: {'byot-001': {name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
-    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith'}, items: {'byot-005': {name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending' },
-    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan'}, items: {'byot-002': {name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {name: 'Mint Kit', quantity:1, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
-    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown'}, items: {'byot-001': {name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned' },
-    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
+    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
+    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending' },
+    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
+    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned' },
+    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
     'byot-001': { totalStock: 271, engravedStock: 50, unengravedStock: 221, defective: 2 },
@@ -56,7 +56,118 @@ const PICKUP_TIMES = [
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } `}</style> );
 
 // --- View Components (Customer Facing) ---
-const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient }) => { const feedRef = useRef(null); useEffect(() => { const feedEl = feedRef.current; if (!feedEl) return; let scrollTimeout; const handleScroll = () => { clearTimeout(scrollTimeout); scrollTimeout = setTimeout(() => { const feedHeight = feedEl.clientHeight; const currentIndex = Math.round(feedEl.scrollTop / feedHeight); const currentCard = feedEl.children[currentIndex]; if(currentCard){ const { colorStart, colorEnd } = currentCard.dataset; if (colorStart && colorEnd) { document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`; } } }, 50); }; feedEl.addEventListener('scroll', handleScroll); return () => feedEl.removeEventListener('scroll', handleScroll); }, [products, setBgGradient]); const ProductCard = ({ product, onAddToCart, onBuyNow }) => { const [quantity, setQuantity] = useState(1); return ( <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}> <div className="card-content"> <h2 className="text-3xl font-bold">{product.name}</h2> <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p> <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit"> <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-2 text-white">-</button> <input type="number" readOnly className="w-12 bg-transparent text-white text-center font-bold" value={quantity} /> <button onClick={() => setQuantity(q => q + 1)} className="p-2 text-white">+</button> </div> <div className="flex items-center space-x-2 mt-4"> <button onClick={() => onAddToCart(product, quantity)} className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg">Add to Cart</button> <button onClick={() => onBuyNow(product, quantity)} className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}>Buy Now</button> </div> </div> </div> ); }; return( <main ref={feedRef} className="feed"> <div className="card justify-center text-center" style={{backgroundImage: "url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')"}} data-color-start="#111827" data-color-end="#374151"> <div className="card-content"> <h1 className="text-4xl font-extrabold text-white drop-shadow-md">Bring Yuh Owna Tings</h1> <p className="text-lg text-gray-200 mt-2">Sustainable Kits for a Greener Jamaica.</p> </div> <div className="scroll-arrow text-white"><ArrowDownIcon /></div> </div> {products.map((product) => ( <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} /> ))} </main> ) };
+const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => { // Added inventory prop
+    const feedRef = useRef(null); 
+    useEffect(() => { 
+        const feedEl = feedRef.current; 
+        if (!feedEl) return; 
+        let scrollTimeout; 
+        const handleScroll = () => { 
+            clearTimeout(scrollTimeout); 
+            scrollTimeout = setTimeout(() => { 
+                const feedHeight = feedEl.clientHeight; 
+                const currentIndex = Math.round(feedEl.scrollTop / feedHeight); 
+                const currentCard = feedEl.children[currentIndex]; 
+                if(currentCard){ 
+                    const { colorStart, colorEnd } = currentCard.dataset; 
+                    if (colorStart && colorEnd) { 
+                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`; 
+                    } 
+                } 
+            }, 50); 
+        }; 
+        feedEl.addEventListener('scroll', handleScroll); 
+        return () => feedEl.removeEventListener('scroll', handleScroll); 
+    }, [products, setBgGradient]); 
+    
+    const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => { // Added inventory prop
+        const [quantity, setQuantity] = useState(1);
+        const availableStock = inventory[product.id]?.unengravedStock || 0; // Assuming customer buys unengraved stock
+
+        const handleQuantityChange = (change) => {
+            setQuantity(prevQuantity => {
+                const newQuantity = prevQuantity + change;
+                // Cap the quantity at the available stock
+                return Math.max(1, Math.min(newQuantity, availableStock));
+            });
+        };
+
+        const handleAddToCartClick = () => {
+            if (quantity > availableStock) {
+                onAddToCart(product, availableStock); // Add max available if user attempts to add more
+                alert(`Only ${availableStock} of ${product.name} are available. Adding max available to cart.`);
+            } else {
+                onAddToCart(product, quantity);
+            }
+        };
+
+        const handleBuyNowClick = () => {
+            if (quantity > availableStock) {
+                onBuyNow(product, availableStock); // Buy max available if user attempts to buy more
+                alert(`Only ${availableStock} of ${product.name} are available. Proceeding with max available.`);
+            } else {
+                onBuyNow(product, quantity);
+            }
+        };
+
+        return ( 
+            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}> 
+                <div className="card-content"> 
+                    <h2 className="text-3xl font-bold">{product.name}</h2> 
+                    <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p> 
+                    {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
+                        <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
+                    )}
+                    {availableStock === 0 && ( // Display out of stock message
+                        <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
+                    )}
+                    <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit"> 
+                        <button onClick={() => handleQuantityChange(-1)} className="p-2 text-white">-</button> 
+                        <input 
+                            type="number" 
+                            readOnly 
+                            className="w-12 bg-transparent text-white text-center font-bold" 
+                            value={quantity} 
+                            min="1" 
+                            max={availableStock} // Set max quantity based on available stock
+                        /> 
+                        <button onClick={() => handleQuantityChange(1)} className="p-2 text-white">+</button> 
+                    </div> 
+                    <div className="flex items-center space-x-2 mt-4"> 
+                        <button 
+                            onClick={handleAddToCartClick} 
+                            className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg"
+                            disabled={availableStock === 0} // Disable if out of stock
+                        >
+                            Add to Cart
+                        </button> 
+                        <button 
+                            onClick={handleBuyNowClick} 
+                            className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}
+                            disabled={availableStock === 0} // Disable if out of stock
+                        >
+                            Buy Now
+                        </button> 
+                    </div> 
+                </div> 
+            </div> 
+        ); 
+    }; 
+    return( 
+        <main ref={feedRef} className="feed"> 
+            <div className="card justify-center text-center" style={{backgroundImage: "url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')"}} data-color-start="#111827" data-color-end="#374151"> 
+                <div className="card-content"> 
+                    <h1 className="text-4xl font-extrabold text-white drop-shadow-md">Bring Yuh Owna Tings</h1> 
+                    <p className="text-lg text-gray-200 mt-2">Sustainable Kits for a Greener Jamaica.</p> 
+                </div> 
+                <div className="scroll-arrow text-white"><ArrowDownIcon /></div> 
+            </div> 
+            {products.map((product) => ( 
+                <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
+            ))} 
+        </main> 
+    ); 
+};
 const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack }) => { const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-4 space-y-4"> {Object.keys(cart).length === 0 ? <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500"><CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p></div> : Object.values(cart).map(item => ( <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> <input type="number" value={item.quantity} onChange={(e) => updateCartQuantity(item.id, parseInt(e.target.value))} className="w-12 text-center border rounded-md mx-2" min="1"/> <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> </div> ))} </main> {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} </div> ); };
 const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
@@ -103,9 +214,9 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
             total,
             fulfillmentMethod,
             paymentMethod,
-            fulfillmentDetails: fulfillmentMethod === 'bearer' ? bearerLocation : (fulfillmentMethod === 'knutsford' ? knutsfordLocation : 'N/A'),
-            pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : 'N/A', // Use state for pickupDate
-            pickupTime: fulfillmentMethod === 'pickup' ? pickupTime : 'N/A',   // Use state for pickupTime
+            // Ensure pickupDate and pickupTime are only set if fulfillmentMethod is 'pickup'
+            pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : null, 
+            pickupTime: fulfillmentMethod === 'pickup' ? pickupTime : null,
         });
     };
 
@@ -329,7 +440,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             setInventory(prevInventory => {
                 const newInventory = { ...prevInventory }; // Clone for immutability
 
-                // Only adjust stock if the fulfillment status is changing from something else to 'Completed'
+                // Inventory decrease for 'Completed' fulfillment
                 if (field === 'fulfillmentStatus' && value === 'Completed' && oldOrder.fulfillmentStatus !== 'Completed') {
                     console.log(`Decreasing stock for order ${orderId} becoming Completed.`);
                     Object.values(oldOrder.items).forEach(item => {
@@ -395,14 +506,14 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         e.preventDefault();
         const formData = new FormData(e.target);
         const items = {};
-        manualOrderItems.forEach((itemInput) => {
+        manualOrderItems.forEach((itemInput) => { // Renamed 'item' to 'itemInput' to avoid conflict with PRODUCTS_DATA item
             if(itemInput.productId) {
                 const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
-                if (product) {
+                if (product) { // Ensure product is found before adding to items
                     items[product.id] = {
                         name: product.name,
                         price: product.price,
-                        image: product.image,
+                        image: product.image, // Ensure image is carried over
                         quantity: parseInt(itemInput.quantity) || 1
                     };
                 } else {
@@ -415,6 +526,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         const customerName = formData.get('customerName');
         const paymentStatus = formData.get('paymentStatus');
         const fulfillmentStatus = formData.get('fulfillmentStatus');
+
 
         const subtotal = Object.values(items).reduce((sum, i)=> sum + (i.price * i.quantity), 0);
         const newOrder = {
@@ -559,7 +671,14 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                     <tbody className="bg-white divide-y divide-gray-200">
                         {orders.map(order => (
                             <tr key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td><td className="px-6 py-4 whitespace-nowrap">{new Date(order.createdAt).toLocaleDateString()}</td><td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
+                                {/* Conditionally display date or "N/A" based on whether it's a valid date string */}
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {order.pickupDate && order.pickupDate !== 'N/A' && !isNaN(new Date(order.pickupDate).getTime()) // Check for valid date object
+                                        ? new Date(order.pickupDate).toLocaleDateString() 
+                                        : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                         {order.paymentStatus}
                                     </span>
@@ -579,11 +698,27 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     )
 }
 const AdminInventoryView = ({ inventory, setInventory, products, showToast }) => {
+    const handleValueChange = (productId, field, value) => {
+        const newInventory = {
+            ...inventory,
+            [productId]: {
+                ...inventory[productId],
+                [field]: parseInt(value) || 0
+            }
+        };
+
+        // Recalculate totalStock based on engraved, unengraved, and defective
+        const { engravedStock, unengravedStock, defective } = newInventory[productId];
+        newInventory[productId].totalStock = (engravedStock || 0) + (unengravedStock || 0) + (defective || 0);
+
+        setInventory(newInventory);
+    };
+
     const handleSave = (id) => {
-        console.log(`Saving inventory for ${id}:`, inventory[id]); // Added console.log for debugging
+        console.log(`Saving inventory for ${id}:`, inventory[id]); 
         showToast(`Inventory for ${products.find(p=>p.id===id).name} saved!`);
     };
-    return ( <div> <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> <div className="space-y-4"> {products.map(p => ( <div key={p.id} className="bg-white rounded-lg shadow p-4"> <h3 className="font-bold">{p.name}</h3> <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inventory[p.id]?.totalStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], totalStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inventory[p.id]?.engravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], engravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inventory[p.id]?.unengravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], unengravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inventory[p.id]?.defective || 0} onChange={e => setInventory(prev => ({...prev[p.id], defective: parseInt(e.target.value) || 0}))} className="w-full p-2 border rounded mt-1"/></div> <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> </div> {inventory[p.id]?.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} </div> ))} </div> </div> ) }
+    return ( <div> <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> <div className="space-y-4"> {products.map(p => ( <div key={p.id} className="bg-white rounded-lg shadow p-4"> <h3 className="font-bold">{p.name}</h3> <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inventory[p.id]?.totalStock || 0} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inventory[p.id]?.engravedStock || 0} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inventory[p.id]?.unengravedStock || 0} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inventory[p.id]?.defective || 0} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> </div> {inventory[p.id]?.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} </div> ))} </div> </div> ) }
 const AdminProductsView = ({products, setProducts, showToast}) => { const [editingProduct, setEditingProduct] = useState(null); const [isAddingNew, setIsAddingNew] = useState(false); const handleSave = (e) => { e.preventDefault(); const formData = new FormData(e.target); const productData = { id: editingProduct ? editingProduct.id : `byot-${Date.now()}`, name: formData.get('name'), price: Number(formData.get('price')), description: formData.get('description'), image: formData.get('image'), colorStart: '#cccccc', colorEnd: '#eeeeee', buttonTextColor: 'text-gray-800', }; if (isAddingNew) { setProducts(prev => [...prev, productData]); showToast("Product added!"); } else { setProducts(prev => prev.map(p => p.id === productData.id ? {...p, ...productData} : p)); showToast("Product updated!"); } setEditingProduct(null); setIsAddingNew(false); }
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
@@ -743,7 +878,14 @@ export default function App() {
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
     
     const placeOrder = (order) => { 
-        const newOrder = {...order, id: `BYOT-${Date.now()}`}; 
+        const newOrder = {
+            ...order, 
+            id: `BYOT-${Date.now()}`,
+            // Ensure paymentStatus and fulfillmentStatus have initial values for new orders
+            paymentStatus: order.paymentStatus || 'Pending', 
+            fulfillmentStatus: order.fulfillmentStatus || 'Pending',
+            createdAt: new Date().toISOString() // Ensure createdAt is always a valid date string
+        }; 
         setOrderData(newOrder); 
         setOrders(prev => [newOrder, ...prev]); 
 
@@ -767,7 +909,7 @@ export default function App() {
             return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} showToast={setToastMessage} />;
         }
         switch (view) {
-            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} /></div>;
+            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; {/* Pass inventory to ShopView */}
             case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} />;
             case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
