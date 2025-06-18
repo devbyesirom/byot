@@ -254,7 +254,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         </div>
     );
 };
-const ConfirmationView = ({ order, onContinue }) => { if(!order) return null; const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order; return ( <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center"> <CheckCircleIcon /><h1 className="text-2xl font-bold mt-4">Thank You!</h1><p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p> <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm"> <h2 className="font-bold mb-2">Next Steps</h2> {paymentMethod === 'bank_transfer' && <div className="space-y-3"><p>To complete your order, please send proof of payment to our WhatsApp.</p><a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a></div>} {paymentMethod === 'cod' && fulfillmentMethod === 'pickup' && <p>Your pickup is scheduled for <strong>{pickupDate}</strong> between <strong>{pickupTime}</strong>. Please have cash ready.</p>} {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank you for your order!</p>} {fulfillmentMethod === 'bearer' && <p>We will contact you shortly to coordinate your delivery.</p>} {fulfillmentMethod === 'knutsford' && <p>Your package will be dropped off at Knutsford Express. They will contact you when it's ready for collection.</p>} </div> <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button> </div> ); };
+const ConfirmationView = ({ order, onContinue }) => { if(!order) return null; const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order; return ( <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center"> <CheckCircleIcon /><h1 className="text-2xl font-bold mt-4">Thank You!</h1><p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p> <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm"> <h2 className="font-bold mb-2">Next Steps</h2> {paymentMethod === 'bank_transfer' && <div className="space-y-3"><p>To complete your order, please send proof of payment to our WhatsApp.</p><a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a></div>} {paymentMethod === 'cod' && fulfillmentMethod === 'pickup' && <p>Your pickup is scheduled for <strong>{pickupDate}</strong> between <strong>{pickupTime}</strong>. Please have cash ready.</p>} {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>} {fulfillmentMethod === 'bearer' && <p>We will contact you shortly to coordinate your delivery.</p>} {fulfillmentMethod === 'knutsford' && <p>Your package will be dropped off at Knutsford Express. They will contact you when it's ready for collection.</p>} </div> <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button> </div> ); };
 const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
 const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <h2 className="text-3xl font-bold text-gray-800 mt-4">Esirom Foundation</h2><p className="mt-4 text-gray-600 max-w-sm">Dedicated to fostering positive change through community-based initiatives in education, environment, and entrepreneurship in Jamaica.</p> </main> </div> ) }
 
@@ -329,7 +329,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             setInventory(prevInventory => {
                 const newInventory = { ...prevInventory }; // Clone for immutability
 
-                // Inventory decrease for 'Completed' fulfillment
+                // Only adjust stock if the fulfillment status is changing from something else to 'Completed'
                 if (field === 'fulfillmentStatus' && value === 'Completed' && oldOrder.fulfillmentStatus !== 'Completed') {
                     console.log(`Decreasing stock for order ${orderId} becoming Completed.`);
                     Object.values(oldOrder.items).forEach(item => {
@@ -343,7 +343,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                     });
                     showToast(`Stock decreased for completed order ${orderId}`);
                 }
-                // Inventory increase for 'Returned' or 'Cancelled' fulfillment
+                // Only adjust stock if the fulfillment status is changing to 'Returned' or 'Cancelled'
                 else if (field === 'fulfillmentStatus' && (value === 'Returned' || value === 'Cancelled') && 
                          oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
                     console.log(`Increasing stock for order ${orderId} becoming ${value}.`);
@@ -358,7 +358,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                     });
                     showToast(`Stock updated for ${value.toLowerCase()} order ${orderId}`);
                 }
-                // Inventory increase for 'Refunded' payment (if not already handled by fulfillment status)
+                // Only adjust stock if payment status is changing to 'Refunded' AND fulfillment wasn't already returned/cancelled
                 else if (field === 'paymentStatus' && value === 'Refunded' && oldOrder.paymentStatus !== 'Refunded') {
                      if (oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
                         console.log(`Increasing stock for order ${orderId} becoming Refunded (not returned/cancelled).`);
@@ -371,14 +371,13 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                 console.log(`  Product ${productId}: +${quantityAdjust}. New stock: ${newInventory[productId].totalStock}`);
                             }
                         });
-                        setInventory(newInventory);
+                        setInventory(newInventory); // Explicitly call setInventory here
                         showToast(`Stock updated for refunded order ${orderId}`);
                     }
                 }
                 return newInventory;
             });
 
-            // Return the updated orders array
             return prevOrders.map(o => o.id === orderId ? updatedOrder : o);
         });
     };
@@ -396,15 +395,14 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         e.preventDefault();
         const formData = new FormData(e.target);
         const items = {};
-        // Iterate over the manualOrderItems state to get product IDs and quantities
-        manualOrderItems.forEach((itemInput) => { // Renamed 'item' to 'itemInput' to avoid conflict with PRODUCTS_DATA item
+        manualOrderItems.forEach((itemInput) => {
             if(itemInput.productId) {
                 const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
-                if (product) { // Ensure product is found before adding to items
+                if (product) {
                     items[product.id] = {
                         name: product.name,
                         price: product.price,
-                        image: product.image, // Ensure image is carried over
+                        image: product.image,
                         quantity: parseInt(itemInput.quantity) || 1
                     };
                 } else {
@@ -418,7 +416,6 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         const paymentStatus = formData.get('paymentStatus');
         const fulfillmentStatus = formData.get('fulfillmentStatus');
 
-
         const subtotal = Object.values(items).reduce((sum, i)=> sum + (i.price * i.quantity), 0);
         const newOrder = {
             id: `BYOT-${Date.now()}`,
@@ -431,23 +428,20 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         };
         setOrders(prev => [newOrder, ...prev]);
         setShowManualForm(false);
-        setManualOrderItems([{ productId: '', quantity: 1 }]); // Reset form
+        setManualOrderItems([{ productId: '', quantity: 1 }]);
         showToast("Manual order added!");
     };
 
-    // Function to add a new item row to the manual order form
     const handleAddItemRow = () => {
         setManualOrderItems(prev => [...prev, { productId: '', quantity: 1 }]);
     };
 
-    // Function to update the product ID or quantity for a specific item row
     const handleManualItemChange = (index, field, value) => {
         setManualOrderItems(prev => prev.map((item, i) => 
             i === index ? { ...item, [field]: value } : item
         ));
     };
 
-    // Function to remove an item row from the manual order form
     const handleRemoveItemRow = (indexToRemove) => {
         setManualOrderItems(prev => prev.filter((_, i) => i !== indexToRemove));
     };
@@ -468,7 +462,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                             <option>Pending</option> 
                             <option>Paid</option>
                             <option>Refunded</option> 
-                            <option>Cancelled</option> {/* Added Cancelled status */}
+                            <option>Cancelled</option>
                         </select> 
                     </div> 
                     <div className="flex items-center"> 
@@ -477,7 +471,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                             <option>Pending</option> 
                             <option>Completed</option>
                             <option>Returned</option> 
-                            <option>Cancelled</option> {/* Added Cancelled status */}
+                            <option>Cancelled</option>
                         </select> 
                     </div> 
                     {/* Display order items with quantity and price */}
@@ -485,7 +479,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                     <ul className="list-disc pl-5">
                         {/* Ensure item properties are safely accessed with fallback values */}
                         {Object.values(order.items).map(item => (
-                            <li key={item.id || item.name || Math.random()}> {/* Added Math.random() fallback for key */}
+                            <li key={item.id || item.name || Math.random()}>
                                 {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price || 0).toLocaleString()}
                             </li>
                         ))}
@@ -586,9 +580,10 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
 }
 const AdminInventoryView = ({ inventory, setInventory, products, showToast }) => {
     const handleSave = (id) => {
+        console.log(`Saving inventory for ${id}:`, inventory[id]); // Added console.log for debugging
         showToast(`Inventory for ${products.find(p=>p.id===id).name} saved!`);
     };
-    return ( <div> <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> <div className="space-y-4"> {products.map(p => ( <div key={p.id} className="bg-white rounded-lg shadow p-4"> <h3 className="font-bold">{p.name}</h3> <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inventory[p.id]?.totalStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], totalStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inventory[p.id]?.engravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], engravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inventory[p.id]?.unengravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], unengravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inventory[p.id]?.defective || 0} onChange={e => setInventory(prev => ({...prev[p.id], defective: parseInt(e.target.value) || 0}))} className="w-full p-2 border rounded mt-1"/></div> <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> </div> {inventory[p.id]?.unengravedStock <= 10 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} </div> ))} </div> </div> ) }
+    return ( <div> <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> <div className="space-y-4"> {products.map(p => ( <div key={p.id} className="bg-white rounded-lg shadow p-4"> <h3 className="font-bold">{p.name}</h3> <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inventory[p.id]?.totalStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], totalStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inventory[p.id]?.engravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], engravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inventory[p.id]?.unengravedStock || 0} onChange={e => setInventory(prev => ({...prev, [p.id]: {...prev[p.id], unengravedStock: parseInt(e.target.value) || 0}}))} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inventory[p.id]?.defective || 0} onChange={e => setInventory(prev => ({...prev[p.id], defective: parseInt(e.target.value) || 0}))} className="w-full p-2 border rounded mt-1"/></div> <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> </div> {inventory[p.id]?.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} </div> ))} </div> </div> ) }
 const AdminProductsView = ({products, setProducts, showToast}) => { const [editingProduct, setEditingProduct] = useState(null); const [isAddingNew, setIsAddingNew] = useState(false); const handleSave = (e) => { e.preventDefault(); const formData = new FormData(e.target); const productData = { id: editingProduct ? editingProduct.id : `byot-${Date.now()}`, name: formData.get('name'), price: Number(formData.get('price')), description: formData.get('description'), image: formData.get('image'), colorStart: '#cccccc', colorEnd: '#eeeeee', buttonTextColor: 'text-gray-800', }; if (isAddingNew) { setProducts(prev => [...prev, productData]); showToast("Product added!"); } else { setProducts(prev => prev.map(p => p.id === productData.id ? {...p, ...productData} : p)); showToast("Product updated!"); } setEditingProduct(null); setIsAddingNew(false); }
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
@@ -747,7 +742,21 @@ export default function App() {
     const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
     
-    const placeOrder = (order) => { const newOrder = {...order, id: `BYOT-${Date.now()}`}; setOrderData(newOrder); setOrders(prev => [newOrder, ...prev]); if (order.paymentMethod === 'credit_card') { setView('payment'); } else { setView('confirmation'); } setCart({}); };
+    const placeOrder = (order) => { 
+        const newOrder = {...order, id: `BYOT-${Date.now()}`}; 
+        setOrderData(newOrder); 
+        setOrders(prev => [newOrder, ...prev]); 
+
+        // Important: Inventory is NOT decreased here. It's only decreased when order is "Completed" via handleStatusUpdate.
+        // This prevents stock issues if an order is placed but never fulfilled.
+
+        if (order.paymentMethod === 'credit_card') { 
+            setView('payment'); 
+        } else { 
+            setView('confirmation'); 
+        } 
+        setCart({}); 
+    };
     
     const handleContinueShopping = () => { setOrderData(null); setView('shop'); };
     const handleLogin = (email, password) => { if (email === 'foundation@esirom.com' && password === 'M@$t3rK3Y') { setIsLoggedIn(true); } else { alert('Login Failed!'); } }
