@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // --- SVGs as React Components ---
@@ -84,11 +84,18 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const formData = new FormData(e.target);
+        // Extract values from formData first
+        const fullName = formData.get('fullName');
+        const email = formData.get('email');
+        const phone = formData.get('phone');
+        const knutsfordLocation = formData.get('knutsford_location');
+
         placeOrder({
             customerInfo: {
-                name: formData.get('fullName'),
-                email: formData.get('email'),
-                phone: formData.get('phone')
+                name: fullName,
+                email: email,
+                phone: phone
             },
             items: cart,
             subtotal,
@@ -96,7 +103,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
             total,
             fulfillmentMethod,
             paymentMethod,
-            fulfillmentDetails: fulfillmentMethod === 'bearer' ? bearerLocation : (fulfillmentMethod === 'knutsford' ? formData.get('knutsford_location') : 'N/A'),
+            fulfillmentDetails: fulfillmentMethod === 'bearer' ? bearerLocation : (fulfillmentMethod === 'knutsford' ? knutsfordLocation : 'N/A'),
             pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : 'N/A', // Use state for pickupDate
             pickupTime: fulfillmentMethod === 'pickup' ? pickupTime : 'N/A',   // Use state for pickupTime
         });
@@ -407,15 +414,20 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             }
         });
 
+        const customerName = formData.get('customerName');
+        const paymentStatus = formData.get('paymentStatus');
+        const fulfillmentStatus = formData.get('fulfillmentStatus');
+
+
         const subtotal = Object.values(items).reduce((sum, i)=> sum + (i.price * i.quantity), 0);
         const newOrder = {
             id: `BYOT-${Date.now()}`,
-            customerInfo: {name: formData.get('customerName')},
+            customerInfo: {name: customerName},
             items,
             total: subtotal,
             createdAt: new Date().toISOString(),
-            paymentStatus: formData.get('paymentStatus'),
-            fulfillmentStatus: formData.get('fulfillmentStatus')
+            paymentStatus: paymentStatus,
+            fulfillmentStatus: fulfillmentStatus
         };
         setOrders(prev => [newOrder, ...prev]);
         setShowManualForm(false);
