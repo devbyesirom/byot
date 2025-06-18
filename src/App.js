@@ -34,11 +34,11 @@ const DUMMY_ORDERS = [
     {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-001': { totalStock: 271, engravedStock: 50, unengravedStock: 221, defective: 2 },
+    'byot-002': { totalStock: 69, engravedStock: 10, unengravedStock: 59, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 5, unengravedStock: 27, defective: 1 },
+    'byot-004': { totalStock: 8, engravedStock: 2, unengravedStock: 6, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 15, unengravedStock: 18, defective: 3 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -266,7 +266,8 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         const fullName = formData.get('fullName');
         const email = formData.get('email');
         const phone = formData.get('phone');
-        const knutsfordLocation = formData.get('knutsford_location');
+        // knutsfordLocation is only relevant if fulfillmentMethod is 'knutsford'
+        const knutsfordLocation = fulfillmentMethod === 'knutsford' ? formData.get('knutsford_location') : null; 
 
         placeOrder({
             customerInfo: {
@@ -741,7 +742,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {order.pickupDate && order.pickupDate !== 'N/A' && !isNaN(new Date(order.pickupDate).getTime()) // Check for valid date object
                                         ? new Date(order.pickupDate).toLocaleDateString() 
-                                        : 'N/A'}
+                                        : new Date(order.createdAt).toLocaleDateString()} {/* Fallback to createdAt for display */}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
