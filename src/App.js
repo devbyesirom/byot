@@ -927,9 +927,10 @@ export default function App() {
     const [products, setProducts] = useState(PRODUCTS_DATA);
     const [inventory, setInventory] = useState(DUMMY_INVENTORY);
     const [orders, setOrders] = useState(DUMMY_ORDERS);
-   function App() {
+function App() {
     const [cart, setCart] = useState({});
 
+    // --- Add this inside the App component where state and functions are declared ---
     const removeFromCart = (id) => {
         setCart(prev => {
             const updatedCart = { ...prev };
@@ -937,6 +938,38 @@ export default function App() {
             return updatedCart;
         });
     };
+
+    const updateCartQuantity = (id, quantity) => {
+        setCart(prev => ({
+            ...prev,
+            [id]: { ...prev[id], quantity }
+        }));
+    };
+
+    const handleGoToCheckout = () => {
+        // handle checkout logic
+    };
+
+    const handleBack = () => {
+        // handle back navigation
+    };
+
+    const inventory = {}; // placeholder
+
+    return (
+        <CartView
+            cart={cart}
+            updateCartQuantity={updateCartQuantity}
+            removeFromCart={removeFromCart}
+            onGoToCheckout={handleGoToCheckout}
+            onBack={handleBack}
+            inventory={inventory}
+        />
+    );
+}
+
+export default App;
+
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
     const [orderData, setOrderData] = useState(null);
