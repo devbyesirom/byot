@@ -277,12 +277,10 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        // Extract values from formData first
         const fullName = formData.get('fullName');
         const email = formData.get('email');
         const phone = formData.get('phone');
-        // knutsfordLocation is only relevant if fulfillmentMethod is 'knutsford'
-        const knutsfordLocation = formData.get('knutsford_location'); // This variable is now used
+        const knutsfordLocation = formData.get('knutsford_location');
 
         placeOrder({
             customerInfo: {
@@ -296,9 +294,9 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
             total,
             fulfillmentMethod,
             paymentMethod,
-            // Ensure pickupDate and pickupTime are only set if fulfillmentMethod is 'pickup'
             pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : null, 
             pickupTime: fulfillmentMethod === 'pickup' ? pickupTime : null,
+            knutsfordLocation: fulfillmentMethod === 'knutsford' ? knutsfordLocation : null,
         });
     };
 
@@ -330,7 +328,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         }
     };
 
-    // Get today's date in yyyy-MM-dd format for min attribute, ensuring it's a weekday
+    // Get today's date in 'YYYY-MM-DD' format for min attribute, ensuring it's a weekday
     const getMinDate = () => {
         const today = new Date();
         return getNextWeekday(today);
@@ -447,17 +445,35 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         </div>
     );
 };
-const ConfirmationView = ({ order, onContinue }) => { if(!order) return null; const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order; return ( <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center"> <CheckCircleIcon /><h1 className="text-2xl font-bold mt-4">Thank You!</h1><p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p> <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm"> <h2 className="font-bold mb-2">Next Steps</h2> 
-                    {paymentMethod === 'bank_transfer' && <p>For bank transfer payments, orders will not be processed until proof of payment is sent via Whatsapp at 876-436-5244.</p>}
-                    {fulfillmentMethod === 'pickup' && <p>For Pick up, please allow up to 1 business day for collection.</p>}
-                    {fulfillmentMethod === 'bearer' && <p>For Bearer Delivery, please allow up to 3 business days for delivery. We will contact you the morning of delivery.</p>}
-                    {fulfillmentMethod === 'knutsford' && <p>For Knutsford Courier, please allow up to 3 business days for delivery. We will contact you once the order has been dropped off.</p>}
-                    {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>}
-                    {/* Only show WhatsApp button if bank transfer is selected */}
-                    {paymentMethod === 'bank_transfer' && (
-                        <a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
-                    )}
-                </div> <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button> </div> ); };
+const ConfirmationView = ({ order, onContinue }) => {
+    if(!order) return null;
+    const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order;
+    return (
+        <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center">
+            <CheckCircleIcon />
+            <h1 className="text-2xl font-bold mt-4">Thank You!</h1>
+            <p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p>
+            <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm">
+                <h2 className="font-bold mb-2">Next Steps</h2>
+                {paymentMethod === 'bank_transfer' && <p>For bank transfer payments, orders will not be processed until proof of payment is sent via Whatsapp at 876-436-5244.</p>}
+                {fulfillmentMethod === 'pickup' && (
+                    <>
+                        <p>For Pick up, please allow up to 1 business day for collection. Your selected time is:</p>
+                        <p className="font-semibold">{pickupDate && new Date(pickupDate).toLocaleDateString()} at {pickupTime}</p>
+                    </>
+                )}
+                {fulfillmentMethod === 'bearer' && <p>For Bearer Delivery, please allow up to 3 business days for delivery. We will contact you the morning of delivery.</p>}
+                {fulfillmentMethod === 'knutsford' && <p>For Knutsford Courier, please allow up to 3 business days for delivery. We will contact you once the order has been dropped off.</p>}
+                {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>}
+                {/* Only show WhatsApp button if bank transfer is selected */}
+                {paymentMethod === 'bank_transfer' && (
+                    <a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
+                )}
+            </div>
+            <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button>
+        </div>
+    );
+};
 const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
 const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <h2 className="text-3xl font-bold text-gray-800 mt-4">Esirom Foundation</h2><p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
 
