@@ -18,6 +18,8 @@ const PackageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29a2.41 2.41 0 0 0 3.42 0L22 13.42a2.41 2.41 0 0 0 0-3.42z"></path><circle cx="7" cy="7" r="1"></circle></svg>;
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
+const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+
 
 // --- Local Data ---
 const PRODUCTS_DATA = [
@@ -72,7 +74,7 @@ const PICKUP_TIMES = [
     "3:00 PM - 4:00 PM"
 ];
 
-const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } `}</style> );
+const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
 // --- View Components (Customer Facing) ---
 const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => { // Added inventory prop
@@ -317,6 +319,21 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
         }
     };
 
+    const handleCopyBankInfo = () => {
+        const bankInfo = `Company: Esirom Foundation Limited\nBank: Scotiabank\nBranch: Oxford Road\nAccount #: 846837, SAVINGS (JMD Account)`;
+        const textArea = document.createElement("textarea");
+        textArea.value = bankInfo;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('Bank info copied to clipboard!');
+        } catch (err) {
+            showToast('Failed to copy text.', 'error');
+        }
+        document.body.removeChild(textArea);
+    };
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -402,6 +419,23 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                                 <span className="ml-2">Pick Up (Unit #18, 13 West Kings House Road)</span>
                                 <span className="ml-auto font-semibold">Free</span>
                             </label>
+                             {fulfillmentMethod === 'pickup' && (
+                                <div className="pl-8 pt-2 grid grid-cols-2 gap-2">
+                                    <input
+                                        type="date"
+                                        name="pickup_date"
+                                        className="p-2 border rounded-md"
+                                        required
+                                        value={pickupDate}
+                                        onChange={handleDateChange}
+                                        min={getMinDate()}
+                                    />
+                                    <select name="pickup_time" className="p-2 border rounded-md" required value={pickupTime} onChange={(e) => setPickupTime(e.target.value)}>
+                                        {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1 col-span-2">Pickups are available Monday - Friday.</p>
+                                </div>
+                            )}
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
                                 <input onChange={(e) => setFulfillmentMethod(e.target.value)} type="radio" name="fulfillment" value="bearer" checked={fulfillmentMethod === 'bearer'} />
                                 <span className="ml-2">Bearer Delivery</span>
@@ -459,31 +493,10 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                     <div>
                         <h2 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h2>
                         <div className="space-y-2">
-                            {/* Always show COD for pickup, and enable date/time selectors when pickup is selected */}
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
-                                <input type="radio" name="payment" value="cod" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'cod'} />
-                                <span className="ml-2">Cash on Pickup</span>
+                                <input type="radio" name="payment" value="cod" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'cod'} disabled={fulfillmentMethod !== 'pickup'} />
+                                <span className={`ml-2 ${fulfillmentMethod !== 'pickup' ? 'text-gray-400' : ''}`}>Cash on Pickup</span>
                             </label>
-
-                            {/* Date and Time selectors for Pickup, regardless of payment method IF pickup is chosen */}
-                            {fulfillmentMethod === 'pickup' && (
-                                <div className="pl-6 pt-2 grid grid-cols-2 gap-2">
-                                    <input
-                                        type="date"
-                                        name="pickup_date"
-                                        className="p-2 border rounded-md"
-                                        required
-                                        value={pickupDate}
-                                        onChange={handleDateChange}
-                                        min={getMinDate()}
-                                    />
-                                    <select name="pickup_time" className="p-2 border rounded-md" required value={pickupTime} onChange={(e) => setPickupTime(e.target.value)}>
-                                        {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
-                                    <p className="text-xs text-gray-500 mt-1 col-span-2">Pickups are available Monday - Friday.</p>
-                                </div>
-                            )}
-
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
                                 <input type="radio" name="payment" value="bank_transfer" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'bank_transfer'} />
                                 <span className="ml-2">Bank Transfer</span>
@@ -496,6 +509,9 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                                         <li><strong>Branch:</strong> Oxford Road</li>
                                         <li><strong>Account #:</strong> 846837, SAVINGS (JMD Account)</li>
                                     </ul>
+                                    <button type="button" onClick={handleCopyBankInfo} className="mt-2 flex items-center gap-2 text-xs bg-blue-500 text-white py-1 px-2 rounded">
+                                        <CopyIcon /> Copy Info
+                                    </button>
                                 </div>
                             )}
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
@@ -551,7 +567,7 @@ const ConfirmationView = ({ order, onContinue }) => {
     );
 };
 const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
-const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <h2 className="text-3xl font-bold text-gray-800 mt-4">Esirom Foundation</h2><p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
+const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
@@ -591,6 +607,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
 }
 const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [paymentFilter, setPaymentFilter] = useState('all');
     const [manualOrderItems, setManualOrderItems] = useState([{ productId: '', quantity: 1 }]);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
@@ -749,12 +766,16 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     };
     
     const filteredOrders = useMemo(() => {
-        if (!searchTerm) return orders;
-        return orders.filter(order => 
-            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [orders, searchTerm]);
+        return orders.filter(order => {
+            const searchMatch = !searchTerm || 
+                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const paymentStatusMatch = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
+
+            return searchMatch && paymentStatusMatch;
+        });
+    }, [orders, searchTerm, paymentFilter]);
 
 
     const OrderModal = ({ order, onClose, onDeleteOrder }) => (
@@ -967,7 +988,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             {selectedOrder && <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onDeleteOrder={handleDeleteOrder} />}
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4"> 
                 <h2 className="text-2xl font-bold">Orders</h2> 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <input 
                         type="text"
                         placeholder="Filter by ID or Name..."
@@ -975,6 +996,13 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="p-2 border rounded-md"
                     />
+                     <select value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)} className="p-2 border rounded-md">
+                        <option value="all">All Statuses</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Refunded">Refunded</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
                     <button onClick={() => setShowManualForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm whitespace-nowrap">Add Manual Order</button> 
                 </div>
             </div>
@@ -1145,7 +1173,6 @@ const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
 const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) => {
     const [editingBatch, setEditingBatch] = useState(null);
     
-    // Function to get the start and end of the current month
     const getCurrentMonthDateRange = () => {
         const date = new Date();
         const from = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -1169,36 +1196,68 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
             mailpacShipping: Number(formData.get('mailpacShipping')),
             numSets: Number(formData.get('numSets')),
         };
-        batchData.costPerSet = (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets;
-
+        batchData.costPerSet = batchData.numSets > 0 ? (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets : 0;
+        
         setCostBatches(prev => prev.map(b => b.id === editingBatch.id ? { ...b, ...batchData } : b));
         setEditingBatch(null);
         showToast("Batch updated successfully!");
     };
+
+    const handleCreateNewBatch = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const newBatchData = {
+            id: `batch-${Date.now()}`,
+            name: formData.get('name'),
+            productCost: Number(formData.get('productCost')),
+            alibabaShipping: Number(formData.get('alibabaShipping')),
+            mailpacShipping: Number(formData.get('mailpacShipping')),
+            numSets: Number(formData.get('numSets')),
+            startDate: new Date().toISOString(),
+            endDate: null,
+            isActive: true,
+        };
+        newBatchData.costPerSet = newBatchData.numSets > 0 ? (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets : 0;
+
+        setCostBatches(prevBatches => {
+            const updatedBatches = prevBatches.map(batch => 
+                batch.isActive ? { ...batch, isActive: false, endDate: new Date().toISOString() } : batch
+            );
+            return [...updatedBatches, newBatchData];
+        });
+        
+        setEditingBatch(null);
+        showToast("New cost batch created and activated!");
+    };
     
     const handleToggleBatchStatus = (batchIdToToggle) => {
-        setCostBatches(prevBatches => {
-            // Find the batch we want to toggle
+         setCostBatches(prevBatches => {
             const targetBatch = prevBatches.find(b => b.id === batchIdToToggle);
-            // If we are trying to deactivate the only active batch, prevent it.
-            if (targetBatch.isActive && prevBatches.filter(b => b.isActive).length === 1) {
-                showToast("Cannot deactivate the only active batch.", "error");
-                return prevBatches;
+            if (!targetBatch) return prevBatches;
+
+            // If we are trying to DEACTIVATE the batch
+            if (targetBatch.isActive) {
+                // Check if it's the only active batch
+                const activeBatchesCount = prevBatches.filter(b => b.isActive).length;
+                if (activeBatchesCount <= 1) {
+                    showToast("Cannot deactivate the only active batch.", "error");
+                    return prevBatches; // Do not allow deactivation
+                }
             }
+            
             // Proceed with toggling
             return prevBatches.map(batch => {
-                if (batch.id === batchIdToToggle) {
-                    // This is the batch we're toggling
-                    return { ...batch, isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : batch.endDate };
-                } else if (targetBatch && !targetBatch.isActive) {
-                    // If we are activating a batch, deactivate all others.
-                    return { ...batch, isActive: false, endDate: batch.isActive ? new Date().toISOString() : batch.endDate };
+                 if (batch.id === batchIdToToggle) {
+                    return { ...batch, isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : null };
+                }
+                // If we are ACTIVATING the target batch, deactivate all others.
+                if (targetBatch && !targetBatch.isActive && batch.isActive) {
+                    return { ...batch, isActive: false, endDate: new Date().toISOString() };
                 }
                 return batch;
             });
         });
     };
-
     
     const { filteredOrders, reportData } = useMemo(() => {
         const from = new Date(dateRange.from).setHours(0,0,0,0);
@@ -1303,42 +1362,46 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
-    if (editingBatch) {
+    
+    const BatchForm = ({ batch, onSave, onCancel }) => {
         return (
             <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-6">Edit Cost Batch</h2>
-                <form onSubmit={handleSaveBatch} className="space-y-4">
-                    <div>
+                <h2 className="text-2xl font-bold mb-6">{batch.isNew ? "Create New Cost Batch" : "Edit Cost Batch"}</h2>
+                <form onSubmit={onSave} className="space-y-4">
+                     <div>
                         <label className="font-semibold block mb-1">Batch Name</label>
-                        <input name="name" defaultValue={editingBatch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
+                        <input name="name" defaultValue={batch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                          <div>
+                            <label className="font-semibold block mb-1">Shipping Cost (Alibaba)</label>
+                            <input name="alibabaShipping" type="number" step="0.01" defaultValue={batch.alibabaShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                             <label className="font-semibold block mb-1">Shipping Cost (Mailpac)</label>
+                            <input name="mailpacShipping" type="number" step="0.01" defaultValue={batch.mailpacShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
                             <label className="font-semibold block mb-1">Product Cost (Alibaba)</label>
-                            <input name="productCost" type="number" defaultValue={editingBatch.productCost} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                            <label className="font-semibold block mb-1">Shipping (Alibaba)</label>
-                            <input name="alibabaShipping" type="number" defaultValue={editingBatch.alibabaShipping} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                             <label className="font-semibold block mb-1">Shipping (Mailpac)</label>
-                            <input name="mailpacShipping" type="number" defaultValue={editingBatch.mailpacShipping} className="w-full p-2 border rounded" required />
+                            <input name="productCost" type="number" step="0.01" defaultValue={batch.productCost} className="w-full p-2 border rounded" required />
                          </div>
                          <div>
                              <label className="font-semibold block mb-1">Total # of Sets</label>
-                            <input name="numSets" type="number" defaultValue={editingBatch.numSets} className="w-full p-2 border rounded" required />
+                            <input name="numSets" type="number" defaultValue={batch.numSets} className="w-full p-2 border rounded" required />
                          </div>
                     </div>
                     <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setEditingBatch(null)} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
                         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
                     </div>
                 </form>
                  <p className="text-xs text-gray-500 mt-4">Note: After saving, please update your stock levels in the 'Inventory' tab to reflect the new batch.</p>
             </div>
         );
+    };
+
+    if (editingBatch) {
+        return <BatchForm batch={editingBatch} onSave={editingBatch.isNew ? handleCreateNewBatch : handleSaveBatch} onCancel={() => setEditingBatch(null)} />
     }
     
 
