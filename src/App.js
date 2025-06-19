@@ -34,11 +34,11 @@ const DUMMY_ORDERS = [
     {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 271, defective: 0 },
+    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 69, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 32, defective: 0 },
+    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 8, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 33, defective: 0 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
