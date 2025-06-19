@@ -34,11 +34,11 @@ const DUMMY_ORDERS = [
     {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White', email: 'bobwhite@example.com', phone: '876-555-0105'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled', fulfillmentMethod: 'bearer', bearerLocation: 'Portmore', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card'},
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 271, unengravedStock: 0, defective: 0 },
-    'byot-002': { totalStock: 69, engravedStock: 690, unengravedStock: 0, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 32, unengravedStock: 0, defective: 0 },
-    'byot-004': { totalStock: 8, engravedStock: 8, unengravedStock: 0, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 33, unengravedStock: 0, defective: 0 },
+    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -533,10 +533,19 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, setProducts, se
     );
 }
 const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory }) => {
-    // State to manage the dynamic input fields for manual order items
+    const [searchTerm, setSearchTerm] = useState('');
     const [manualOrderItems, setManualOrderItems] = useState([{ productId: '', quantity: 1 }]);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
+    
+    // State for the manual order form
+    const [manualFulfillmentMethod, setManualFulfillmentMethod] = useState('pickup');
+    const [manualBearerLocation, setManualBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
+    const [manualKnutsfordLocation, setManualKnutsfordLocation] = useState(KNUTSFORD_LOCATIONS[0]);
+    const [manualPaymentMethod, setManualPaymentMethod] = useState('cod');
+    const [manualPickupDate, setManualPickupDate] = useState('');
+    const [manualPickupTime, setManualPickupTime] = useState(PICKUP_TIMES[0]);
+
 
     const handleStatusUpdate = (orderId, field, value) => {
         setOrders(prevOrders => {
@@ -615,41 +624,56 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         e.preventDefault();
         const formData = new FormData(e.target);
         const items = {};
-        manualOrderItems.forEach((itemInput) => { // Renamed 'item' to 'itemInput' to avoid conflict with PRODUCTS_DATA item
+        let subtotal = 0;
+        manualOrderItems.forEach((itemInput) => {
             if(itemInput.productId) {
                 const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
-                if (product) { // Ensure product is found before adding to items
+                if (product) {
                     items[product.id] = {
-                        name: product.name,
-                        price: product.price,
-                        image: product.image, // Ensure image is carried over
+                        ...product,
                         quantity: parseInt(itemInput.quantity) || 1
                     };
-                } else {
-                    console.warn(`Product with ID ${itemInput.productId} not found in PRODUCTS_DATA.`);
-                    showToast(`Product with ID ${itemInput.productId} not found and skipped.`);
+                    subtotal += product.price * items[product.id].quantity;
                 }
             }
         });
+        
+        const fulfillmentCost = (() => {
+            if (manualFulfillmentMethod === 'pickup') return 0;
+            if (manualFulfillmentMethod === 'bearer') return DELIVERY_OPTIONS[manualBearerLocation];
+            if (manualFulfillmentMethod === 'knutsford') return KNUTSFORD_FEE;
+            return 0;
+        })();
 
-        const customerName = formData.get('customerName');
-        const paymentStatus = formData.get('paymentStatus');
-        const fulfillmentStatus = formData.get('fulfillmentStatus');
-
-
-        const subtotal = Object.values(items).reduce((sum, i)=> sum + (i.price * i.quantity), 0);
         const newOrder = {
             id: `BYOT-${Date.now()}`,
-            customerInfo: {name: customerName},
+            customerInfo: {
+                name: formData.get('customerName'),
+                email: formData.get('customerEmail'),
+                phone: formData.get('customerPhone')
+            },
             items,
-            total: subtotal,
+            subtotal,
+            fulfillmentCost,
+            total: subtotal + fulfillmentCost,
             createdAt: new Date().toISOString(),
-            paymentStatus: paymentStatus,
-            fulfillmentStatus: fulfillmentStatus
+            paymentStatus: formData.get('paymentStatus'),
+            fulfillmentStatus: formData.get('fulfillmentStatus'),
+            fulfillmentMethod: manualFulfillmentMethod,
+            paymentMethod: manualPaymentMethod,
+            pickupDate: manualFulfillmentMethod === 'pickup' ? manualPickupDate : null, 
+            pickupTime: manualFulfillmentMethod === 'pickup' ? manualPickupTime : null,
+            knutsfordLocation: manualFulfillmentMethod === 'knutsford' ? manualKnutsfordLocation : null,
+            bearerLocation: manualFulfillmentMethod === 'bearer' ? manualBearerLocation : null,
         };
         setOrders(prev => [newOrder, ...prev]);
         setShowManualForm(false);
+        // Reset form state
         setManualOrderItems([{ productId: '', quantity: 1 }]);
+        setManualFulfillmentMethod('pickup');
+        setManualPaymentMethod('cod');
+        setManualPickupDate('');
+
         showToast("Manual order added!");
     };
 
@@ -666,6 +690,14 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     const handleRemoveItemRow = (indexToRemove) => {
         setManualOrderItems(prev => prev.filter((_, i) => i !== indexToRemove));
     };
+    
+    const filteredOrders = useMemo(() => {
+        if (!searchTerm) return orders;
+        return orders.filter(order => 
+            order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [orders, searchTerm]);
 
 
     const OrderModal = ({ order, onClose, onDeleteOrder }) => (
@@ -746,60 +778,148 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             </div>
         </div>
     );
-    if (showManualForm) { return ( 
-        <div> 
-            <h2 className="text-2xl font-bold mb-4">Add Manual Order</h2> 
-            <form onSubmit={handleManualSubmit} className="bg-white p-6 rounded-lg shadow space-y-4"> 
-                <input name="customerName" type="text" placeholder="Customer Name" className="w-full p-2 border rounded" required /> 
-                <div> 
-                    <h3 className="font-semibold mb-2">Items</h3> 
-                    <div className="space-y-2"> 
-                        {manualOrderItems.map((item, index) => (
-                            <div key={index} className="flex gap-2 items-center"> 
-                                <select 
-                                    name={`productId-${index}`} 
-                                    className="w-full p-2 border rounded" 
-                                    value={item.productId} 
-                                    onChange={(e) => handleManualItemChange(index, 'productId', e.target.value)}
-                                    required
-                                > 
-                                    <option value="">Select Product</option> 
-                                    {PRODUCTS_DATA.map(p => <option key={p.id} value={p.id}>{p.name}</option>)} 
-                                </select> 
-                                <input 
-                                    type="number" 
-                                    placeholder="Qty" 
-                                    className="w-20 p-2 border rounded" 
-                                    min="1" 
-                                    value={item.quantity}
-                                    onChange={(e) => handleManualItemChange(index, 'quantity', e.target.value)}
-                                    required
-                                /> 
-                                {manualOrderItems.length > 1 && (
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleRemoveItemRow(index)} 
-                                        className="p-2 text-red-500 rounded-md hover:bg-red-100"
-                                    >
-                                        <TrashIcon />
-                                    </button>
-                                )}
+    if (showManualForm) { 
+        return ( 
+            <div className="bg-white p-6 rounded-lg shadow-lg"> 
+                <h2 className="text-2xl font-bold mb-6">Add Manual Order</h2> 
+                <form onSubmit={handleManualSubmit} className="space-y-6">
+                    {/* Customer Info */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Customer Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <input name="customerName" type="text" placeholder="Full Name" className="w-full p-2 border rounded" required />
+                           <input name="customerEmail" type="email" placeholder="Email Address" className="w-full p-2 border rounded" />
+                           <input name="customerPhone" type="tel" placeholder="Phone Number" className="w-full p-2 border rounded" required />
+                        </div>
+                    </div>
+
+                    {/* Items */}
+                    <div> 
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Items</h3> 
+                        <div className="space-y-2"> 
+                            {manualOrderItems.map((item, index) => (
+                                <div key={index} className="flex gap-2 items-center"> 
+                                    <select 
+                                        name={`productId-${index}`} 
+                                        className="w-full p-2 border rounded" 
+                                        value={item.productId} 
+                                        onChange={(e) => handleManualItemChange(index, 'productId', e.target.value)}
+                                        required
+                                    > 
+                                        <option value="">Select Product</option> 
+                                        {PRODUCTS_DATA.map(p => <option key={p.id} value={p.id}>{p.name}</option>)} 
+                                    </select> 
+                                    <input 
+                                        type="number" 
+                                        placeholder="Qty" 
+                                        className="w-20 p-2 border rounded" 
+                                        min="1" 
+                                        value={item.quantity}
+                                        onChange={(e) => handleManualItemChange(index, 'quantity', e.target.value)}
+                                        required
+                                    /> 
+                                    {manualOrderItems.length > 1 && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleRemoveItemRow(index)} 
+                                            className="p-2 text-red-500 rounded-md hover:bg-red-100"
+                                        >
+                                            <TrashIcon />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <button type="button" onClick={handleAddItemRow} className="px-4 py-2 bg-gray-200 text-sm rounded-md mt-2">Add Another Item</button>
+                        </div> 
+                    </div>
+
+                    {/* Fulfillment Details */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Fulfillment Details</h3>
+                        <div className="space-y-2">
+                            <select value={manualFulfillmentMethod} onChange={(e) => setManualFulfillmentMethod(e.target.value)} className="w-full p-2 border rounded">
+                                <option value="pickup">Pick Up</option>
+                                <option value="bearer">Bearer Delivery</option>
+                                <option value="knutsford">Knutsford Express</option>
+                            </select>
+                            {manualFulfillmentMethod === 'bearer' && (
+                                <div className="pl-2 pt-2">
+                                    <select value={manualBearerLocation} onChange={(e) => setManualBearerLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {Object.entries(DELIVERY_OPTIONS).map(([loc, price]) => <option key={loc} value={loc}>{`${loc} - J$${price}`}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'knutsford' && (
+                                <div className="pl-2 pt-2">
+                                    <select value={manualKnutsfordLocation} onChange={(e) => setManualKnutsfordLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {KNUTSFORD_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'pickup' && (
+                                <div className="pl-2 pt-2 grid grid-cols-2 gap-2">
+                                    <input type="date" value={manualPickupDate} onChange={(e) => setManualPickupDate(e.target.value)} className="p-2 border rounded-md" required />
+                                    <select value={manualPickupTime} onChange={(e) => setManualPickupTime(e.target.value)} className="p-2 border rounded-md" required>
+                                        {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    {/* Payment & Order Status */}
+                     <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Payment and Status</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Method</label>
+                                <select name="paymentMethod" value={manualPaymentMethod} onChange={e => setManualPaymentMethod(e.target.value)} className="w-full p-2 border rounded mt-1">
+                                    <option value="cod">Cash on Pickup</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="credit_card">Credit Card</option>
+                                </select>
                             </div>
-                        ))}
-                        <button type="button" onClick={handleAddItemRow} className="px-4 py-2 bg-gray-200 text-sm rounded-md mt-2">Add Another Item</button>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Status</label>
+                                <select name="paymentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Paid</option>
+                                </select>
+                            </div> 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Fulfillment</label>
+                                <select name="fulfillmentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Completed</option>
+                                </select>
+                            </div> 
+                        </div>
                     </div> 
-                </div> 
-                <div className="grid grid-cols-2 gap-4"> 
-                    <div><label>Payment Status</label><select name="paymentStatus" className="w-full p-2 border rounded mt-1"><option>Pending</option><option>Paid</option></select></div> 
-                    <div><label>Fulfillment</label><select name="fulfillmentStatus" className="w-full p-2 border rounded mt-1"><option>Pending</option><option>Completed</option></select></div> 
-                </div> 
-                <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setShowManualForm(false); setManualOrderItems([{ productId: '', quantity: 1 }]); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Add Order</button></div> 
-            </form> 
-        </div> ) }
+
+                    <div className="flex justify-end space-x-2 pt-4 border-t mt-6">
+                        <button type="button" onClick={() => { setShowManualForm(false); setManualOrderItems([{ productId: '', quantity: 1 }]); }} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Add Order</button>
+                    </div> 
+                </form> 
+            </div> 
+        ) 
+    }
     return(
         <div>
             {selectedOrder && <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onDeleteOrder={handleDeleteOrder} />}
-            <div className="flex justify-between items-center mb-4"> <h2 className="text-2xl font-bold">Orders</h2> <button onClick={() => setShowManualForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Add Manual Order</button> </div>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4"> 
+                <h2 className="text-2xl font-bold">Orders</h2> 
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="text"
+                        placeholder="Filter by ID or Name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="p-2 border rounded-md"
+                    />
+                    <button onClick={() => setShowManualForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm whitespace-nowrap">Add Manual Order</button> 
+                </div>
+            </div>
             <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -808,7 +928,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {orders.map(order => (
+                        {filteredOrders.map(order => (
                             <tr key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
                                 {/* Conditionally display date or "N/A" based on whether it's a valid date string */}
