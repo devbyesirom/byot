@@ -17,6 +17,7 @@ const ClipboardListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="2
 const PackageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V6a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 6v4"></path><path d="M21 10v4a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 14v-4"></path><path d="m3.29 7 8.71 5 8.71-5"></path><path d="M12 22V12"></path></svg>;
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29a2.41 2.41 0 0 0 3.42 0L22 13.42a2.41 2.41 0 0 0 0-3.42z"></path><circle cx="7" cy="7" r="1"></circle></svg>;
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 
 // --- Local Data ---
 const PRODUCTS_DATA = [
@@ -1142,122 +1143,255 @@ const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
     )
 }
 const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) => {
-    const [showNewBatchForm, setShowNewBatchForm] = useState(false);
+    const [editingBatch, setEditingBatch] = useState(null);
+    
+    // Function to get the start and end of the current month
+    const getCurrentMonthDateRange = () => {
+        const date = new Date();
+        const from = new Date(date.getFullYear(), date.getMonth(), 1);
+        const to = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return {
+            from: from.toISOString().split('T')[0],
+            to: to.toISOString().split('T')[0]
+        };
+    };
+    
+    const [dateRange, setDateRange] = useState(getCurrentMonthDateRange());
 
-    const handleCreateNewBatch = (e) => {
+    const handleSaveBatch = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const newBatchData = {
-            id: `batch-${Date.now()}`,
+        const batchData = {
+            id: editingBatch.id,
             name: formData.get('name'),
             productCost: Number(formData.get('productCost')),
             alibabaShipping: Number(formData.get('alibabaShipping')),
             mailpacShipping: Number(formData.get('mailpacShipping')),
             numSets: Number(formData.get('numSets')),
-            startDate: new Date().toISOString(),
-            endDate: null,
-            isActive: true,
         };
-        newBatchData.costPerSet = (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets;
+        batchData.costPerSet = (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets;
 
-        setCostBatches(prevBatches => {
-            // Archive the current active batch
-            const updatedBatches = prevBatches.map(batch => 
-                batch.isActive ? { ...batch, isActive: false, endDate: new Date().toISOString() } : batch
-            );
-            return [...updatedBatches, newBatchData];
-        });
-        
-        setShowNewBatchForm(false);
-        showToast("New cost batch created and activated!");
+        setCostBatches(prev => prev.map(b => b.id === editingBatch.id ? { ...b, ...batchData } : b));
+        setEditingBatch(null);
+        showToast("Batch updated successfully!");
     };
     
-    const { totalIncome, totalProfit, monthlySales, popularColors, returnedValue, refundedValue } = useMemo(() => {
-        const data = { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } };
-        let totalIncome = 0;
-        let totalProfit = 0;
-        let returnedValue = 0;
-        let refundedValue = 0;
-        const colorCounts = {};
+    const handleToggleBatchStatus = (batchIdToToggle) => {
+        setCostBatches(prevBatches => {
+            // Find the batch we want to toggle
+            const targetBatch = prevBatches.find(b => b.id === batchIdToToggle);
+            // If we are trying to deactivate the only active batch, prevent it.
+            if (targetBatch.isActive && prevBatches.filter(b => b.isActive).length === 1) {
+                showToast("Cannot deactivate the only active batch.", "error");
+                return prevBatches;
+            }
+            // Proceed with toggling
+            return prevBatches.map(batch => {
+                if (batch.id === batchIdToToggle) {
+                    // This is the batch we're toggling
+                    return { ...batch, isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : batch.endDate };
+                } else if (targetBatch && !targetBatch.isActive) {
+                    // If we are activating a batch, deactivate all others.
+                    return { ...batch, isActive: false, endDate: batch.isActive ? new Date().toISOString() : batch.endDate };
+                }
+                return batch;
+            });
+        });
+    };
+
+    
+    const { filteredOrders, reportData } = useMemo(() => {
+        const from = new Date(dateRange.from).setHours(0,0,0,0);
+        const to = new Date(dateRange.to).setHours(23,59,59,999);
+        
+        const filtered = !dateRange.from || !dateRange.to 
+            ? orders 
+            : orders.filter(order => {
+                const orderDate = new Date(order.createdAt).getTime();
+                return orderDate >= from && orderDate <= to;
+            });
+
+        const data = { 
+            totalIncome: 0, totalProfit: 0, sales: 0,
+            returnedValue: 0, refundedValue: 0,
+            monthlySales: { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } },
+            popularColors: {}
+        };
         const now = new Date();
 
-        orders.forEach(order => {
+        filtered.forEach(order => {
             const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
             const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
             const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
             
             if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
-                totalIncome += order.total;
-                totalProfit += order.total - costOfGoods;
-                
-                const orderDate = new Date(order.createdAt);
-                const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
-                const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
-                if (key) {
-                    data[key].sales += orderQty;
-                    data[key].income += order.total;
-                    data[key].profit += order.total - costOfGoods;
-                }
+                data.totalIncome += order.total;
+                data.totalProfit += order.total - costOfGoods;
+                data.sales += orderQty;
                 
                 Object.values(order.items).forEach(item => {
                     const color = item.name.replace(' Kit', '');
-                    colorCounts[color] = (colorCounts[color] || 0) + item.quantity;
+                    data.popularColors[color] = (data.popularColors[color] || 0) + item.quantity;
                 });
 
             } else if (order.fulfillmentStatus === 'Returned') {
-                returnedValue += order.total;
+                data.returnedValue += order.total;
             } else if (order.paymentStatus === 'Refunded') {
-                refundedValue += order.total;
+                data.refundedValue += order.total;
             }
         });
 
+        // This part is for the smaller monthly chart, separate from the main report data
+        orders.forEach(order => {
+            const orderDate = new Date(order.createdAt);
+            const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
+            const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
+            if (key && order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
+                const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+                const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+                const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+                data.monthlySales[key].income += order.total;
+                data.monthlySales[key].profit += order.total - costOfGoods;
+            }
+        });
+        
         return {
-            totalIncome,
-            totalProfit,
-            monthlySales: [
-                { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].profit },
-                { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].profit },
-            ],
-            popularColors: Object.entries(colorCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
-            returnedValue,
-            refundedValue,
+            filteredOrders: filtered,
+            reportData: {
+                ...data,
+                monthlyChartData: [
+                    { name: 'Last Month', Income: data.monthlySales['Last Month'].income, Profit: data.monthlySales['Last Month'].profit },
+                    { name: 'This Month', Income: data.monthlySales['This Month'].income, Profit: data.monthlySales['This Month'].profit },
+                ],
+                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+            }
         };
-    }, [orders, costBatches]);
+    }, [orders, costBatches, dateRange]);
+
+    const handleExport = () => {
+        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit"];
+        
+        const rows = filteredOrders.map(order => {
+            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+            const profit = order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed' ? order.total - costOfGoods : 0;
+            
+            const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
+
+            return [
+                order.id,
+                new Date(order.createdAt).toLocaleDateString(),
+                order.customerInfo.name,
+                `"${itemsString}"`, // Quote to handle commas in item names
+                order.subtotal || 0,
+                order.discount || 0,
+                order.fulfillmentCost || 0,
+                order.total,
+                profit.toFixed(2)
+            ].join(',');
+        });
+
+        const csvString = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `byot_report_${dateRange.from}_to_${dateRange.to}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    if (editingBatch) {
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-6">Edit Cost Batch</h2>
+                <form onSubmit={handleSaveBatch} className="space-y-4">
+                    <div>
+                        <label className="font-semibold block mb-1">Batch Name</label>
+                        <input name="name" defaultValue={editingBatch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <label className="font-semibold block mb-1">Product Cost (Alibaba)</label>
+                            <input name="productCost" type="number" defaultValue={editingBatch.productCost} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                            <label className="font-semibold block mb-1">Shipping (Alibaba)</label>
+                            <input name="alibabaShipping" type="number" defaultValue={editingBatch.alibabaShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                             <label className="font-semibold block mb-1">Shipping (Mailpac)</label>
+                            <input name="mailpacShipping" type="number" defaultValue={editingBatch.mailpacShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                             <label className="font-semibold block mb-1">Total # of Sets</label>
+                            <input name="numSets" type="number" defaultValue={editingBatch.numSets} className="w-full p-2 border rounded" required />
+                         </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => setEditingBatch(null)} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
+                </form>
+                 <p className="text-xs text-gray-500 mt-4">Note: After saving, please update your stock levels in the 'Inventory' tab to reflect the new batch.</p>
+            </div>
+        );
+    }
+    
 
     return ( 
         <div> 
             <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> 
             
-            {/* --- Key Metrics --- */}
+            {/* Reporting Section */}
+            <div className="p-4 bg-white rounded-lg shadow mb-6">
+                <h3 className="font-bold mb-4">Export Report</h3>
+                <div className="flex items-end gap-4 flex-wrap">
+                    <div>
+                        <label className="text-sm font-medium">From</label>
+                        <input type="date" value={dateRange.from} onChange={e => setDateRange(prev => ({...prev, from: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">To</label>
+                        <input type="date" value={dateRange.to} onChange={e => setDateRange(prev => ({...prev, to: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <button onClick={handleExport} disabled={!dateRange.from || !dateRange.to} className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-gray-400">Export CSV</button>
+                </div>
+            </div>
+            
+             {/* --- Key Metrics --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6"> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Total Income</h3> 
-                    <p className="text-3xl font-bold">J${totalIncome.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString()}</p>
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Total Profit</h3> 
-                    <p className="text-3xl font-bold">J${totalProfit.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString()}</p>
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="text-gray-500">Sales (This Month)</h3> 
-                    <p className="text-3xl font-bold">{monthlySales[1].Sales}</p>
+                    <h3 className="text-gray-500">Sales (Period)</h3> 
+                    <p className="text-3xl font-bold">{reportData.sales}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Returned Value</h3>
-                    <p className="text-3xl font-bold text-orange-500">J${returnedValue.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-orange-500">J${reportData.returnedValue.toLocaleString()}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Refunded Value</h3>
-                    <p className="text-3xl font-bold text-red-500">J${refundedValue.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-red-500">J${reportData.refundedValue.toLocaleString()}</p>
                 </div>
             </div> 
-            
-            {/* --- Charts --- */}
+
+            {/* --- Charts & Batches --- */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="font-bold mb-4">Profitability</h3> 
+                    <h3 className="font-bold mb-4">Monthly Profitability</h3> 
                     <ResponsiveContainer width="100%" height={200}> 
-                        <BarChart data={monthlySales}> 
+                        <BarChart data={reportData.monthlyChartData} > 
                             <CartesianGrid strokeDasharray="3 3" /> 
                             <XAxis dataKey="name" /> 
                             <YAxis /> 
@@ -1269,9 +1403,9 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
                     </ResponsiveContainer> 
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="font-bold mb-4">Most Popular Colors</h3> 
+                    <h3 className="font-bold mb-4">Most Popular Colors (Period)</h3> 
                     <ResponsiveContainer width="100%" height={200}> 
-                        <BarChart data={popularColors} layout="vertical"> 
+                        <BarChart data={reportData.popularColorsChartData} layout="vertical"> 
                             <CartesianGrid strokeDasharray="3 3" /> 
                             <XAxis type="number" /> 
                             <YAxis type="category" dataKey="name" width={80} /> 
@@ -1282,39 +1416,32 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
                 </div> 
             </div>
 
-            {/* --- Cost Batches --- */}
             <div className="p-4 bg-white rounded-lg shadow">
                  <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold">Cost Batches</h3>
-                    <button onClick={() => setShowNewBatchForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
+                     <button onClick={() => setEditingBatch({ name: '', productCost: 0, alibabaShipping: 0, mailpacShipping: 0, numSets: 0, isNew: true })} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
                  </div>
-                {showNewBatchForm && (
-                     <form onSubmit={handleCreateNewBatch} className="bg-gray-50 p-4 rounded-lg space-y-4 mb-4">
-                        <h4 className="font-semibold">New Batch Details</h4>
-                        <input name="name" placeholder="Batch Name (e.g., July 2025 Order)" className="w-full p-2 border rounded" required/>
-                        <div className="grid grid-cols-2 gap-4">
-                            <input name="productCost" type="number" placeholder="Product Cost (Alibaba)" className="w-full p-2 border rounded" required/>
-                            <input name="alibabaShipping" type="number" placeholder="Shipping (Alibaba)" className="w-full p-2 border rounded" required/>
-                            <input name="mailpacShipping" type="number" placeholder="Shipping (Mailpac)" className="w-full p-2 border rounded" required/>
-                            <input name="numSets" type="number" placeholder="Total Number of Sets" className="w-full p-2 border rounded" required/>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                             <button type="button" onClick={() => setShowNewBatchForm(false)} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
-                             <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md">Save & Activate</button>
-                        </div>
-                     </form>
-                )}
                  <div className="space-y-2">
                     {costBatches.slice().reverse().map(batch => (
                         <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
-                            <div className="flex justify-between items-center">
-                                <p className="font-semibold">{batch.name}</p>
-                                {batch.isActive && <span className="text-xs font-bold text-white bg-green-500 px-2 py-1 rounded-full">ACTIVE</span>}
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold">{batch.name}</p>
+                                    <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
+                                    <p className="text-xs text-gray-500">
+                                        {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <button onClick={() => setEditingBatch(batch)} className="p-1 text-blue-600 hover:text-blue-800"><EditIcon/></button>
+                                     <div className="flex items-center">
+                                        <span className={`text-xs mr-2 ${batch.isActive ? 'text-green-600 font-bold' : 'text-gray-500'}`}>{batch.isActive ? 'Active' : 'Inactive'}</span>
+                                        <button onClick={() => handleToggleBatchStatus(batch.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full ${batch.isActive ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${batch.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
-                            <p className="text-xs text-gray-500">
-                                Active from {new Date(batch.startDate).toLocaleDateString()} to {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
-                            </p>
                         </div>
                     ))}
                  </div>
