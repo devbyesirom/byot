@@ -27,18 +27,18 @@ const PRODUCTS_DATA = [
     { id: 'byot-005', name: 'Pink Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Pink.png', colorStart: '#ec4899', colorEnd: '#fce7f3', buttonTextColor: 'text-pink-800', description: 'A soft and stylish pink for an elegant touch.' },
 ];
 const DUMMY_ORDERS = [
-    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
-    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending' },
-    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4000, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed' },
-    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned' },
-    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled' },
+    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe', email: 'johndoe@example.com', phone: '876-555-0101'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4700, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'bearer', bearerLocation: 'Kingston (10, 11)', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card' },
+    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith', email: 'janesmith@example.com', phone: '876-555-0102'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-20', pickupTime: '11:00 AM - 12:00 PM', paymentMethod: 'cod'},
+    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan', email: 'peterpan@example.com', phone: '876-555-0103'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4500, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'knutsford', bearerLocation: null, knutsfordLocation: 'New Kingston', pickupDate: null, pickupTime: null, paymentMethod: 'bank_transfer'},
+    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown', email: 'alicebrown@example.com', phone: '876-555-0104'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-14', pickupTime: '1:00 PM - 2:00 PM', paymentMethod: 'cod'},
+    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White', email: 'bobwhite@example.com', phone: '876-555-0105'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled', fulfillmentMethod: 'bearer', bearerLocation: 'Portmore', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card'},
 ];
 const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 271, defective: 0 },
-    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 69, defective: 0 },
-    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 32, defective: 0 },
-    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 8, defective: 0 },
-    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 33, defective: 0 },
+    'byot-001': { totalStock: 271, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-002': { totalStock: 69, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-003': { totalStock: 32, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-004': { totalStock: 8, engravedStock: 0, unengravedStock: 0, defective: 0 },
+    'byot-005': { totalStock: 33, engravedStock: 0, unengravedStock: 0, defective: 0 },
 };
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -297,6 +297,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
             pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : null, 
             pickupTime: fulfillmentMethod === 'pickup' ? pickupTime : null,
             knutsfordLocation: fulfillmentMethod === 'knutsford' ? knutsfordLocation : null,
+            bearerLocation: fulfillmentMethod === 'bearer' ? bearerLocation : null,
         });
     };
 
@@ -667,51 +668,82 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     };
 
 
-    const OrderModal = ({ order, onClose, onDeleteOrder }) => ( 
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50"> 
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md"> 
-                <div className="p-4 border-b flex justify-between items-center"> 
+    const OrderModal = ({ order, onClose, onDeleteOrder }) => (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
                     <h3 className="font-bold">Order #{order.id}</h3>
-                    <button onClick={onClose}>&times;</button> 
-                </div> 
-                <div className="p-4 space-y-2 text-sm"> 
-                    <p><strong>Customer:</strong> {order.customerInfo.name}</p> 
-                    <div className="flex items-center"> 
-                        <label className="w-32">Payment Status</label> 
-                        <select defaultValue={order.paymentStatus} onChange={(e) => handleStatusUpdate(order.id, 'paymentStatus', e.target.value)} className="p-1 border rounded-md"> 
-                            <option>Pending</option> 
-                            <option>Paid</option>
-                            <option>Refunded</option> 
-                            <option>Cancelled</option>
-                        </select> 
-                    </div> 
-                    <div className="flex items-center"> 
-                        <label className="w-32">Fulfillment</label> 
-                        <select defaultValue={order.fulfillmentStatus} onChange={(e) => handleStatusUpdate(order.id, 'fulfillmentStatus', e.target.value)} className="p-1 border rounded-md"> 
-                            <option>Pending</option> 
-                            <option>Completed</option>
-                            <option>Returned</option> 
-                            <option>Cancelled</option>
-                        </select> 
-                    </div> 
-                    {/* Display order items with quantity and price */}
-                    <h4 className="font-semibold mt-4">Items:</h4>
-                    <ul className="list-disc pl-5">
-                        {/* Ensure item properties are safely accessed with fallback values */}
-                        {Object.values(order.items).map(item => (
-                            <li key={item.id || item.name || Math.random()}>
-                                {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price || 0).toLocaleString()}
-                            </li>
-                        ))}
-                    </ul>
-                </div> 
-                <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm">
+                    <button onClick={onClose} className="text-2xl font-bold p-1">&times;</button>
+                </div>
+                <div className="p-4 space-y-4 text-sm overflow-y-auto">
+                    {/* Customer Details */}
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Customer Details</h4>
+                        <p><strong>Name:</strong> {order.customerInfo.name}</p>
+                        {order.customerInfo.email && <p><strong>Email:</strong> {order.customerInfo.email}</p>}
+                        {order.customerInfo.phone && <p><strong>Phone:</strong> {order.customerInfo.phone}</p>}
+                    </div>
+
+                    {/* Fulfillment Details */}
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Fulfillment Details</h4>
+                        <p><strong>Method:</strong> <span className="capitalize">{order.fulfillmentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        {order.fulfillmentMethod === 'pickup' && (
+                            <p><strong>Details:</strong> {order.pickupDate ? new Date(order.pickupDate).toLocaleDateString() : 'N/A'} at {order.pickupTime || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'bearer' && (
+                            <p><strong>Location:</strong> {order.bearerLocation || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'knutsford' && (
+                            <p><strong>Location:</strong> {order.knutsfordLocation || 'N/A'}</p>
+                        )}
+                    </div>
+                    
+                    {/* Order & Payment Status */}
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Order Status</h4>
+                         <p className="mb-2"><strong>Payment Method:</strong> <span className="capitalize">{order.paymentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        <div className="flex items-center">
+                            <label className="w-32">Payment Status</label>
+                            <select defaultValue={order.paymentStatus} onChange={(e) => handleStatusUpdate(order.id, 'paymentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Paid</option>
+                                <option>Refunded</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center mt-2">
+                            <label className="w-32">Fulfillment</label>
+                            <select defaultValue={order.fulfillmentStatus} onChange={(e) => handleStatusUpdate(order.id, 'fulfillmentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Completed</option>
+                                <option>Returned</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Items */}
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Items</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            {Object.values(order.items).map(item => (
+                                <li key={item.id || item.name || Math.random()}>
+                                    {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price * (item.quantity || 0)).toLocaleString()}
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
                         <TrashIcon className="mr-1"/> Delete Order
                     </button>
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Close</button>
-                </div> 
-            </div> 
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
+                </div>
+            </div>
         </div>
     );
     if (showManualForm) { return ( 
@@ -781,9 +813,9 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
                                 {/* Conditionally display date or "N/A" based on whether it's a valid date string */}
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    {order.pickupDate && order.pickupDate !== 'N/A' && !isNaN(new Date(order.pickupDate).getTime()) // Check for valid date object
-                                        ? new Date(order.pickupDate).toLocaleDateString() 
-                                        : new Date(order.createdAt).toLocaleDateString()} {/* Fallback to createdAt for display */}
+                                    {order.createdAt && !isNaN(new Date(order.createdAt).getTime()) // Check for valid date object
+                                        ? new Date(order.createdAt).toLocaleDateString() 
+                                        : 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
