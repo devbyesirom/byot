@@ -9,7 +9,7 @@ const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
+const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const WhatsAppIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.17.28-.3.4-.28.2-.45.28-.35.13-.53.13c-.18 0-.38-.04-.58-.13s-.43-.2-.65-.35-.45-.3-.68-.5-.45-.4-.68-.63c-.23-.23-.45-.48-.65-.75s-.38-.5-.53-.75c-.15-.25-.23-.5-.23-.78 0-.28.08-.53.23-.75s.33-.4.53-.53.4-.2.6-.23c.2-.03.4-.04.6-.04.2 0 .4.03.58.08s.35.13.5.22.28.2.4.33.2.25.25.4c.05.14.08.3.08.48s-.03.33-.08.45-.13.25-.23.38c-.1.13-.23.25-.38.38s-.3.25-.45.35-.3.18-.45.25c-.15.08-.3.12-.43.12-.13 0-.25-.02-.38-.08s-.25-.12-.35-.22-.2-.2-.28-.3c-.08-.1-.12-.23-.12-.38 0-.15.04-.28.12-.4.08-.12.2-.23.35-.32.15-.1.3-.15.48-.15.18 0 .35.04.5.13.15.08.3.2.43.32zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path></svg>;
@@ -27,11 +27,9 @@ const PRODUCTS_DATA = [
     { id: 'byot-005', name: 'Pink Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Pink.png', colorStart: '#ec4899', colorEnd: '#fce7f3', buttonTextColor: 'text-pink-800', description: 'A soft and stylish pink for an elegant touch.' },
 ];
 const DUMMY_ORDERS = [
-    {id: 'BYOT-1718679601', customerInfo: {name: 'John Doe', email: 'johndoe@example.com', phone: '876-555-0101'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4700, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'bearer', bearerLocation: 'Kingston (10, 11)', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card' },
-    {id: 'BYOT-1718679602', customerInfo: {name: 'Jane Smith', email: 'janesmith@example.com', phone: '876-555-0102'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-20', pickupTime: '11:00 AM - 12:00 PM', paymentMethod: 'cod'},
-    {id: 'BYOT-1718679603', customerInfo: {name: 'Peter Pan', email: 'peterpan@example.com', phone: '876-555-0103'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4500, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'knutsford', bearerLocation: null, knutsfordLocation: 'New Kingston', pickupDate: null, pickupTime: null, paymentMethod: 'bank_transfer'},
-    {id: 'BYOT-1718679604', customerInfo: {name: 'Alice Brown', email: 'alicebrown@example.com', phone: '876-555-0104'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Returned', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-14', pickupTime: '1:00 PM - 2:00 PM', paymentMethod: 'cod'},
-    {id: 'BYOT-1718679605', customerInfo: {name: 'Bob White', email: 'bobwhite@example.com', phone: '876-555-0105'}, items: {'byot-004': {id: 'byot-004', name: 'Yellow Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Refunded', fulfillmentStatus: 'Cancelled', fulfillmentMethod: 'bearer', bearerLocation: 'Portmore', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card'},
+    {id: 'BYOT-1718679601', costBatchId: 'batch-001', customerInfo: {name: 'John Doe', email: 'johndoe@example.com', phone: '876-555-0101'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4700, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'bearer', bearerLocation: 'Kingston (10, 11)', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card' },
+    {id: 'BYOT-1718679602', costBatchId: 'batch-001', customerInfo: {name: 'Jane Smith', email: 'janesmith@example.com', phone: '876-555-0102'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-20', pickupTime: '11:00 AM - 12:00 PM', paymentMethod: 'cod'},
+    {id: 'BYOT-1718679603', costBatchId: 'batch-001', customerInfo: {name: 'Peter Pan', email: 'peterpan@example.com', phone: '876-555-0103'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4500, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'knutsford', bearerLocation: null, knutsfordLocation: 'New Kingston', pickupDate: null, pickupTime: null, paymentMethod: 'bank_transfer'},
 ];
 const DUMMY_INVENTORY = {
     'byot-001': { totalStock: 20, engravedStock: 0, unengravedStock: 20, defective: 0 },
@@ -44,6 +42,21 @@ const DUMMY_COUPONS = [
     { id: 'coup-001', code: 'SAVE10', type: 'percentage', value: 10, isActive: true },
     { id: 'coup-002', code: '500OFF', type: 'fixed', value: 500, isActive: true },
     { id: 'coup-003', code: 'EXPIRED', type: 'percentage', value: 20, isActive: false },
+];
+
+const DUMMY_COST_BATCHES = [
+    { 
+        id: 'batch-001', 
+        name: 'Initial Batch - June 2025',
+        productCost: 1000, 
+        alibabaShipping: 200, 
+        mailpacShipping: 50, 
+        numSets: 150,
+        costPerSet: (1000 + 200 + 50) / 150,
+        startDate: new Date('2025-06-01').toISOString(),
+        endDate: null,
+        isActive: true
+    }
 ];
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -541,7 +554,7 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, setProducts, setInventory, setOrders, setCoupons, showToast }) => {
+const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, setProducts, setInventory, setOrders, setCoupons, setCostBatches, showToast }) => {
     const [adminView, setAdminView] = useState('orders');
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
@@ -569,7 +582,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, setPro
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} setInventory={setInventory} products={products} showToast={showToast} />}
                     {adminView === 'products' && <AdminProductsView products={products} setProducts={setProducts} showToast={showToast}/>}
                     {adminView === 'coupons' && <AdminCouponsView coupons={coupons} setCoupons={setCoupons} showToast={showToast} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders}/>}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} setCostBatches={setCostBatches} showToast={showToast} />}
                  </div>
             </main>
         </div>
@@ -1128,34 +1141,67 @@ const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
         </div>
     )
 }
-const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({ productCost: 1000, alibabaShipping: 200, mailpacShipping: 50, numSets: 1 }); const handleCostChange = (e) => setCosts(prev => ({...prev, [e.target.name]: Number(e.target.value)})); const costPerSet = useMemo(() => { const totalCost = costs.productCost + costs.alibabaShipping + costs.mailpacShipping; return costs.numSets > 0 ? totalCost / costs.numSets : 0; }, [costs]); 
+const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) => {
+    const [showNewBatchForm, setShowNewBatchForm] = useState(false);
+
+    const handleCreateNewBatch = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const newBatchData = {
+            id: `batch-${Date.now()}`,
+            name: formData.get('name'),
+            productCost: Number(formData.get('productCost')),
+            alibabaShipping: Number(formData.get('alibabaShipping')),
+            mailpacShipping: Number(formData.get('mailpacShipping')),
+            numSets: Number(formData.get('numSets')),
+            startDate: new Date().toISOString(),
+            endDate: null,
+            isActive: true,
+        };
+        newBatchData.costPerSet = (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets;
+
+        setCostBatches(prevBatches => {
+            // Archive the current active batch
+            const updatedBatches = prevBatches.map(batch => 
+                batch.isActive ? { ...batch, isActive: false, endDate: new Date().toISOString() } : batch
+            );
+            return [...updatedBatches, newBatchData];
+        });
+        
+        setShowNewBatchForm(false);
+        showToast("New cost batch created and activated!");
+    };
+    
     const salesData = useMemo(() => { 
-        const data = { 'This Month': { sales: 0, income: 0 }, 'Last Month': { sales: 0, income: 0 } }; 
+        const data = { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } }; 
         const now = new Date(); 
         orders.forEach(order => { 
-            // Only count orders that are Paid AND Completed (or were never cancelled/returned)
-            if (order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
+            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
                 const orderDate = new Date(order.createdAt); 
                 const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth(); 
                 const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null); 
+
                 if (key) { 
                     const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0); 
                     data[key].sales += orderQty; 
-                    data[key].income += order.total; 
+                    data[key].income += order.total;
+                    
+                    const costBatch = costBatches.find(b => b.id === order.costBatchId);
+                    const costPerSet = costBatch ? costBatch.costPerSet : (costBatches.find(b=>b.isActive)?.costPerSet || 0);
+                    data[key].profit += order.total - (orderQty * costPerSet);
                 }
             } 
         }); 
         return [ 
-            { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].income - (data['Last Month'].sales * costPerSet) }, 
-            { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].income - (data['This Month'].sales * costPerSet) } 
+            { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].profit }, 
+            { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].profit }
         ]; 
-    }, [orders, costPerSet]); 
+    }, [orders, costBatches]); 
     
     const popularColors = useMemo(() => { 
         const colorCounts = {}; 
         orders.forEach(order => { 
-            // Only count items from orders that are Paid AND Completed
-            if (order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
+            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
                 Object.values(order.items).forEach(item => { 
                     if (item.name && item.name.includes('Kit')) { 
                         const color = item.name.replace(' Kit', ''); 
@@ -1166,68 +1212,29 @@ const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({
         }); 
         return Object.entries(colorCounts).map(([name, count]) => ({name, count})).sort((a,b) => b.count - a.count); 
     }, [orders]); 
-    
-    // Calculate values for canceled/returned/refunded orders
-    const cancelledReturnedValue = useMemo(() => {
-        return orders.reduce((sum, order) => {
-            if (order.fulfillmentStatus === 'Returned' || order.fulfillmentStatus === 'Cancelled') {
-                return sum + order.total;
-            }
-            return sum;
-        }, 0);
-    }, [orders]);
-
-    const refundedValue = useMemo(() => {
-        return orders.reduce((sum, order) => {
-            if (order.paymentStatus === 'Refunded') {
-                // Ensure we don't double count if also returned/cancelled
-                if (order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled') {
-                    return sum + order.total;
-                }
-            }
-            return sum;
-        }, 0);
-    }, [orders]);
 
     return ( 
         <div> 
             <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> 
+            
+            {/* --- Key Metrics --- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Total Income</h3> 
-                    <p className="text-3xl font-bold">J${orders
-                        .filter(order => order.paymentStatus !== 'Refunded' && order.fulfillmentStatus !== 'Returned' && order.fulfillmentStatus !== 'Cancelled')
-                        .reduce((sum, o) => sum + o.total, 0).toLocaleString()}
-                    </p>
+                    <p className="text-3xl font-bold">J${salesData.reduce((acc, month) => acc + month.Income, 0).toLocaleString()}</p>
+                </div> 
+                <div className="p-4 bg-white rounded-lg shadow"> 
+                    <h3 className="text-gray-500">Total Profit</h3> 
+                    <p className="text-3xl font-bold">J${salesData.reduce((acc, month) => acc + month.Profit, 0).toLocaleString()}</p>
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Sales (This Month)</h3> 
                     <p className="text-3xl font-bold">{salesData[1].Sales}</p>
                 </div> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="text-gray-500">Profit (This Month)</h3> 
-                    <p className="text-3xl font-bold">J${salesData[1].Profit.toLocaleString()}</p>
-                </div> 
-                <div className="p-4 bg-white rounded-lg shadow"> {/* New card for Canceled/Returned */}
-                    <h3 className="text-gray-500">Canceled/Returned Value</h3> 
-                    <p className="text-3xl font-bold text-red-500">J${cancelledReturnedValue.toLocaleString()}</p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow"> {/* New card for Refunded */}
-                    <h3 className="text-gray-500">Refunded Value</h3> 
-                    <p className="text-3xl font-bold text-red-500">J${refundedValue.toLocaleString()}</p>
-                </div>
             </div> 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="font-bold mb-4">Cost Calculation</h3> 
-                    <div className="space-y-2 text-sm"> 
-                        <div className="flex justify-between"><label>Product Cost (Alibaba)</label><input name="productCost" value={costs.productCost} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
-                        <div className="flex justify-between"><label>Shipping Cost (Alibaba)</label><input name="alibabaShipping" value={costs.alibabaShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
-                        <div className="flex justify-between"><label>Shipping Cost (Mailpac)</label><input name="mailpacShipping" value={costs.mailpacShipping} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
-                        <div className="flex justify-between"><label>Total Number of Sets</label><input name="numSets" value={costs.numSets} onChange={handleCostChange} type="number" className="w-24 p-1 border rounded"/></div> 
-                        <div className="flex justify-between font-bold border-t pt-2 mt-2"><label>Cost Per Set</label><span>J${costPerSet.toFixed(2)}</span></div> 
-                    </div> 
-                </div> 
+            
+            {/* --- Charts --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="font-bold mb-4">Profitability</h3> 
                     <ResponsiveContainer width="100%" height={200}> 
@@ -1254,7 +1261,45 @@ const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({
                         </BarChart> 
                     </ResponsiveContainer> 
                 </div> 
-            </div> 
+            </div>
+
+            {/* --- Cost Batches --- */}
+            <div className="p-4 bg-white rounded-lg shadow">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold">Cost Batches</h3>
+                    <button onClick={() => setShowNewBatchForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
+                 </div>
+                {showNewBatchForm && (
+                     <form onSubmit={handleCreateNewBatch} className="bg-gray-50 p-4 rounded-lg space-y-4 mb-4">
+                        <h4 className="font-semibold">New Batch Details</h4>
+                        <input name="name" placeholder="Batch Name (e.g., July 2025 Order)" className="w-full p-2 border rounded" required/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <input name="productCost" type="number" placeholder="Product Cost (Alibaba)" className="w-full p-2 border rounded" required/>
+                            <input name="alibabaShipping" type="number" placeholder="Shipping (Alibaba)" className="w-full p-2 border rounded" required/>
+                            <input name="mailpacShipping" type="number" placeholder="Shipping (Mailpac)" className="w-full p-2 border rounded" required/>
+                            <input name="numSets" type="number" placeholder="Total Number of Sets" className="w-full p-2 border rounded" required/>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                             <button type="button" onClick={() => setShowNewBatchForm(false)} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                             <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md">Save & Activate</button>
+                        </div>
+                     </form>
+                )}
+                 <div className="space-y-2">
+                    {costBatches.slice().reverse().map(batch => (
+                        <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
+                            <div className="flex justify-between items-center">
+                                <p className="font-semibold">{batch.name}</p>
+                                {batch.isActive && <span className="text-xs font-bold text-white bg-green-500 px-2 py-1 rounded-full">ACTIVE</span>}
+                            </div>
+                            <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">
+                                Active from {new Date(batch.startDate).toLocaleDateString()} to {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
+                            </p>
+                        </div>
+                    ))}
+                 </div>
+            </div>
         </div> 
     ) 
 }
@@ -1267,6 +1312,7 @@ export default function App() {
     const [inventory, setInventory] = useState(DUMMY_INVENTORY);
     const [orders, setOrders] = useState(DUMMY_ORDERS);
     const [coupons, setCoupons] = useState(DUMMY_COUPONS);
+    const [costBatches, setCostBatches] = useState(DUMMY_COST_BATCHES);
     const [cart, setCart] = useState({});
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
@@ -1289,10 +1335,12 @@ export default function App() {
     const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
     
-    const placeOrder = (order) => { 
+    const placeOrder = (order) => {
+        const activeCostBatch = costBatches.find(b => b.isActive);
         const newOrder = {
             ...order, 
             id: `BYOT-${Date.now()}`,
+            costBatchId: activeCostBatch ? activeCostBatch.id : null,
             paymentStatus: order.paymentStatus || 'Pending', 
             fulfillmentStatus: order.fulfillmentStatus || 'Pending',
             createdAt: new Date().toISOString()
@@ -1314,7 +1362,7 @@ export default function App() {
     
     const renderContent = () => {
         if (isLoggedIn) {
-            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} setCoupons={setCoupons} showToast={showToast} />;
+            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} costBatches={costBatches} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} setCoupons={setCoupons} setCostBatches={setCostBatches} showToast={showToast} />;
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
