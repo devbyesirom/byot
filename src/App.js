@@ -9,7 +9,7 @@ const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-// Adjusted CheckCircleIcon to have matching width and height attributes as XCircleIcon for visual consistency.
+const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const WhatsAppIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.17.28-.3.4-.28.2-.45.28-.35.13-.53.13c-.18 0-.38-.04-.58-.13s-.43-.2-.65-.35-.45-.3-.68-.5-.45-.4-.68-.63c-.23-.23-.45-.48-.65-.75s-.38-.5-.53-.75c-.15-.25-.23-.5-.23-.78 0-.28.08-.53.23-.75s.33-.4.53-.53.4-.2.6-.23c.2-.03.4-.04.6-.04.2 0 .4.03.58.08s.35.13.5.22.28.2.4.33.2.25.25.4c.05.14.08.3.08.48s-.03.33-.08.45-.13.25-.23.38c-.1.13-.23.25-.38.38s-.3.25-.45.35-.3.18-.45.25c-.15.08-.3.12-.43.12-.13 0-.25-.02-.38-.08s-.25-.12-.35-.22-.2-.2-.28-.3c-.08-.1-.12-.23-.12-.38 0-.15.04-.28.12-.4.08-.12.2-.23.35-.32.15-.1.3-.15.48-.15.18 0 .35.04.5.13.15.08.3.2.43.32zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path></svg>;
@@ -40,6 +40,11 @@ const DUMMY_INVENTORY = {
     'byot-004': { totalStock: 1, engravedStock: 0, unengravedStock: 1, defective: 0 },
     'byot-005': { totalStock: 10, engravedStock: 0, unengravedStock: 10, defective: 0 },
 };
+const DUMMY_COUPONS = [
+    { id: 'coup-001', code: 'SAVE10', type: 'percentage', value: 10, isActive: true },
+    { id: 'coup-002', code: '500OFF', type: 'fixed', value: 500, isActive: true },
+    { id: 'coup-003', code: 'EXPIRED', type: 'percentage', value: 20, isActive: false },
+];
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
 const KNUTSFORD_FEE = 500;
@@ -250,12 +255,14 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
         </div> 
     ); 
 };
-const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
+const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }) => {
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
     const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
     const [paymentMethod, setPaymentMethod] = useState('cod');
-    const [pickupDate, setPickupDate] = useState(''); // State for pickup date
-    const [pickupTime, setPickupTime] = useState(''); // State for pickup time
+    const [pickupDate, setPickupDate] = useState('');
+    const [pickupTime, setPickupTime] = useState('');
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
 
     useEffect(() => {
         if (fulfillmentMethod !== 'pickup') {
@@ -271,8 +278,31 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         if (fulfillmentMethod === 'knutsford') return KNUTSFORD_FEE;
         return 0;
     }, [fulfillmentMethod, bearerLocation]);
+    
+    const discount = useMemo(() => {
+        if (!appliedCoupon) return 0;
+        if (appliedCoupon.type === 'percentage') {
+            return subtotal * (appliedCoupon.value / 100);
+        }
+        if (appliedCoupon.type === 'fixed') {
+            return appliedCoupon.value;
+        }
+        return 0;
+    }, [appliedCoupon, subtotal]);
 
-    const total = subtotal + fulfillmentCost;
+    const total = subtotal + fulfillmentCost - discount;
+    
+    const handleApplyCoupon = () => {
+        const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
+        if(coupon) {
+            setAppliedCoupon(coupon);
+            showToast('Coupon applied!', 'success');
+        } else {
+            showToast('Invalid or inactive coupon.', 'error');
+            setAppliedCoupon(null);
+        }
+    };
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -283,15 +313,13 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         const knutsfordLocation = formData.get('knutsford_location');
 
         placeOrder({
-            customerInfo: {
-                name: fullName,
-                email: email,
-                phone: phone
-            },
+            customerInfo: { name: fullName, email, phone },
             items: cart,
             subtotal,
             fulfillmentCost,
+            discount,
             total,
+            couponUsed: appliedCoupon ? appliedCoupon.code : null,
             fulfillmentMethod,
             paymentMethod,
             pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : null, 
@@ -386,6 +414,34 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                             )}
                         </div>
                     </div>
+                    {/* Coupon Code Section */}
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-700 mb-2">Coupon Code</h2>
+                        <div className="flex gap-2">
+                            <input 
+                                type="text"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value)}
+                                placeholder="Enter coupon code"
+                                className="w-full p-3 border rounded-lg"
+                                disabled={!!appliedCoupon}
+                            />
+                            <button 
+                                type="button" 
+                                onClick={handleApplyCoupon}
+                                className="px-4 py-2 bg-gray-600 text-white rounded-lg disabled:bg-gray-400"
+                                disabled={!!appliedCoupon || !couponCode}
+                            >
+                                Apply
+                            </button>
+                        </div>
+                        {appliedCoupon && (
+                             <p className="text-green-600 text-sm mt-2">
+                                 Coupon "{appliedCoupon.code}" applied! You saved J${discount.toLocaleString()}
+                                 <button onClick={() => {setAppliedCoupon(null); setCouponCode('')}} className="ml-2 text-red-500 font-bold">[Remove]</button>
+                             </p>
+                        )}
+                    </div>
                     <div>
                         <h2 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h2>
                         <div className="space-y-2">
@@ -437,7 +493,12 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                 </form>
             </main>
             <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3">
-                <div className="flex justify-between font-bold text-lg">
+                <div className="text-right space-y-1">
+                    <p>Subtotal: <span className="font-semibold">J${subtotal.toLocaleString()}</span></p>
+                    <p>Shipping: <span className="font-semibold">J${fulfillmentCost.toLocaleString()}</span></p>
+                    {discount > 0 && <p className="text-green-600">Discount: <span className="font-semibold">-J${discount.toLocaleString()}</span></p>}
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
                     <span>Total</span>
                     <span>J${total.toLocaleString()}</span>
                 </div>
@@ -480,44 +541,25 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, orders, products, inventory, setProducts, setInventory, setOrders, showToast }) => {
+const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, setProducts, setInventory, setOrders, setCoupons, showToast }) => {
     const [adminView, setAdminView] = useState('orders');
-    // Using useRef to get the latest inventory without triggering re-renders in the child component unnecessarily.
     const inventoryRef = useRef(inventory);
-    useEffect(() => {
-        inventoryRef.current = inventory;
-    }, [inventory]);
+    useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
     return (
-        // Changed main dashboard container to always be flex-col for consistent layout as nav moves to top
         <div className="view active bg-gray-200 flex-col">
-            {/* Admin Panel as a top horizontal bar on large screens, and vertical sidebar on small screens */}
-            <aside className="w-full bg-gray-800 text-white flex-shrink-0 
-                              lg:h-16 lg:flex lg:flex-row lg:items-center lg:justify-between">
-                 {/* Admin Panel Title - hidden on mobile, visible on large screens (top left) */}
-                 <div className="p-4 font-bold border-b border-gray-700 
-                                 lg:border-b-0 lg:p-0 lg:ml-6 hidden lg:block">Admin Panel</div>
-                 
-                 {/* Navigation links - vertical on mobile, horizontal on large screens */}
-                 <nav className="p-2 flex-grow flex flex-col justify-around 
-                                 lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-6">
-                     <button onClick={() => setAdminView('orders')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 
-                                 lg:flex-row lg:text-left lg:w-auto ${adminView === 'orders' ? 'bg-gray-700' : ''}`}><ClipboardListIcon/><span>Orders</span></button>
-                     <button onClick={() => setAdminView('inventory')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 
-                                 lg:flex-row lg:text-left lg:w-auto ${adminView === 'inventory' ? 'bg-gray-700' : ''}`}><PackageIcon/><span>Inventory</span></button>
-                     <button onClick={() => setAdminView('products')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 
-                                 lg:flex-row lg:text-left lg:w-auto ${adminView === 'products' ? 'bg-gray-700' : ''}`}><TagIcon/><span>Products</span></button>
-                     <button onClick={() => setAdminView('insights')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 
-                                 lg:flex-row lg:text-left lg:w-auto ${adminView === 'insights' ? 'bg-gray-700' : ''}`}><BarChartIcon/><span>Insights</span></button>
+            <aside className="w-full bg-gray-800 text-white flex-shrink-0 lg:h-16 lg:flex lg:flex-row lg:items-center lg:justify-between">
+                 <div className="p-4 font-bold border-b border-gray-700 lg:border-b-0 lg:p-0 lg:ml-6 hidden lg:block">Admin Panel</div>
+                 <nav className="p-2 flex-grow flex flex-col justify-around lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-6">
+                     <button onClick={() => setAdminView('orders')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'orders' ? 'bg-gray-700' : ''}`}><ClipboardListIcon/><span>Orders</span></button>
+                     <button onClick={() => setAdminView('inventory')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'inventory' ? 'bg-gray-700' : ''}`}><PackageIcon/><span>Inventory</span></button>
+                     <button onClick={() => setAdminView('products')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'products' ? 'bg-gray-700' : ''}`}><TagIcon/><span>Products</span></button>
+                     <button onClick={() => setAdminView('coupons')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'coupons' ? 'bg-gray-700' : ''}`}><TicketIcon/><span>Coupons</span></button>
+                     <button onClick={() => setAdminView('insights')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'insights' ? 'bg-gray-700' : ''}`}><BarChartIcon/><span>Insights</span></button>
                  </nav>
-                 
-                 {/* Logout button - hidden on mobile, visible on large screens (top right) */}
-                 <button onClick={onLogout} className="p-4 text-sm text-red-400 hover:bg-red-500 hover:text-white 
-                                 hidden lg:block lg:mr-6">Logout</button>
+                 <button onClick={onLogout} className="p-4 text-sm text-red-400 hover:bg-red-500 hover:text-white hidden lg:block lg:mr-6">Logout</button>
             </aside>
-            
-            <main className="flex-1 flex flex-col overflow-y-hidden lg:flex-row"> {/* This main will be alongside the content*/}
-                 {/* Mobile header (for when the above aside becomes vertical nav) */}
+            <main className="flex-1 flex flex-col overflow-y-hidden lg:flex-row">
                  <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between lg:hidden">
                     <h1 className="text-xl font-bold capitalize">{adminView}</h1>
                     <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
@@ -526,6 +568,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, setProducts, se
                     {adminView === 'orders' && <AdminOrdersView orders={orders} setOrders={setOrders} showToast={showToast} inventory={inventoryRef} setInventory={setInventory} />}
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} setInventory={setInventory} products={products} showToast={showToast} />}
                     {adminView === 'products' && <AdminProductsView products={products} setProducts={setProducts} showToast={showToast}/>}
+                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} setCoupons={setCoupons} showToast={showToast} />}
                     {adminView === 'insights' && <AdminInsightsView orders={orders}/>}
                  </div>
             </main>
@@ -765,6 +808,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                 </li>
                             ))}
                         </ul>
+                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed} (-J${order.discount.toLocaleString()})</p>}
                         <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
                     </div>
                 </div>
@@ -982,6 +1026,108 @@ const AdminProductsView = ({products, setProducts, showToast}) => { const [editi
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
     return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {products.map(p => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> ))} </div> </div> ) }
+const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
+    const [editingCoupon, setEditingCoupon] = useState(null);
+    const [isAddingNew, setIsAddingNew] = useState(false);
+
+    const handleSave = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const couponData = {
+            id: editingCoupon ? editingCoupon.id : `coup-${Date.now()}`,
+            code: formData.get('code').toUpperCase(),
+            type: formData.get('type'),
+            value: Number(formData.get('value')),
+            isActive: formData.get('isActive') === 'on',
+        };
+
+        if (isAddingNew) {
+            setCoupons(prev => [...prev, couponData]);
+            showToast("Coupon added!");
+        } else {
+            setCoupons(prev => prev.map(c => c.id === couponData.id ? couponData : c));
+            showToast("Coupon updated!");
+        }
+        setEditingCoupon(null);
+        setIsAddingNew(false);
+    };
+
+    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true } : null);
+
+    if (formInitialData) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Coupon" : "Edit Coupon"}</h2>
+                <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4">
+                    <div>
+                        <label className="font-semibold">Coupon Code</label>
+                        <input name="code" defaultValue={formInitialData.code} className="w-full p-2 border rounded mt-1 uppercase" required/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Type</label>
+                            <select name="type" defaultValue={formInitialData.type} className="w-full p-2 border rounded mt-1">
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (J$)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="font-semibold">Value</label>
+                            <input name="value" type="number" defaultValue={formInitialData.value} className="w-full p-2 border rounded mt-1" required/>
+                        </div>
+                    </div>
+                    <div className="flex items-center">
+                        <input name="isActive" type="checkbox" defaultChecked={formInitialData.isActive} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
+                        <label className="ml-2 block text-sm text-gray-900">Active</label>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                        <button type="button" onClick={() => { setEditingCoupon(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Coupon Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Coupon</button>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {coupons.map(c => (
+                            <tr key={c.id}>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono">{c.code}</td>
+                                <td className="px-6 py-4 whitespace-nowrap capitalize">{c.type}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {c.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingCoupon(c)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
 const AdminInsightsView = ({ orders }) => { const [costs, setCosts] = useState({ productCost: 1000, alibabaShipping: 200, mailpacShipping: 50, numSets: 1 }); const handleCostChange = (e) => setCosts(prev => ({...prev, [e.target.name]: Number(e.target.value)})); const costPerSet = useMemo(() => { const totalCost = costs.productCost + costs.alibabaShipping + costs.mailpacShipping; return costs.numSets > 0 ? totalCost / costs.numSets : 0; }, [costs]); 
     const salesData = useMemo(() => { 
         const data = { 'This Month': { sales: 0, income: 0 }, 'Last Month': { sales: 0, income: 0 } }; 
@@ -1120,18 +1266,25 @@ export default function App() {
     const [products, setProducts] = useState(PRODUCTS_DATA);
     const [inventory, setInventory] = useState(DUMMY_INVENTORY);
     const [orders, setOrders] = useState(DUMMY_ORDERS);
+    const [coupons, setCoupons] = useState(DUMMY_COUPONS);
     const [cart, setCart] = useState({});
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
     
     useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
-    useEffect(() => { if(toastMessage){ const timer = setTimeout(() => setToastMessage(''), 2000); return () => clearTimeout(timer); } }, [toastMessage]);
+    
+    const showToast = (message, type = 'success') => {
+        setToastMessage(message);
+        setToastType(type);
+        setTimeout(() => setToastMessage(''), 3000);
+    };
 
     const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
     const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
     
-    const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); setToastMessage(`${quantity} x ${product.name} added!`); };
+    const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); showToast(`${quantity} x ${product.name} added!`); };
     const handleBuyNow = (product, quantity) => { setCart({ [product.id]: { ...product, quantity } }); setView('checkout'); };
     const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
@@ -1140,16 +1293,12 @@ export default function App() {
         const newOrder = {
             ...order, 
             id: `BYOT-${Date.now()}`,
-            // Ensure paymentStatus and fulfillmentStatus have initial values for new orders
             paymentStatus: order.paymentStatus || 'Pending', 
             fulfillmentStatus: order.fulfillmentStatus || 'Pending',
-            createdAt: new Date().toISOString() // Ensure createdAt is always a valid date string
+            createdAt: new Date().toISOString()
         }; 
         setOrderData(newOrder); 
         setOrders(prev => [newOrder, ...prev]); 
-
-        // Important: Inventory is NOT decreased here. It's only decreased when order is "Completed" via handleStatusUpdate.
-        // This prevents stock issues if an order is placed but never fulfilled.
 
         if (order.paymentMethod === 'credit_card') { 
             setView('payment'); 
@@ -1165,12 +1314,12 @@ export default function App() {
     
     const renderContent = () => {
         if (isLoggedIn) {
-            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} showToast={setToastMessage} />;
+            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} setCoupons={setCoupons} showToast={showToast} />;
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
             case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; 
-            case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} />;
+            case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} coupons={coupons} showToast={showToast} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
             case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
             case 'about': return <AboutView onBack={() => setView('shop')} />;
@@ -1188,7 +1337,7 @@ export default function App() {
                  </div>
              ) : (
                 <div className="app-shell">
-                    <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 bg-green-500 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'}`}>
+                    <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
                         {toastMessage}
                     </div>
                     {renderContent()}
