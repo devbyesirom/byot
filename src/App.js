@@ -6,7 +6,6 @@ const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
-// Modified ArrowDownIcon size
 const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -177,15 +176,16 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
                 <div className="card-content"> 
                     {/* Adjusted text size for "Bring Yuh Owna Tings" to fit on one line */}
                     <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1> 
-                    <p className="text-lg text-gray-200 mt-2">Sustainable Kits for a Greener Jamaica.</p> 
+                    <p className="text-lg text-gray-200 mt-2">Reusable Utensil Sets for Everyday Use</p> 
                 </div> 
                 {/* Adjusted arrow position and made it clickable to scroll */}
                 <button 
                     className="scroll-arrow absolute bottom-24 left-1/2 transform -translate-x-1/2 text-white" 
                     onClick={() => {
                         if (feedRef.current) {
+                            // Scroll past the current card to reveal the first product card
                             feedRef.current.scrollTo({
-                                top: window.innerHeight, // Scroll down one full view height
+                                top: feedRef.current.clientHeight, 
                                 behavior: 'smooth'
                             });
                         }
@@ -358,7 +358,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                         <div className="space-y-2">
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
                                 <input onChange={(e) => setFulfillmentMethod(e.target.value)} type="radio" name="fulfillment" value="pickup" checked={fulfillmentMethod === 'pickup'} />
-                                <span className="ml-2">Pick Up (13 West Kings House Road)</span>
+                                <span className="ml-2">Pick Up (Unit #18, 13 West Kings House Road)</span>
                                 <span className="ml-auto font-semibold">Free</span>
                             </label>
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
@@ -382,7 +382,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                                     <select name="knutsford_location" className="w-full p-2 border rounded-md mt-1">
                                         {KNUTSFORD_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
                                     </select>
-                                    <p className="text-xs text-gray-500 mt-1">Note: Knutsford charges a separate fee on collection.</p>
+                                    <p className="text-xs text-gray-500 mt-1">Does NOT cover Knutsford's fee to deliver to your requested destination. Covers delivery of order to Knutsford Courier.</p>
                                 </div>
                             )}
                         </div>
@@ -390,13 +390,14 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                     <div>
                         <h2 className="text-lg font-semibold text-gray-700 mb-2">Payment Method</h2>
                         <div className="space-y-2">
-                            {fulfillmentMethod === 'pickup' && (
-                                <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
-                                    <input type="radio" name="payment" value="cod" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'cod'} />
-                                    <span className="ml-2">Cash on Pickup</span>
-                                </label>
-                            )}
-                            {paymentMethod === 'cod' && fulfillmentMethod === 'pickup' && (
+                            {/* Always show COD for pickup, and enable date/time selectors when pickup is selected */}
+                            <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
+                                <input type="radio" name="payment" value="cod" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'cod'} />
+                                <span className="ml-2">Cash on Pickup</span>
+                            </label>
+
+                            {/* Date and Time selectors for Pickup, regardless of payment method IF pickup is chosen */}
+                            {fulfillmentMethod === 'pickup' && (paymentMethod === 'cod' || paymentMethod === 'bank_transfer' || paymentMethod === 'credit_card') && (
                                 <div className="pl-6 pt-2 grid grid-cols-2 gap-2">
                                     <input
                                         type="date"
@@ -404,8 +405,8 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                                         className="p-2 border rounded-md"
                                         required
                                         value={pickupDate}
-                                        onChange={handleDateChange} // Use the new handler
-                                        min={getMinDate()} // Set minimum date to today
+                                        onChange={handleDateChange}
+                                        min={getMinDate()}
                                     />
                                     <select name="pickup_time" className="p-2 border rounded-md" required value={pickupTime} onChange={(e) => setPickupTime(e.target.value)}>
                                         {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -413,6 +414,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                                     <p className="text-xs text-gray-500 mt-1 col-span-2">Pickups are available Monday - Friday.</p>
                                 </div>
                             )}
+
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
                                 <input type="radio" name="payment" value="bank_transfer" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'bank_transfer'} />
                                 <span className="ml-2">Bank Transfer</span>
@@ -423,16 +425,14 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
                                         <li><strong>Company:</strong> Esirom Foundation Limited</li>
                                         <li><strong>Bank:</strong> Scotiabank</li>
                                         <li><strong>Branch:</strong> Oxford Road</li>
-                                        <li><strong>Account #:</strong> 846837, SAVINGS</li>
+                                        <li><strong>Account #:</strong> 846837, SAVINGS (JMD Account)</li>
                                     </ul>
                                 </div>
                             )}
-                            {fulfillmentMethod === 'pickup' && (
-                                <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
-                                    <input type="radio" name="payment" value="credit_card" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'credit_card'}/>
-                                    <span className="ml-2">Credit Card</span>
-                                </label>
-                            )}
+                            <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
+                                <input type="radio" name="payment" value="credit_card" onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === 'credit_card'}/>
+                                <span className="ml-2">Credit Card</span>
+                            </label>
                         </div>
                     </div>
                 </form>
@@ -447,9 +447,19 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack }) => {
         </div>
     );
 };
-const ConfirmationView = ({ order, onContinue }) => { if(!order) return null; const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order; return ( <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center"> <CheckCircleIcon /><h1 className="text-2xl font-bold mt-4">Thank You!</h1><p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p> <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm"> <h2 className="font-bold mb-2">Next Steps</h2> {paymentMethod === 'bank_transfer' && <div className="space-y-3"><p>To complete your order, please send proof of payment to our WhatsApp.</p><a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a></div>} {paymentMethod === 'cod' && fulfillmentMethod === 'pickup' && <p>Your pickup is scheduled for <strong>{pickupDate}</strong> between <strong>{pickupTime}</strong>. Please have cash ready.</p>} {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>} {fulfillmentMethod === 'bearer' && <p>We will contact you shortly to coordinate your delivery.</p>} {fulfillmentMethod === 'knutsford' && <p>Your package will be dropped off at Knutsford Express. They will contact you when it's ready for collection.</p>} </div> <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button> </div> ); };
-const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
-const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
+const ConfirmationView = ({ order, onContinue }) => { if(!order) return null; const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order; return ( <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center"> <CheckCircleIcon /><h1 className="text-2xl font-bold mt-4">Thank You!</h1><p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p> <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm"> <h2 className="font-bold mb-2">Next Steps</h2> 
+                    {paymentMethod === 'bank_transfer' && <p>For bank transfer payments, orders will not be processed until proof of payment is sent via Whatsapp at 876-436-5244.</p>}
+                    {fulfillmentMethod === 'pickup' && <p>For Pick up, please allow up to 1 business day for collection.</p>}
+                    {fulfillmentMethod === 'bearer' && <p>For Bearer Delivery, please allow up to 3 business days for delivery. We will contact you the morning of delivery.</p>}
+                    {fulfillmentMethod === 'knutsford' && <p>For Knutsford Courier, please allow up to 3 business days for delivery. We will contact you once the order has been dropped off.</p>}
+                    {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>}
+                    {/* Only show WhatsApp button if bank transfer is selected */}
+                    {paymentMethod === 'bank_transfer' && (
+                        <a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
+                    )}
+                </div> <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button> </div> ); };
+const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </header> </div> ) };
+const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <h2 className="text-3xl font-bold text-gray-800 mt-4">Esirom Foundation</h2><p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
@@ -991,7 +1001,7 @@ export default function App() {
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; {/* Pass inventory to ShopView */}
-            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={removeFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; {/* Pass inventory to CartView */}
+            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; {/* Pass inventory to CartView */}
             case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
             case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
