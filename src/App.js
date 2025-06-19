@@ -1172,65 +1172,84 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
         showToast("New cost batch created and activated!");
     };
     
-    const salesData = useMemo(() => { 
-        const data = { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } }; 
-        const now = new Date(); 
-        orders.forEach(order => { 
-            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
-                const orderDate = new Date(order.createdAt); 
-                const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth(); 
-                const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null); 
+    const { totalIncome, totalProfit, monthlySales, popularColors, returnedValue, refundedValue } = useMemo(() => {
+        const data = { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } };
+        let totalIncome = 0;
+        let totalProfit = 0;
+        let returnedValue = 0;
+        let refundedValue = 0;
+        const colorCounts = {};
+        const now = new Date();
 
-                if (key) { 
-                    const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0); 
-                    data[key].sales += orderQty; 
-                    data[key].income += order.total;
-                    
-                    const costBatch = costBatches.find(b => b.id === order.costBatchId);
-                    const costPerSet = costBatch ? costBatch.costPerSet : (costBatches.find(b=>b.isActive)?.costPerSet || 0);
-                    data[key].profit += order.total - (orderQty * costPerSet);
-                }
-            } 
-        }); 
-        return [ 
-            { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].profit }, 
-            { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].profit }
-        ]; 
-    }, [orders, costBatches]); 
-    
-    const popularColors = useMemo(() => { 
-        const colorCounts = {}; 
-        orders.forEach(order => { 
+        orders.forEach(order => {
+            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+            
             if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
-                Object.values(order.items).forEach(item => { 
-                    if (item.name && item.name.includes('Kit')) { 
-                        const color = item.name.replace(' Kit', ''); 
-                        colorCounts[color] = (colorCounts[color] || 0) + item.quantity; 
-                    } 
+                totalIncome += order.total;
+                totalProfit += order.total - costOfGoods;
+                
+                const orderDate = new Date(order.createdAt);
+                const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
+                const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
+                if (key) {
+                    data[key].sales += orderQty;
+                    data[key].income += order.total;
+                    data[key].profit += order.total - costOfGoods;
+                }
+                
+                Object.values(order.items).forEach(item => {
+                    const color = item.name.replace(' Kit', '');
+                    colorCounts[color] = (colorCounts[color] || 0) + item.quantity;
                 });
-            } 
-        }); 
-        return Object.entries(colorCounts).map(([name, count]) => ({name, count})).sort((a,b) => b.count - a.count); 
-    }, [orders]); 
+
+            } else if (order.fulfillmentStatus === 'Returned') {
+                returnedValue += order.total;
+            } else if (order.paymentStatus === 'Refunded') {
+                refundedValue += order.total;
+            }
+        });
+
+        return {
+            totalIncome,
+            totalProfit,
+            monthlySales: [
+                { name: 'Last Month', Sales: data['Last Month'].sales, Income: data['Last Month'].income, Profit: data['Last Month'].profit },
+                { name: 'This Month', Sales: data['This Month'].sales, Income: data['This Month'].income, Profit: data['This Month'].profit },
+            ],
+            popularColors: Object.entries(colorCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+            returnedValue,
+            refundedValue,
+        };
+    }, [orders, costBatches]);
 
     return ( 
         <div> 
             <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> 
             
             {/* --- Key Metrics --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"> 
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6"> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Total Income</h3> 
-                    <p className="text-3xl font-bold">J${salesData.reduce((acc, month) => acc + month.Income, 0).toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${totalIncome.toLocaleString()}</p>
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Total Profit</h3> 
-                    <p className="text-3xl font-bold">J${salesData.reduce((acc, month) => acc + month.Profit, 0).toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${totalProfit.toLocaleString()}</p>
                 </div> 
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="text-gray-500">Sales (This Month)</h3> 
-                    <p className="text-3xl font-bold">{salesData[1].Sales}</p>
-                </div> 
+                    <p className="text-3xl font-bold">{monthlySales[1].Sales}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Returned Value</h3>
+                    <p className="text-3xl font-bold text-orange-500">J${returnedValue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Refunded Value</h3>
+                    <p className="text-3xl font-bold text-red-500">J${refundedValue.toLocaleString()}</p>
+                </div>
             </div> 
             
             {/* --- Charts --- */}
@@ -1238,7 +1257,7 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
                 <div className="p-4 bg-white rounded-lg shadow"> 
                     <h3 className="font-bold mb-4">Profitability</h3> 
                     <ResponsiveContainer width="100%" height={200}> 
-                        <BarChart data={salesData}> 
+                        <BarChart data={monthlySales}> 
                             <CartesianGrid strokeDasharray="3 3" /> 
                             <XAxis dataKey="name" /> 
                             <YAxis /> 
