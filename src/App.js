@@ -767,7 +767,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {order.pickupDate && order.pickupDate !== 'N/A' && !isNaN(new Date(order.pickupDate).getTime()) // Check for valid date object
                                         ? new Date(order.pickupDate).toLocaleDateString() 
-                                        : new Date(order.createdAt).toLocaleDateString()} {/* Fallback to createdAt for display */}
+                                        : new Date(order.createdAt).toLocaleDateDateString()} {/* Fallback to createdAt for display */}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -1000,8 +1000,8 @@ export default function App() {
             return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} showToast={setToastMessage} />;
         }
         switch (view) {
-            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; {/* Pass inventory to ShopView */}
-            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={removeFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; {/* Pass inventory to CartView */}
+            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
+            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={removeFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; 
             case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
             case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
