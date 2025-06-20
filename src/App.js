@@ -610,91 +610,51 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
-    
 
     const handleStatusUpdate = (orderId, field, value) => {
         setOrders(prevOrders => {
             const oldOrder = prevOrders.find(o => o.id === orderId);
-            if (!oldOrder) return prevOrders; // Should not happen
+            if (!oldOrder) return prevOrders;
 
             const updatedOrder = { ...oldOrder, [field]: value };
 
-            // Determine inventory changes based on status transition
             setInventory(prevInventory => {
-                const newInventory = { ...prevInventory }; // Clone for immutability
+                const newInventory = { ...prevInventory };
 
-                // Inventory decrease for 'Completed' fulfillment
                 if (field === 'fulfillmentStatus' && value === 'Completed' && oldOrder.fulfillmentStatus !== 'Completed') {
-                    console.log(`Decreasing stock for order ${orderId} becoming Completed.`);
-                    Object.values(oldOrder.items).forEach(item => {
-                        const productId = item.id;
-                        const quantityOrdered = item.quantity;
-                        if (newInventory[productId]) {
-                            newInventory[productId].totalStock = Math.max(0, newInventory[productId].totalStock - quantityOrdered);
-                            newInventory[productId].unengravedStock = Math.max(0, newInventory[productId].unengravedStock - quantityOrdered);
-                            console.log(`  Product ${productId}: -${quantityOrdered}. New stock: ${newInventory[productId].totalStock}`);
+                     Object.values(oldOrder.items).forEach(item => {
+                        if (newInventory[item.id]) {
+                            newInventory[item.id].unengravedStock -= item.quantity;
                         }
                     });
-                    showToast(`Stock decreased for completed order ${orderId}`);
-                }
-                // Only adjust stock if the fulfillment status is changing to 'Returned' or 'Cancelled'
-                else if (field === 'fulfillmentStatus' && (value === 'Returned' || value === 'Cancelled') && 
-                         oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
-                    console.log(`Increasing stock for order ${orderId} becoming ${value}.`);
+                } else if (field === 'fulfillmentStatus' && ['Returned', 'Cancelled'].includes(value) && !['Returned', 'Cancelled'].includes(oldOrder.fulfillmentStatus)) {
                     Object.values(oldOrder.items).forEach(item => {
-                        const productId = item.id;
-                        const quantityAdjust = item.quantity;
-                        if (newInventory[productId]) {
-                            newInventory[productId].totalStock += quantityAdjust;
-                            newInventory[productId].unengravedStock += quantityAdjust;
-                            console.log(`  Product ${productId}: +${quantityAdjust}. New stock: ${newInventory[productId].totalStock}`);
+                         if (newInventory[item.id]) {
+                           newInventory[item.id].unengravedStock += item.quantity;
                         }
                     });
-                    showToast(`Stock updated for ${value.toLowerCase()} order ${orderId}`);
-                }
-                // Only adjust stock if payment status is changing to 'Refunded' AND fulfillment wasn't already returned/cancelled
-                else if (field === 'paymentStatus' && value === 'Refunded' && oldOrder.paymentStatus !== 'Refunded') {
-                     if (oldOrder.fulfillmentStatus !== 'Returned' && oldOrder.fulfillmentStatus !== 'Cancelled') {
-                        console.log(`Increasing stock for order ${orderId} becoming Refunded (not returned/cancelled).`);
-                        Object.values(oldOrder.items).forEach(item => {
-                            const productId = item.id;
-                            const quantityAdjust = item.quantity;
-                            if (newInventory[productId]) {
-                                newInventory[productId].totalStock += quantityAdjust;
-                                newInventory[productId].unengravedStock += quantityAdjust;
-                                console.log(`  Product ${productId}: +${quantityAdjust}. New stock: ${newInventory[productId].totalStock}`);
-                            }
-                        });
-                        setInventory(newInventory); // Explicitly call setInventory here
-                        showToast(`Stock updated for refunded order ${orderId}`);
-                    }
                 }
                 return newInventory;
             });
-
             return prevOrders.map(o => o.id === orderId ? updatedOrder : o);
         });
+        showToast('Order status updated!');
     };
-
     const handleDeleteOrder = (orderId) => {
-        // In a real application, you'd want a custom confirmation modal here.
-        // For simplicity, directly deleting.
         setOrders(prev => prev.filter(o => o.id !== orderId));
         showToast("Order deleted!");
-        setSelectedOrder(null); // Close modal after deletion
+        setSelectedOrder(null);
     };
-
 
     const handleManualSubmit = (e, manualOrderItems) => {
         e.preventDefault();
         
-        // Final validation before submitting
         for (const item of manualOrderItems) {
             if(!item.productId) continue;
             const stock = inventory.current[item.productId]?.unengravedStock || 0;
             if (item.quantity > stock) {
                 showToast(`Cannot add order: Quantity for ${PRODUCTS_DATA.find(p=>p.id === item.productId).name} exceeds available stock of ${stock}.`, 'error');
-                return; // Prevent form submission
+                return;
             }
         }
 
@@ -705,33 +665,24 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             if(itemInput.productId) {
                 const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
                 if (product) {
-                    items[product.id] = {
-                        ...product,
-                        quantity: parseInt(itemInput.quantity) || 1
-                    };
+                    items[product.id] = { ...product, quantity: parseInt(itemInput.quantity) || 1 };
                     subtotal += product.price * items[product.id].quantity;
                 }
             }
         });
         
         const fulfillmentCost = (() => {
-            if (formData.get('manualFulfillmentMethod') === 'pickup') return 0;
-            if (formData.get('manualFulfillmentMethod') === 'bearer') return DELIVERY_OPTIONS[formData.get('manualBearerLocation')];
-            if (formData.get('manualFulfillmentMethod') === 'knutsford') return KNUTSFORD_FEE;
+            const method = formData.get('manualFulfillmentMethod');
+            if (method === 'pickup') return 0;
+            if (method === 'bearer') return DELIVERY_OPTIONS[formData.get('manualBearerLocation')];
+            if (method === 'knutsford') return KNUTSFORD_FEE;
             return 0;
         })();
 
         const newOrder = {
             id: `BYOT-${Date.now()}`,
-            customerInfo: {
-                name: formData.get('customerName'),
-                email: formData.get('customerEmail'),
-                phone: formData.get('customerPhone')
-            },
-            items,
-            subtotal,
-            fulfillmentCost,
-            total: subtotal + fulfillmentCost,
+            customerInfo: { name: formData.get('customerName'), email: formData.get('customerEmail'), phone: formData.get('customerPhone')},
+            items, subtotal, fulfillmentCost, total: subtotal + fulfillmentCost,
             createdAt: new Date().toISOString(),
             paymentStatus: formData.get('paymentStatus'),
             fulfillmentStatus: formData.get('fulfillmentStatus'),
@@ -746,19 +697,14 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         setShowManualForm(false);
         showToast("Manual order added!");
     };
-
+    
     const filteredOrders = useMemo(() => {
         return orders.filter(order => {
-            const searchMatch = !searchTerm || 
-                order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase());
-            
+            const searchMatch = !searchTerm || order.id.toLowerCase().includes(searchTerm.toLowerCase()) || order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase());
             const paymentStatusMatch = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
-
             return searchMatch && paymentStatusMatch;
         });
     }, [orders, searchTerm, paymentFilter]);
-
 
     const OrderModal = ({ order, onClose, onDeleteOrder }) => (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50">
@@ -831,8 +777,8 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
-                        <TrashIcon className="mr-1"/> Delete Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
+                        <EditIcon className="mr-1"/> Delete Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
@@ -842,6 +788,12 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     
     const ManualOrderForm = () => {
          const [manualOrderItems, setManualOrderItems] = useState([{ productId: '', quantity: 1 }]);
+         const [manualFulfillmentMethod, setManualFulfillmentMethod] = useState('pickup');
+         const [manualBearerLocation, setManualBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
+         const [manualKnutsfordLocation, setManualKnutsfordLocation] = useState(KNUTSFORD_LOCATIONS[0]);
+         const [manualPaymentMethod, setManualPaymentMethod] = useState('cod');
+         const [manualPickupDate, setManualPickupDate] = useState('');
+         const [manualPickupTime, setManualPickupTime] = useState(PICKUP_TIMES[0]);
          
          const handleLocalManualItemChange = (index, field, value) => {
             const updatedItems = [...manualOrderItems];
@@ -1644,5 +1596,3 @@ export default function App() {
         </div>
     );
 }
-``` from the "App.js-fixed" Canvas and asking a question about it. Please answer my question.
-I want to replace the `TrashIcon` with an `EditIcon` and change its color from red to blue in the `AdminOrdersView` compone
