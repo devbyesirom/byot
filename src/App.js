@@ -18,7 +18,8 @@ import {
     deleteDoc,
     query,
     where,
-    getDocs
+    getDocs,
+    writeBatch
 } from "firebase/firestore";
 
 
@@ -584,7 +585,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                     <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
                  </header>
                  <div className="flex-grow overflow-y-auto p-2 sm:p-6">
-                    {adminView === 'orders' && <AdminOrdersView orders={orders} setOrders={setOrders} showToast={showToast} inventory={inventoryRef} setInventory={setInventory} />}
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} setOrders={setOrders} showToast={showToast} inventory={inventoryRef} setInventory={setInventory} />}
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} setInventory={setInventory} products={products} showToast={showToast} />}
                     {adminView === 'products' && <AdminProductsView products={products} setProducts={setProducts} showToast={showToast}/>}
                     {adminView === 'coupons' && <AdminCouponsView coupons={coupons} setCoupons={setCoupons} showToast={showToast} />}
@@ -594,7 +595,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
         </div>
     );
 }
-const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory }) => {
+const AdminOrdersView = ({ orders, products, setOrders, showToast, inventory, setInventory }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
