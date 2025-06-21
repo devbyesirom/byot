@@ -584,7 +584,7 @@ const ConfirmationView = ({ order, onContinue }) => {
     return (
         <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center">
             <CheckCircleIcon />
-            <h1 className="text-2xl font-bold mt-4">Thank You!</h1>
+            <h1 className="text-2xl font-bold mt-4">Thank Thank You!</h1>
             <p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p>
             <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm">
                 <h2 className="font-bold mb-2">Next Steps</h2>
@@ -1770,8 +1770,8 @@ export default function App() {
         }; 
         
         try {
-            await addDoc(collection(db, "orders"), newOrder);
-            setOrderData({ ...newOrder, id: docRef.id }); // This docRef needs to be defined from the addDoc call.
+            const docRef = await addDoc(collection(db, "orders"), newOrder); // Defined docRef here
+            setOrderData({ ...newOrder, id: docRef.id }); 
              if (order.paymentMethod === 'credit_card') { 
                 setView('payment'); 
             } else { 
