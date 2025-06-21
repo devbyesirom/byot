@@ -1,6 +1,44 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+import { initializeApp } from "firebase/app";
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
+    signOut 
+} from "firebase/auth";
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    addDoc, 
+    updateDoc, 
+    doc, 
+    deleteDoc,
+    query,
+    where,
+    getDocs
+} from "firebase/firestore";
+
+
+// --- Firebase Configuration ---
+const firebaseConfig = {
+   apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ",
+   authDomain: "byot-40fe2.firebaseapp.com",
+   projectId: "byot-40fe2",
+   storageBucket: "byot-40fe2.appspot.com",
+   messagingSenderId: "643015540811",
+   appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
+   measurementId: "G-S8QD6WWN90"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+
 // --- SVGs as React Components ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
@@ -20,59 +58,10 @@ const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" he
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
 
-
-// --- Local Data ---
-const PRODUCTS_DATA = [
-    { id: 'byot-001', name: 'Dark Blue Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-DarkBlue.png', colorStart: '#1e3a8a', colorEnd: '#93c5fd', buttonTextColor: 'text-blue-900', description: 'A classic and versatile color for your sustainable journey.' },
-    { id: 'byot-002', name: 'Teal Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Teal.png', colorStart: '#0d9488', colorEnd: '#a7f3d0', buttonTextColor: 'text-teal-800', description: 'Make a vibrant statement with this beautiful teal set.' },
-    { id: 'byot-003', name: 'Mint Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Mint.png', colorStart: '#10b981', colorEnd: '#d1fae5', buttonTextColor: 'text-emerald-800', description: 'A fresh and cool mint green to brighten your day.' },
-    { id: 'byot-004', name: 'Yellow Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Yellow.png', colorStart: '#f59e0b', colorEnd: '#fef3c7', buttonTextColor: 'text-amber-800', description: 'A pop of sunshine yellow for a cheerful mealtime.' },
-    { id: 'byot-005', name: 'Pink Kit', price: 2000, image: 'https://esirom.com/wp-content/uploads/2025/06/BYOTUtensils-Pink.png', colorStart: '#ec4899', colorEnd: '#fce7f3', buttonTextColor: 'text-pink-800', description: 'A soft and stylish pink for an elegant touch.' },
-];
-const DUMMY_ORDERS = [
-    {id: 'BYOT-1718679601', costBatchId: 'batch-001', customerInfo: {name: 'John Doe', email: 'johndoe@example.com', phone: '876-555-0101'}, items: {'byot-001': {id: 'byot-001', name: 'Dark Blue Kit', quantity: 2, price: 2000}}, total: 4700, createdAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'bearer', bearerLocation: 'Kingston (10, 11)', knutsfordLocation: null, pickupDate: null, pickupTime: null, paymentMethod: 'credit_card' },
-    {id: 'BYOT-1718679602', costBatchId: 'batch-001', customerInfo: {name: 'Jane Smith', email: 'janesmith@example.com', phone: '876-555-0102'}, items: {'byot-005': {id: 'byot-005', name: 'Pink Kit', quantity: 1, price: 2000}}, total: 2000, createdAt: new Date().toISOString(), paymentStatus: 'Pending', fulfillmentStatus: 'Pending', fulfillmentMethod: 'pickup', bearerLocation: null, knutsfordLocation: null, pickupDate: '2025-06-20', pickupTime: '11:00 AM - 12:00 PM', paymentMethod: 'cod'},
-    {id: 'BYOT-1718679603', costBatchId: 'batch-001', customerInfo: {name: 'Peter Pan', email: 'peterpan@example.com', phone: '876-555-0103'}, items: {'byot-002': {id: 'byot-002', name: 'Teal Kit', quantity: 1, price: 2000}, 'byot-003': {id: 'byot-003', name: 'Mint Kit', quantity:1, price: 2000}}, total: 4500, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), paymentStatus: 'Paid', fulfillmentStatus: 'Completed', fulfillmentMethod: 'knutsford', bearerLocation: null, knutsfordLocation: 'New Kingston', pickupDate: null, pickupTime: null, paymentMethod: 'bank_transfer'},
-];
-const DUMMY_INVENTORY = {
-    'byot-001': { totalStock: 20, engravedStock: 0, unengravedStock: 20, defective: 0 },
-    'byot-002': { totalStock: 5, engravedStock: 0, unengravedStock: 5, defective: 0 },
-    'byot-003': { totalStock: 3, engravedStock: 0, unengravedStock: 3, defective: 0 },
-    'byot-004': { totalStock: 1, engravedStock: 0, unengravedStock: 1, defective: 0 },
-    'byot-005': { totalStock: 10, engravedStock: 0, unengravedStock: 10, defective: 0 },
-};
-const DUMMY_COUPONS = [
-    { id: 'coup-001', code: 'SAVE10', type: 'percentage', value: 10, isActive: true },
-    { id: 'coup-002', code: '500OFF', type: 'fixed', value: 500, isActive: true },
-    { id: 'coup-003', code: 'EXPIRED', type: 'percentage', value: 20, isActive: false },
-];
-
-const DUMMY_COST_BATCHES = [
-    { 
-        id: 'batch-001', 
-        name: 'Initial Batch - June 2025',
-        productCost: 1000, 
-        alibabaShipping: 200, 
-        mailpacShipping: 50, 
-        numSets: 150,
-        costPerSet: (1000 + 200 + 50) / 150,
-        startDate: new Date('2025-06-01').toISOString(),
-        endDate: null,
-        isActive: true
-    }
-];
-
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
 const KNUTSFORD_FEE = 500;
 const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "Gutters", "Harbour View", "New Kingston", "Luana", "Lucea", "Mandeville", "May Pen", "Montego Bay (Pier 1)", "Montego Bay Airport", "Negril", "Ocho Rios", "Port Antonio", "Port Maria", "Portmore", "Savanna-La-Mar", "Washington Boulevard"];
-const PICKUP_TIMES = [
-    "10:00 AM - 11:00 AM",
-    "11:00 AM - 12:00 PM",
-    "12:00 PM - 1:00 PM",
-    "1:00 PM - 2:00 PM",
-    "2:00 PM - 3:00 PM",
-    "3:00 PM - 4:00 PM"
-];
+const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
 
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
@@ -610,7 +599,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
-
+    
     const handleStatusUpdate = (orderId, field, value) => {
         setOrders(prevOrders => {
             const oldOrder = prevOrders.find(o => o.id === orderId);
@@ -777,8 +766,8 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
-                        <EditIcon className="mr-1"/> Delete Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
+                        <TrashIcon className="mr-1"/> Delete Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
