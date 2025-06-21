@@ -16,7 +16,8 @@ import {
     updateDoc, 
     doc,
     deleteDoc,
-    writeBatch
+    writeBatch,
+    setDoc
 } from "firebase/firestore";
 
 
@@ -67,7 +68,8 @@ const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
 // --- View Components (Customer Facing) ---
-const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => { // Added inventory prop
+const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => {
+    const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
     const feedRef = useRef(null); 
     useEffect(() => { 
         const feedEl = feedRef.current; 
@@ -205,7 +207,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
                     <ArrowDownIcon />
                 </button> 
             </div> 
-            {products.map((product) => ( 
+            {sortedProducts.map((product) => ( 
                 <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
             ))} 
         </main> 
