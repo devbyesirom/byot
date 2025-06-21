@@ -13,7 +13,7 @@ import {
     collection, 
     onSnapshot, 
     addDoc, 
-    updateDoc, 
+    // updateDoc, // Removed unused import
     doc,
     deleteDoc,
     writeBatch,
