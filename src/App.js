@@ -1828,31 +1828,62 @@ export default function App() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
+    const [isAuthReady, setIsAuthReady] = useState(false); // New state to track auth readiness
 
+    // Handles authentication and sets a ready flag when a user is available.
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, user => {
-            if (!user) {
-                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed", error));
+            if (user) {
+                // If we have a user (anonymous or logged in), we're ready to fetch data.
+                setIsAuthReady(true);
+            } else {
+                // If there's no user, attempt to sign in anonymously.
+                // onAuthStateChanged will get called again once this completes.
+                signInAnonymously(auth).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    // Mark as ready anyway to avoid the app getting stuck.
+                    // Data fetches will fail, but the UI won't hang.
+                    setIsAuthReady(true);
+                });
             }
         });
+        return () => unsubscribeAuth(); // Cleanup on unmount
+    }, []); // Empty dependency array ensures this runs only once.
 
+    // Handles data fetching from Firestore, runs only when auth is ready.
+    useEffect(() => {
+        // Do nothing if auth isn't ready yet.
+        if (!isAuthReady) return;
+
+        // Set up all Firestore listeners.
         const unsubscribes = [
-            onSnapshot(collection(db, "products"), (snapshot) => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
+            onSnapshot(collection(db, "products"), (snapshot) => {
+                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'products' error:", error)),
+
             onSnapshot(collection(db, "inventory"), (snapshot) => {
                 const invData = {};
                 snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
                 setInventory(invData);
-            }),
-            onSnapshot(collection(db, "orders"), (snapshot) => setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            onSnapshot(collection(db, "coupons"), (snapshot) => setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            onSnapshot(collection(db, "costBatches"), (snapshot) => setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
+            }, (error) => console.error("Firestore 'inventory' error:", error)),
+
+            onSnapshot(collection(db, "orders"), (snapshot) => {
+                setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'orders' error:", error)),
+
+            onSnapshot(collection(db, "coupons"), (snapshot) => {
+                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'coupons' error:", error)),
+
+            onSnapshot(collection(db, "costBatches"), (snapshot) => {
+                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'costBatches' error:", error))
         ];
 
-        return () => {
-            unsubscribeAuth();
-            unsubscribes.forEach(unsub => unsub());
-        };
-    }, []);
+        // Return a cleanup function to unsubscribe from all listeners on unmount.
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, [isAuthReady]); // This effect depends on auth readiness.
+
 
     useEffect(() => {
         if (!isAdminMode && view !== 'shop') {
