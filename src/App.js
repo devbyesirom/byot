@@ -1,21 +1,21 @@
 /* global __firebase_config, __app_id */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Disclosure } from '@headlessui/react';
+import { Disclosure } from '@headlessui/react'; // Import Disclosure for expandable sections
 
 import { initializeApp } from "firebase/app";
-import {
-    getAuth,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
     signOut,
-    signInAnonymously
+    signInAnonymously 
 } from "firebase/auth";
-import {
-    getFirestore,
-    collection,
-    onSnapshot,
-    addDoc,
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    addDoc, 
     doc,
     deleteDoc,
     writeBatch,
@@ -24,13 +24,11 @@ import {
 
 
 // --- Firebase Configuration ---
-// IMPORTANT: Your Firebase config is now loaded from environment variables.
-// This is a critical security measure to avoid exposing your API keys.
-// Make sure you have set these variables in your Netlify deployment environment.
+// Determine Firebase config based on environment
 const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config)
+    ? JSON.parse(__firebase_config) // Use provided config for deployed environment
     : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Fallback for local development
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Fallback local key for development
         authDomain: "byot-40fe2.firebaseapp.com",
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
@@ -39,11 +37,13 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         measurementId: "G-S8QD6WWN90"
     };
 
+// Determine appId for Firestore paths based on environment
+const currentAppId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2'; // Using projectId as a fallback appId.
 
 
 // --- SVGs as React Components (Corrected Attributes) ---
@@ -64,7 +64,8 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -73,6 +74,7 @@ const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "
 const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
 
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
+
 
 // --- View Components (Customer Facing) ---
 const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, showToast }) => {
@@ -98,7 +100,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
         };
         feedEl.addEventListener('scroll', handleScroll);
         return () => feedEl.removeEventListener('scroll', handleScroll);
-    }, [products]); // Removed setBgGradient from deps as it's a stable function
+    }, [products]);
 
     const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => {
         const [quantity, setQuantity] = useState(1);
@@ -152,10 +154,10 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
                     <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
-                    {availableStock <= 15 && availableStock > 0 && (
+                    {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
                         <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
                     )}
-                    {availableStock === 0 && (
+                    {availableStock === 0 && ( // Display out of stock message
                         <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
                     )}
                     <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit">
@@ -389,7 +391,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
         } else {
             setCouponMessage('');
         }
-    }, [appliedCoupon, discount]); // Depend on discount which depends on all other factors
+    }, [appliedCoupon, discount]);
 
 
     const handleCopyBankInfo = () => {
@@ -400,7 +402,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
         textArea.select();
         try {
             document.execCommand('copy');
-            showToast('Bank info copied to clipboard!');
+            showToast('Bank info copied to clipboard!', 'success');
         } catch (err) {
             showToast('Failed to copy text.', 'error');
         }
@@ -751,15 +753,15 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                     updatedBatches.sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
 
                     for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
-                        let batchEntry = updatedBatches[i];
-                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
-                        batchEntry.unengraved -= deductibleFromBatch;
+                        let batch = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batch.unengraved);
+                        batch.unengraved -= deductibleFromBatch;
                         remainingToDeduct -= deductibleFromBatch;
                     }
 
                     const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
 
-                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.productId);
+                    const productDocRef = doc(db, `artifacts/${currentAppId}/public/data/inventory`, item.productId);
                     batch.set(productDocRef, { batches: newBatches }, { merge: true });
                 }
             }
@@ -1829,61 +1831,53 @@ export default function App() {
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
-    const [isAuthReady, setIsAuthReady] = useState(false); // New state to track auth readiness
+    const [isAuthReady, setIsAuthReady] = useState(false);
 
     // Handles authentication and sets a ready flag when a user is available.
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, user => {
             if (user) {
-                // If we have a user (anonymous or logged in), we're ready to fetch data.
                 setIsAuthReady(true);
             } else {
-                // If there's no user, attempt to sign in anonymously.
-                // onAuthStateChanged will get called again once this completes.
                 signInAnonymously(auth).catch(error => {
                     console.error("Anonymous sign-in failed:", error);
-                    // Mark as ready anyway to avoid the app getting stuck.
-                    // Data fetches will fail, but the UI won't hang.
                     setIsAuthReady(true);
                 });
             }
         });
-        return () => unsubscribeAuth(); // Cleanup on unmount
-    }, []); // Empty dependency array ensures this runs only once.
+        return () => unsubscribeAuth();
+    }, []);
 
     // Handles data fetching from Firestore, runs only when auth is ready.
     useEffect(() => {
-        // Do nothing if auth isn't ready yet.
         if (!isAuthReady) return;
 
-        // Set up all Firestore listeners.
         const unsubscribes = [
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/products`), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/products`), (snapshot) => {
                 setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }, (error) => console.error("Firestore 'products' error:", error)),
 
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/inventory`), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/inventory`), (snapshot) => {
                 const invData = {};
                 snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
                 setInventory(invData);
             }, (error) => console.error("Firestore 'inventory' error:", error)),
 
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/orders`), (snapshot) => {
                 setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }, (error) => console.error("Firestore 'orders' error:", error)),
 
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/coupons`), (snapshot) => {
                 setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }, (error) => console.error("Firestore 'coupons' error:", error)),
 
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/costBatches`), (snapshot) => {
                 setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }, (error) => console.error("Firestore 'costBatches' error:", error))
         ];
 
-        // Return a cleanup function to unsubscribe from all listeners on unmount.
         return () => unsubscribes.forEach(unsub => unsub());
-    }, [isAuthReady]); // This effect depends on auth readiness.
+    }, [isAuthReady, currentAppId]);
 
 
     useEffect(() => {
@@ -1921,7 +1915,7 @@ export default function App() {
         };
 
         try {
-            const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/orders`), newOrder);
+            const docRef = await addDoc(collection(db, `artifacts/${currentAppId}/public/data/orders`), newOrder);
             setOrderData({ ...newOrder, id: docRef.id });
 
             const batch = writeBatch(db);
@@ -1940,7 +1934,7 @@ export default function App() {
                         }
 
                         const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-                        const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.id);
+                        const productDocRef = doc(db, `artifacts/${currentAppId}/public/data/inventory`, item.id);
                         batch.set(productDocRef, { batches: newBatches }, { merge: true });
                     }
                 }
@@ -1982,7 +1976,7 @@ export default function App() {
 
      const handleUpdateFirestore = async (collectionName, docId, data) => {
         try {
-            await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
+            await setDoc(doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId), data, { merge: true });
             showToast(`${collectionName.slice(0,-1)} updated!`);
         }
         catch (error) {
@@ -1992,7 +1986,7 @@ export default function App() {
 
     const handleAddFirestore = async (collectionName, data) => {
         try {
-            await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+            await addDoc(collection(db, `artifacts/${currentAppId}/public/data/${collectionName}`), data);
             showToast(`${collectionName.slice(0,-1)} added!`);
         } catch (error) {
             showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
@@ -2001,7 +1995,7 @@ export default function App() {
 
     const handleDeleteFirestore = async (collectionName, docId) => {
         try {
-            await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
+            await deleteDoc(doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId));
             showToast(`${collectionName.slice(0,-1)} deleted!`);
         } catch(error) {
             showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
@@ -2011,7 +2005,7 @@ export default function App() {
     const handleBatchUpdate = async (updates) => {
         const batch = writeBatch(db);
         updates.forEach(({collectionName, docId, data}) => {
-            const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
+            const docRef = doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId);
             batch.update(docRef, data);
         });
         try {
