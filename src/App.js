@@ -561,56 +561,10 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, showToast }) => {
+const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, showToast, onUpdate, onAdd, onDelete, onBatchUpdate }) => {
     const [adminView, setAdminView] = useState('orders');
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
-
-    const handleUpdateFirestore = async (collectionName, docId, data) => {
-        try {
-            await updateDoc(doc(db, collectionName, docId), data);
-            showToast(`${collectionName.slice(0,-1)} updated!`);
-        } catch (error) {
-            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error updating ${collectionName}: `, error);
-        }
-    };
-    
-    const handleAddFirestore = async (collectionName, data) => {
-        try {
-            await addDoc(collection(db, collectionName), data);
-            showToast(`${collectionName.slice(0,-1)} added!`);
-        } catch (error) {
-            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error adding ${collectionName}: `, error);
-        }
-    };
-
-    const handleDeleteFirestore = async (collectionName, docId) => {
-        try {
-            await deleteDoc(doc(db, collectionName, docId));
-            showToast(`${collectionName.slice(0,-1)} deleted!`);
-        } catch(error) {
-            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error deleting ${collectionName}: `, error);
-        }
-    };
-
-    const handleBatchUpdate = async (updates) => {
-        const batch = writeBatch(db);
-        updates.forEach(({collectionName, docId, data}) => {
-            const docRef = doc(db, collectionName, docId);
-            batch.update(docRef, data);
-        });
-        try {
-            await batch.commit();
-            showToast('Batch update successful!');
-        } catch (error) {
-            showToast('Batch update failed.', 'error');
-            console.error("Batch update failed: ", error);
-        }
-    };
-
 
     return (
         <div className="view active bg-gray-200 flex-col">
@@ -631,11 +585,11 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                     <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
                  </header>
                  <div className="flex-grow overflow-y-auto p-2 sm:p-6">
-                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={handleUpdateFirestore} onDelete={handleDeleteFirestore} onAdd={handleAddFirestore} showToast={showToast} inventory={inventoryRef} />}
-                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={handleUpdateFirestore} products={products} showToast={showToast} />}
-                    {adminView === 'products' && <AdminProductsView products={products} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} onBatchUpdate={handleBatchUpdate} showToast={showToast}/>}
-                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} showToast={showToast} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={handleAddFirestore} onBatchUpdate={handleBatchUpdate} showToast={showToast} />}
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd} showToast={showToast} inventory={inventoryRef} />}
+                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={onUpdate} products={products} showToast={showToast} />}
+                    {adminView === 'products' && <AdminProductsView products={products} onSave={onUpdate} onAdd={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast}/>}
+                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} onSave={onUpdate} onAdd={onAdd} showToast={showToast} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} />}
                  </div>
             </main>
         </div>
@@ -785,8 +739,8 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
-                        <TrashIcon className="mr-1"/> Delete Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
+                        <EditIcon className="mr-1"/> Edit Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
@@ -1061,7 +1015,7 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         }
     };
 
-    if (products.length === 0 || Object.keys(localInventory).length === 0) {
+    if (products.length === 0) {
         return <div>Loading inventory...</div>;
     }
 
@@ -1081,7 +1035,7 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
                                 <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inv.defective} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
                                 <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> 
                             </div> 
-                            {inv.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
+                            {(inv.unengravedStock || 0) <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
                         </div>
                     )
                 })} 
@@ -1684,9 +1638,66 @@ export default function App() {
         }
     }
     
+     const handleUpdateFirestore = async (collectionName, docId, data) => {
+        try {
+            await updateDoc(doc(db, collectionName, docId), data);
+            showToast(`${collectionName.slice(0,-1)} updated!`);
+        } catch (error) {
+            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error updating ${collectionName}: `, error);
+        }
+    };
+    
+    const handleAddFirestore = async (collectionName, data) => {
+        try {
+            await addDoc(collection(db, collectionName), data);
+            showToast(`${collectionName.slice(0,-1)} added!`);
+        } catch (error) {
+            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error adding ${collectionName}: `, error);
+        }
+    };
+
+    const handleDeleteFirestore = async (collectionName, docId) => {
+        try {
+            await deleteDoc(doc(db, collectionName, docId));
+            showToast(`${collectionName.slice(0,-1)} deleted!`);
+        } catch(error) {
+            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error deleting ${collectionName}: `, error);
+        }
+    };
+
+    const handleBatchUpdate = async (updates) => {
+        const batch = writeBatch(db);
+        updates.forEach(({collectionName, docId, data}) => {
+            const docRef = doc(db, collectionName, docId);
+            batch.update(docRef, data);
+        });
+        try {
+            await batch.commit();
+            showToast('Batch update successful!');
+        } catch (error) {
+            showToast('Batch update failed.', 'error');
+            console.error("Batch update failed: ", error);
+        }
+    };
+
     const renderContent = () => {
         if (isLoggedIn) {
-            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} costBatches={costBatches} showToast={showToast} />;
+            return <AdminDashboard 
+                onLogout={handleLogout} 
+                orders={orders} 
+                products={products} 
+                inventory={inventory} 
+                coupons={coupons} 
+                costBatches={costBatches} 
+                showToast={showToast}
+                onUpdate={handleUpdateFirestore}
+                onAdd={handleAddFirestore}
+                onDelete={handleDeleteFirestore}
+                onBatchUpdate={handleBatchUpdate}
+            />;
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
