@@ -55,6 +55,9 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
 const KNUTSFORD_FEE = 500;
@@ -630,7 +633,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                  <div className="flex-grow overflow-y-auto p-2 sm:p-6">
                     {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={handleUpdateFirestore} onDelete={handleDeleteFirestore} onAdd={handleAddFirestore} showToast={showToast} inventory={inventoryRef} />}
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={handleUpdateFirestore} products={products} showToast={showToast} />}
-                    {adminView === 'products' && <AdminProductsView products={products} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} showToast={showToast}/>}
+                    {adminView === 'products' && <AdminProductsView products={products} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} onBatchUpdate={handleBatchUpdate} showToast={showToast}/>}
                     {adminView === 'coupons' && <AdminCouponsView coupons={coupons} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} showToast={showToast} />}
                     {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={handleAddFirestore} onBatchUpdate={handleBatchUpdate} showToast={showToast} />}
                  </div>
@@ -1079,19 +1082,27 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         </div> 
     ) 
 }
-const AdminProductsView = ({products, onSave, onAdd, showToast}) => { 
+const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) => { 
     const [editingProduct, setEditingProduct] = useState(null); 
     const [isAddingNew, setIsAddingNew] = useState(false); 
     
     const handleSave = async (e) => { 
         e.preventDefault(); 
         const formData = new FormData(e.target); 
+        
+        let displayOrder = isAddingNew 
+            ? products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1 
+            : editingProduct.displayOrder;
+
         const productData = { 
             name: formData.get('name'), 
             price: Number(formData.get('price')), 
             description: formData.get('description'), 
             image: formData.get('image'), 
-            colorStart: '#cccccc', colorEnd: '#eeeeee', buttonTextColor: 'text-gray-800', 
+            colorStart: '#cccccc', 
+            colorEnd: '#eeeeee', 
+            buttonTextColor: 'text-gray-800',
+            displayOrder
         }; 
         
         if (isAddingNew) { 
@@ -1101,10 +1112,37 @@ const AdminProductsView = ({products, onSave, onAdd, showToast}) => {
         } 
         setEditingProduct(null); 
         setIsAddingNew(false); 
-    }
+    };
+
+    const handleMove = async (productId, direction) => {
+        const sortedProducts = [...products].sort((a, b) => a.displayOrder - b.displayOrder);
+        const currentIndex = sortedProducts.findIndex(p => p.id === productId);
+        
+        if (direction === 'up' && currentIndex > 0) {
+            const otherProduct = sortedProducts[currentIndex - 1];
+            const updates = [
+                { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
+                { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
+            ];
+            await onBatchUpdate(updates);
+        } else if (direction === 'down' && currentIndex < sortedProducts.length - 1) {
+            const otherProduct = sortedProducts[currentIndex + 1];
+             const updates = [
+                { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
+                { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
+            ];
+            await onBatchUpdate(updates);
+        }
+    };
+    
+    const sortedProducts = useMemo(() => {
+        return [...products].sort((a, b) => a.displayOrder - b.displayOrder);
+    }, [products]);
+
+
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
-    return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {products.map(p => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> ))} </div> </div> ) }
+    return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {sortedProducts.map((p, index) => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <div className="flex items-center gap-2"> <div className="flex flex-col"> <button onClick={() => handleMove(p.id, 'up')} disabled={index === 0} className="disabled:opacity-20"><ChevronUpIcon /></button> <button onClick={() => handleMove(p.id, 'down')} disabled={index === sortedProducts.length - 1} className="disabled:opacity-20"><ChevronDownIcon /></button> </div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> </div> ))} </div> </div> ) }
 const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
@@ -1638,7 +1676,7 @@ export default function App() {
     
     const renderContent = () => {
         if (isLoggedIn) {
-            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} costBatches={costBatches} setProducts={setProducts} setInventory={setInventory} setOrders={setOrders} setCoupons={setCoupons} setCostBatches={setCostBatches} showToast={showToast} />;
+            return <AdminDashboard onLogout={handleLogout} orders={orders} products={products} inventory={inventory} coupons={coupons} costBatches={costBatches} showToast={showToast} />;
         }
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
