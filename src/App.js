@@ -1,21 +1,21 @@
-/* global __firebase_config */ // Removed __app_id from global scope declaration
+/* global __firebase_config, __app_id */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Disclosure } from '@headlessui/react'; // Import Disclosure for expandable sections
+import { Disclosure } from '@headlessui/react';
 
 import { initializeApp } from "firebase/app";
-import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signInWithEmailAndPassword, 
+import {
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
     signOut,
-    signInAnonymously 
+    signInAnonymously
 } from "firebase/auth";
-import { 
-    getFirestore, 
-    collection, 
-    onSnapshot, 
-    addDoc, 
+import {
+    getFirestore,
+    collection,
+    onSnapshot,
+    addDoc,
     doc,
     deleteDoc,
     writeBatch,
@@ -35,7 +35,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
         messagingSenderId: "643015540811",
-        appId: "1:643015540811:web:f8b609d7b2e6408607cdce", // Removed usage of __app_id here
+        appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
         measurementId: "G-S8QD6WWN90"
     };
 
@@ -43,6 +43,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2'; // Using projectId as a fallback appId.
 
 
 // --- SVGs as React Components (Corrected Attributes) ---
@@ -63,8 +64,7 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
-// Removed ChevronDownIcon import as it's not directly used; ChevronUpIcon is rotated
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -73,7 +73,6 @@ const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "
 const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
 
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
-
 
 // --- View Components (Customer Facing) ---
 const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, showToast }) => {
@@ -99,7 +98,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
         };
         feedEl.addEventListener('scroll', handleScroll);
         return () => feedEl.removeEventListener('scroll', handleScroll);
-    }, [products]);
+    }, [products]); // Removed setBgGradient from deps as it's a stable function
 
     const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => {
         const [quantity, setQuantity] = useState(1);
@@ -153,10 +152,10 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
                     <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
-                    {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
+                    {availableStock <= 15 && availableStock > 0 && (
                         <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
                     )}
-                    {availableStock === 0 && ( // Display out of stock message
+                    {availableStock === 0 && (
                         <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
                     )}
                     <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit">
@@ -381,7 +380,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
 
     useEffect(() => {
         if (appliedCoupon) {
-            const currentDiscount = discount;
+            const currentDiscount = discount; // Use the memoized discount value
             if (currentDiscount > 0) {
                 setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
             } else {
@@ -390,7 +389,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
         } else {
             setCouponMessage('');
         }
-    }, [appliedCoupon, discount]);
+    }, [appliedCoupon, discount]); // Depend on discount which depends on all other factors
 
 
     const handleCopyBankInfo = () => {
@@ -401,7 +400,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
         textArea.select();
         try {
             document.execCommand('copy');
-            showToast('Bank info copied to clipboard!', 'success');
+            showToast('Bank info copied to clipboard!');
         } catch (err) {
             showToast('Failed to copy text.', 'error');
         }
@@ -594,4 +593,1487 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
             <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3">
                 <div className="text-right space-y-1">
                     <p>Subtotal: <span className="font-semibold">J${subtotal.toLocaleString()}</span></p>
-                    <p>Shipping: <span className="font-semibold">J${fulfillmentCo
+                    <p>Shipping: <span className="font-semibold">J${fulfillmentCost.toLocaleString()}</span></p>
+                    {discount > 0 && <p className="text-green-600">Discount: <span className="font-semibold">-J${discount.toLocaleString()}</span></p>}
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                    <span>Total</span>
+                    <span>J${total.toLocaleString()}</span>
+                </div>
+                <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Place Order</button>
+            </footer>
+        </div>
+    );
+};
+const ConfirmationView = ({ order, onContinue }) => {
+    if(!order) return null;
+    const { id, paymentMethod, fulfillmentMethod, pickupDate, pickupTime } = order;
+    return (
+        <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center">
+            <CheckCircleIcon />
+            <h1 className="text-2xl font-bold mt-4">Thank You!</h1>
+            <p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p>
+            <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm">
+                <h2 className="font-bold mb-2">Next Steps</h2>
+                {paymentMethod === 'bank_transfer' && <p>For bank transfer payments, orders will not be processed until proof of payment is sent via Whatsapp at 876-436-5244.</p>}
+                {fulfillmentMethod === 'pickup' && (
+                    <>
+                        <p>For Pick up, please allow up to 1 business day for collection. Your selected time is:</p>
+                        <p className="font-semibold">{pickupDate && new Date(pickupDate).toLocaleDateString()} at {pickupTime}</p>
+                    </>
+                )}
+                {fulfillmentMethod === 'bearer' && <p>For Bearer Delivery, please allow up to 3 business days for delivery. We will contact you the morning of delivery.</p>}
+                {fulfillmentMethod === 'knutsford' && <p>For Knutsford Courier, please allow up to 3 business days for delivery. We will contact you once the order has been dropped off.</p>}
+                {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>}
+                {paymentMethod === 'bank_transfer' && (
+                    <a href="http://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
+                )}
+            </div>
+            <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button>
+        </div>
+    );
+};
+const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
+const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
+
+// --- Admin Components ---
+const AdminLoginView = ({ onLogin, showToast }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password, showToast); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
+const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, showToast, onUpdate, onAdd, onDelete, onBatchUpdate }) => {
+    const [adminView, setAdminView] = useState('orders');
+    const inventoryRef = useRef(inventory);
+    useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
+    return (
+        <div className="view active bg-gray-200 flex-col">
+            <aside className="w-full bg-gray-800 text-white flex-shrink-0 lg:h-16 lg:flex lg:flex-row lg:items-center lg:justify-between">
+                 <div className="p-4 font-bold border-b border-gray-700 lg:border-b-0 lg:p-0 lg:ml-6 hidden lg:block">Admin Panel</div>
+                 <nav className="p-2 flex-grow flex flex-col justify-around lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-6">
+                     <button onClick={() => setAdminView('orders')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'orders' ? 'bg-gray-700' : ''}`}><ClipboardListIcon/><span>Orders</span></button>
+                     <button onClick={() => setAdminView('inventory')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'inventory' ? 'bg-gray-700' : ''}`}><PackageIcon/><span>Inventory</span></button>
+                     <button onClick={() => setAdminView('products')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'products' ? 'bg-gray-700' : ''}`}><TagIcon/><span>Products</span></button>
+                     <button onClick={() => setAdminView('coupons')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'coupons' ? 'bg-gray-700' : ''}`}><TicketIcon/><span>Coupons</span></button>
+                     <button onClick={() => setAdminView('insights')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'insights' ? 'bg-gray-700' : ''}`}><BarChartIcon/><span>Insights</span></button>
+                 </nav>
+                 <button onClick={onLogout} className="p-4 text-sm text-red-400 hover:bg-red-500 hover:text-white hidden lg:block lg:mr-6">Logout</button>
+            </aside>
+            <main className="flex-1 flex flex-col overflow-y-hidden lg:flex-row">
+                 <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between lg:hidden">
+                    <h1 className="text-xl font-bold capitalize">{adminView}</h1>
+                    <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
+                 </header>
+                 <div className="flex-grow overflow-y-auto p-2 sm:p-6">
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd} showToast={showToast} inventory={inventoryRef} />}
+                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={onUpdate} products={products} showToast={showToast} />}
+                    {adminView === 'products' && <AdminProductsView products={products} onSave={onUpdate} onAdd={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast}/>}
+                    {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} onSave={onUpdate} onAdd={onAdd} showToast={showToast} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} onUpdate={onUpdate} onAdd={onAdd}/>}
+                 </div>
+            </main>
+        </div>
+    );
+}
+const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToast, inventory }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [paymentFilter, setPaymentFilter] = useState('all');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showManualForm, setShowManualForm] = useState(false);
+
+    const handleStatusUpdate = async (orderId, field, value) => {
+        await onUpdate('orders', orderId, { [field]: value });
+    };
+
+    const handleDeleteOrder = async (orderId) => {
+        await onDelete('orders', orderId);
+        setSelectedOrder(null);
+    };
+
+    const handleManualSubmit = async (e, manualOrderItems) => {
+        e.preventDefault();
+
+        for (const item of manualOrderItems) {
+            if(!item.productId) continue;
+            const productInventory = inventory.current[item.productId];
+            const availableStock = productInventory && Array.isArray(productInventory.batches)
+                ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                : 0;
+
+            if (item.quantity > availableStock) {
+                showToast(`Cannot add order: Quantity for ${products.find(p=>p.id === item.productId).name} exceeds available stock of ${availableStock}.`, 'error');
+                return;
+            }
+        }
+
+        const formData = new FormData(e.target);
+        const items = {};
+        let subtotal = 0;
+        manualOrderItems.forEach((itemInput) => {
+            if(itemInput.productId) {
+                const product = products.find(p => p.id === itemInput.productId);
+                if (product) {
+                    items[product.id] = { ...product, quantity: parseInt(itemInput.quantity) || 1 };
+                    subtotal += product.price * items[product.id].quantity;
+                }
+            }
+        });
+
+        const fulfillmentCost = (() => {
+            const method = formData.get('manualFulfillmentMethod');
+            if (method === 'pickup') return 0;
+            if (method === 'bearer') return DELIVERY_OPTIONS[formData.get('manualBearerLocation')];
+            if (method === 'knutsford') return KNUTSFORD_FEE;
+            return 0;
+        })();
+
+        const newOrder = {
+            customerInfo: { name: formData.get('customerName'), email: formData.get('customerEmail'), phone: formData.get('customerPhone')},
+            items, subtotal, fulfillmentCost, total: subtotal + fulfillmentCost,
+            createdAt: new Date().toISOString(),
+            paymentStatus: formData.get('paymentStatus'),
+            fulfillmentStatus: formData.get('fulfillmentStatus'),
+            fulfillmentMethod: formData.get('manualFulfillmentMethod'),
+            paymentMethod: formData.get('manualPaymentMethod'),
+            pickupDate: formData.get('manualFulfillmentMethod') === 'pickup' ? formData.get('manualPickupDate') : null,
+            pickupTime: formData.get('manualFulfillmentMethod') === 'pickup' ? formData.get('manualPickupTime') : null,
+            knutsfordLocation: formData.get('manualFulfillmentMethod') === 'knutsford' ? formData.get('manualKnutsfordLocation') : null,
+            bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
+        };
+        await onAdd("orders", newOrder);
+        showToast("Manual order added successfully!");
+
+        const batch = writeBatch(db);
+        for (const item of manualOrderItems) {
+            if (item.productId && item.quantity > 0) {
+                const currentProductInv = inventory.current[item.productId];
+                if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                    let remainingToDeduct = item.quantity;
+                    const updatedBatches = [...currentProductInv.batches];
+
+                    updatedBatches.sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                    for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                        let batchEntry = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                        batchEntry.unengraved -= deductibleFromBatch;
+                        remainingToDeduct -= deductibleFromBatch;
+                    }
+
+                    const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.productId);
+                    batch.set(productDocRef, { batches: newBatches }, { merge: true });
+                }
+            }
+        }
+        try {
+            await batch.commit();
+            showToast("Inventory updated for manual order!");
+        } catch (error) {
+            showToast("Failed to update inventory for manual order.", "error");
+        }
+
+
+        setShowManualForm(false);
+    };
+
+    const filteredOrders = useMemo(() => {
+        return orders.filter(order => {
+            const searchMatch = !searchTerm || order.id.toLowerCase().includes(searchTerm.toLowerCase()) || order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const paymentStatusMatch = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
+            return searchMatch && paymentStatusMatch;
+        });
+    }, [orders, searchTerm, paymentFilter]);
+
+    const OrderModal = ({ order, onClose, onDeleteOrder }) => (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
+                    <h3 className="font-bold">Order #{order.id}</h3>
+                    <button onClick={onClose} className="text-2xl font-bold p-1">&times;</button>
+                </div>
+                <div className="p-4 space-y-4 text-sm overflow-y-auto">
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Customer Details</h4>
+                        <p><strong>Name:</strong> {order.customerInfo.name}</p>
+                        {order.customerInfo.email && <p><strong>Email:</strong> {order.customerInfo.email}</p>}
+                        {order.customerInfo.phone && <p><strong>Phone:</strong> {order.customerInfo.phone}</p>}
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Fulfillment Details</h4>
+                        <p><strong>Method:</strong> <span className="capitalize">{order.fulfillmentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        {order.fulfillmentMethod === 'pickup' && (
+                            <p><strong>Details:</strong> {order.pickupDate ? new Date(order.pickupDate).toLocaleDateString() : 'N/A'} at {order.pickupTime || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'bearer' && (
+                            <p><strong>Location:</strong> {order.bearerLocation || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'knutsford' && (
+                            <p><strong>Location:</strong> {order.knutsfordLocation || 'N/A'}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Order Status</h4>
+                         <p className="mb-2"><strong>Payment Method:</strong> <span className="capitalize">{order.paymentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        <div className="flex items-center">
+                            <label className="w-32">Payment Status</label>
+                            <select defaultValue={order.paymentStatus} onChange={(e) => handleStatusUpdate(order.id, 'paymentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Paid</option>
+                                <option>Refunded</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center mt-2">
+                            <label className="w-32">Fulfillment</label>
+                            <select defaultValue={order.fulfillmentStatus} onChange={(e) => handleStatusUpdate(order.id, 'fulfillmentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Completed</option>
+                                <option>Returned</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Items</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            {Object.values(order.items).map(item => (
+                                <li key={item.id}>
+                                    {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price * (item.quantity || 0)).toLocaleString()}
+                                </li>
+                            ))}
+                        </ul>
+                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed} (-J${order.discount.toLocaleString()})</p>}
+                        <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
+                        <EditIcon className="mr-1"/> Edit Order
+                    </button>
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const ManualOrderForm = () => {
+         const [manualOrderItems, setManualOrderItems] = useState([{ productId: '', quantity: 1 }]);
+         const [manualFulfillmentMethod, setManualFulfillmentMethod] = useState('pickup');
+         const [manualBearerLocation, setManualBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
+         const [manualKnutsfordLocation, setManualKnutsfordLocation] = useState(KNUTSFORD_LOCATIONS[0]);
+         const [manualPaymentMethod, setManualPaymentMethod] = useState('cod');
+         const [manualPickupDate, setManualPickupDate] = useState('');
+         const [manualPickupTime, setManualPickupTime] = useState(PICKUP_TIMES[0]);
+
+         const handleLocalManualItemChange = (index, field, value) => {
+            const updatedItems = [...manualOrderItems];
+            const currentItem = updatedItems[index];
+
+            if (field === 'productId') {
+                currentItem.productId = value;
+            } else if (field === 'quantity') {
+                const productId = currentItem.productId;
+                if (productId && inventory.current[productId]) {
+                    const productInventory = inventory.current[productId];
+                    const availableStock = productInventory && Array.isArray(productInventory.batches)
+                        ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                        : 0;
+
+                    let requestedQuantity = parseInt(value, 10);
+                    if (isNaN(requestedQuantity) || requestedQuantity < 1) {
+                        requestedQuantity = 1;
+                    }
+                    if (requestedQuantity > availableStock) {
+                        showToast(`Only ${availableStock} units available for this product.`, 'error');
+                        currentItem.quantity = availableStock;
+                    } else {
+                         currentItem.quantity = requestedQuantity;
+                    }
+                } else {
+                    currentItem.quantity = value;
+                }
+            }
+            setManualOrderItems(updatedItems);
+         };
+
+         const handleLocalAddItemRow = () => {
+            setManualOrderItems(prev => [...prev, { productId: '', quantity: 1 }]);
+         };
+
+         const handleLocalRemoveItemRow = (indexToRemove) => {
+            setManualOrderItems(prev => prev.filter((_, i) => i !== indexToRemove));
+         };
+
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-6">Add Manual Order</h2>
+                <form onSubmit={(e) => handleManualSubmit(e, manualOrderItems)} className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Customer Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <input name="customerName" type="text" placeholder="Full Name" className="w-full p-2 border rounded" required />
+                           <input name="customerEmail" type="email" placeholder="Email Address" className="w-full p-2 border rounded" />
+                           <input name="customerPhone" type="tel" placeholder="Phone Number" className="w-full p-2 border rounded" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Items</h3>
+                        <div className="space-y-2">
+                            {manualOrderItems.map((item, index) => {
+                                const productInventory = item.productId ? inventory.current[item.productId] : null;
+                                const availableStock = productInventory && Array.isArray(productInventory.batches)
+                                    ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                                    : 0;
+
+                                return (
+                                    <div key={index} className="flex gap-2 items-center">
+                                        <select
+                                            name={`productId-${index}`}
+                                            className="w-full p-2 border rounded"
+                                            value={item.productId}
+                                            onChange={(e) => handleLocalManualItemChange(index, 'productId', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select Product</option>
+                                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        </select>
+                                        <div className="flex items-center border rounded">
+                                            <input
+                                                type="number"
+                                                placeholder="Qty"
+                                                className="w-20 p-2"
+                                                min="1"
+                                                max={availableStock}
+                                                value={item.quantity}
+                                                onChange={(e) => handleLocalManualItemChange(index, 'quantity', e.target.value)}
+                                                required
+                                            />
+                                            <span className="text-xs text-gray-500 pr-2">({availableStock} avail.)</span>
+                                        </div>
+                                        {manualOrderItems.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleLocalRemoveItemRow(index)}
+                                                className="p-2 text-red-500 rounded-md hover:bg-red-100"
+                                            >
+                                                <TrashIcon />
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            <button type="button" onClick={handleLocalAddItemRow} className="px-4 py-2 bg-gray-200 text-sm rounded-md mt-2">Add Another Item</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Fulfillment Details</h3>
+                        <div className="space-y-2">
+                            <select name="manualFulfillmentMethod" value={manualFulfillmentMethod} onChange={(e) => setManualFulfillmentMethod(e.target.value)} className="w-full p-2 border rounded">
+                                <option value="pickup">Pick Up</option>
+                                <option value="bearer">Bearer Delivery</option>
+                                <option value="knutsford">Knutsford Express</option>
+                            </select>
+                            {manualFulfillmentMethod === 'bearer' && (
+                                <div className="pl-2 pt-2">
+                                    <select name="manualBearerLocation" value={manualBearerLocation} onChange={(e) => setManualBearerLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {Object.entries(DELIVERY_OPTIONS).map(([loc, price]) => <option key={loc} value={loc}>{`${loc} - J$${price}`}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'knutsford' && (
+                                <div className="pl-2 pt-2">
+                                    <select name="manualKnutsfordLocation" value={manualKnutsfordLocation} onChange={(e) => setManualKnutsfordLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {KNUTSFORD_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'pickup' && (
+                                <div className="pl-2 pt-2 grid grid-cols-2 gap-2">
+                                    <input type="date" name="manualPickupDate" value={manualPickupDate} onChange={(e) => setManualPickupDate(e.target.value)} className="p-2 border rounded-md" required />
+                                    <select name="manualPickupTime" value={manualPickupTime} onChange={(e) => setManualPickupTime(e.target.value)} className="p-2 border rounded-md" required>
+                                        {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                     <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Payment and Status</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Method</label>
+                                <select name="manualPaymentMethod" value={manualPaymentMethod} onChange={e => setManualPaymentMethod(e.target.value)} className="w-full p-2 border rounded mt-1">
+                                    <option value="cod">Cash on Pickup</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="credit_card">Credit Card</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Status</label>
+                                <select name="paymentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Paid</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Fulfillment</label>
+                                <select name="fulfillmentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4 border-t mt-6">
+                        <button type="button" onClick={() => { setShowManualForm(false); }} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Add Order</button>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    if (showManualForm) {
+        return <ManualOrderForm />;
+    }
+
+    return(
+        <div>
+            {selectedOrder && <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onDeleteOrder={handleDeleteOrder} />}
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 className="text-2xl font-bold">Orders</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                        type="text"
+                        placeholder="Filter by ID or Name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="p-2 border rounded-md"
+                    />
+                     <select value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)} className="p-2 border rounded-md">
+                        <option value="all">All Statuses</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Refunded">Refunded</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <button onClick={() => setShowManualForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm whitespace-nowrap">Add Manual Order</button>
+                </div>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfilled</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredOrders.map(order => (
+                            <tr key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {order.createdAt && !isNaN(new Date(order.createdAt).getTime())
+                                        ? new Date(order.createdAt).toLocaleDateString()
+                                        : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {order.paymentStatus}
+                                    </span>
+                                </td><td className="px-6 py-4 whitespace-nowrap">
+                                    {order.fulfillmentStatus === 'Completed' ? (
+                                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                        <XCircleIcon className="h-5 w-5 text-red-500" />
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
+    const [localInventory, setLocalInventory] = useState({});
+
+    useEffect(() => {
+        if (Object.keys(inventory).length > 0) {
+            setLocalInventory(inventory);
+        }
+    }, [inventory]);
+
+    const handleBatchValueChange = (productId, batchIndex, field, value) => {
+        const val = parseInt(value, 10) || 0;
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            if (updatedBatches[batchIndex]) {
+                updatedBatches[batchIndex] = { ...updatedBatches[batchIndex], [field]: val };
+            }
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleAddBatch = (productId) => {
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            updatedBatches.push({
+                batchId: `manual_${Date.now()}`,
+                dateAdded: new Date().toISOString().split('T')[0],
+                engraved: 0,
+                unengraved: 0,
+                defective: 0
+            });
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleRemoveBatch = (productId, batchIndex) => {
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleSaveProductInventory = async (productId) => {
+        if(localInventory[productId]) {
+            await onSave('inventory', productId, { batches: localInventory[productId].batches || [] });
+            showToast('Inventory batches updated!');
+        }
+    };
+
+    if (products.length === 0) {
+        return <div>Loading inventory...</div>;
+    }
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">Inventory Management</h2>
+            <div className="space-y-4">
+                {products.map(p => {
+                    const productInventory = localInventory[p.id] || { batches: [] };
+                    const totalUnengravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
+                    const totalEngravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.engraved || 0), 0);
+                    const totalDefectiveStock = productInventory.batches.reduce((sum, batch) => sum + (batch.defective || 0), 0);
+                    const overallTotalStock = totalUnengravedStock + totalEngravedStock + totalDefectiveStock;
+
+                    return (
+                        <div key={p.id} className="bg-white rounded-lg shadow p-4">
+                            <h3 className="font-bold">{p.name}</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end">
+                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={overallTotalStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={totalEngravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={totalUnengravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={totalDefectiveStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <button onClick={() => handleSaveProductInventory(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save All Changes</button>
+                            </div>
+                            {totalUnengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low unengraved stock warning!</p>}
+
+                            <Disclosure>
+                                {({ open }) => (
+                                    <>
+                                        <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-blue-900 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 mt-4">
+                                            <span>Stock Batches ({productInventory.batches.length})</span>
+                                            <ChevronUpIcon className={`${open ? '' : 'transform rotate-180'} w-5 h-5 text-blue-500`} />
+                                        </Disclosure.Button>
+                                        <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 bg-white border border-t-0 rounded-b-lg">
+                                            <div className="space-y-3">
+                                                {productInventory.batches.map((batch, batchIndex) => (
+                                                    <div key={batch.batchId || batchIndex} className="flex items-center gap-2 p-2 border rounded-md bg-gray-50">
+                                                        <span className="font-semibold text-gray-800 text-xs truncate">Batch: {batch.batchId || `Batch ${batchIndex + 1}`} ({new Date(batch.dateAdded).toLocaleDateString()})</span>
+                                                        <input type="number" value={batch.engraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'engraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Engraved"/>
+                                                        <input type="number" value={batch.unengraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'unengraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Unengraved"/>
+                                                        <input type="number" value={batch.defective || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'defective', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Defective"/>
+                                                        <button onClick={() => handleRemoveBatch(p.id, batchIndex)} className="text-red-500 hover:text-red-700 p-1"><TrashIcon /></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => handleAddBatch(p.id)} className="mt-2 px-3 py-1 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Add New Batch Entry</button>
+                                            </div>
+                                        </Disclosure.Panel>
+                                    </>
+                                )}
+                            </Disclosure>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) => {
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [isAddingNew, setIsAddingNew] = useState(false);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        let displayOrder = Number(formData.get('displayOrder'));
+
+        if (isAddingNew && isNaN(displayOrder)) {
+            displayOrder = products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1;
+        } else if (!isAddingNew && isNaN(displayOrder)) {
+             displayOrder = editingProduct.displayOrder;
+        }
+
+        const productData = {
+            name: formData.get('name'),
+            price: Number(formData.get('price')),
+            description: formData.get('description'),
+            image: formData.get('image'),
+            colorStart: '#cccccc',
+            colorEnd: '#eeeeee',
+            buttonTextColor: 'text-gray-800',
+            displayOrder
+        };
+
+        if (isAddingNew) {
+            await onAdd('products', productData)
+        } else {
+            await onSave('products', editingProduct.id, productData);
+        }
+        setEditingProduct(null);
+        setIsAddingNew(false);
+    };
+
+    const sortedProducts = useMemo(() => {
+        return [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    }, [products]);
+
+
+    const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:'', displayOrder: products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1} : null);
+
+    if (formInitialData) { return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2>
+            <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4">
+                <div>
+                    <label className="font-semibold">Product Name</label>
+                    <input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1" required/>
+                </div>
+                <div>
+                    <label className="font-semibold">Price</label>
+                    <input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1" required/>
+                </div>
+                <div>
+                    <label className="font-semibold">Description</label>
+                    <textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea>
+                </div>
+                <div>
+                    <label className="font-semibold">Image URL</label>
+                    <input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/>
+                </div>
+                 <div>
+                    <label className="font-semibold">Display Order</label>
+                    <input name="displayOrder" type="number" defaultValue={formInitialData.displayOrder} className="w-full p-2 border rounded mt-1"/>
+                    <p className="text-xs text-gray-500 mt-1">Products are ordered from smallest to largest display order.</p>
+                </div>
+                <div className="flex justify-end space-x-2">
+                    <button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    ) }
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Product Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {sortedProducts.map((p) => (
+                            <tr key={p.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{p.displayOrder || '-'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                                    <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name}/>
+                                    <p className="font-bold">{p.name}</p>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${p.price}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
+    const [editingCoupon, setEditingCoupon] = useState(null);
+    const [isAddingNew, setIsAddingNew] = useState(false);
+    const [appliesToOption, setAppliesToOption] = useState('all');
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
+
+    useEffect(() => {
+        if (editingCoupon) {
+            if (Array.isArray(editingCoupon.appliesTo)) {
+                setAppliesToOption('specific');
+                setSelectedProductIds(editingCoupon.appliesTo);
+            } else {
+                setAppliesToOption('all');
+                setSelectedProductIds([]);
+            }
+        } else {
+            setAppliesToOption('all');
+            setSelectedProductIds([]);
+        }
+    }, [editingCoupon]);
+
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        let appliesToValue = 'all';
+        if (appliesToOption === 'specific') {
+            appliesToValue = selectedProductIds;
+        }
+
+        const couponData = {
+            code: formData.get('code').toUpperCase(),
+            type: formData.get('type'),
+            value: Number(formData.get('value')),
+            isActive: formData.get('isActive') === 'on',
+            appliesTo: appliesToValue,
+            startDate: formData.get('startDate'),
+            endDate: formData.get('endDate'),
+        };
+
+        if (isAddingNew) {
+            await onAdd('coupons', couponData)
+        } else {
+            await onSave('coupons', editingCoupon.id, couponData);
+        }
+        setEditingCoupon(null);
+        setIsAddingNew(false);
+    };
+
+    const handleProductSelection = (productId) => {
+        setSelectedProductIds(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true, appliesTo: 'all', startDate: '', endDate: '' } : null);
+
+    if (formInitialData) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Coupon" : "Edit Coupon"}</h2>
+                <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4">
+                    <div>
+                        <label className="font-semibold">Coupon Code</label>
+                        <input name="code" defaultValue={formInitialData.code} className="w-full p-2 border rounded mt-1 uppercase" required/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Type</label>
+                            <select name="type" defaultValue={formInitialData.type} className="w-full p-2 border rounded mt-1">
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (J$)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="font-semibold">Value</label>
+                            <input name="value" type="number" defaultValue={formInitialData.value} className="w-full p-2 border rounded mt-1" required/>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Start Date</label>
+                            <input name="startDate" type="date" defaultValue={formInitialData.startDate} className="w-full p-2 border rounded mt-1" />
+                        </div>
+                        <div>
+                            <label className="font-semibold">End Date</label>
+                            <input name="endDate" type="date" defaultValue={formInitialData.endDate} className="w-full p-2 border rounded mt-1" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="font-semibold">Applies To</label>
+                        <select
+                            value={appliesToOption}
+                            onChange={(e) => setAppliesToOption(e.target.value)}
+                            className="w-full p-2 border rounded mt-1"
+                        >
+                            <option value="all">All Products (Store-wide)</option>
+                            <option value="specific">Specific Products</option>
+                        </select>
+                        {appliesToOption === 'specific' && (
+                            <div className="mt-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
+                                {products.map(p => (
+                                    <label key={p.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProductIds.includes(p.id)}
+                                            onChange={() => handleProductSelection(p.id)}
+                                            className="h-4 w-4"
+                                        />
+                                        <span>{p.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center">
+                        <input name="isActive" type="checkbox" defaultChecked={formInitialData.isActive} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
+                        <label className="ml-2 block text-sm text-gray-900">Active</label>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                        <button type="button" onClick={() => { setEditingCoupon(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Coupon Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Coupon</button>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applies To</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {coupons.map(c => (
+                            <tr key={c.id}>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono">{c.code}</td>
+                                <td className="px-6 py-4 whitespace-nowrap capitalize">{c.type}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
+                                <td className="px-6 py-4">
+                                    {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? 'Specific Products' : 'N/A')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {c.startDate && new Date(c.startDate).toLocaleDateString()}
+                                    {c.startDate && c.endDate && ' - '}
+                                    {c.endDate && new Date(c.endDate).toLocaleDateString()}
+                                    {!c.startDate && !c.endDate && 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {c.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingCoupon(c)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, showToast, onUpdate, onAdd }) => {
+    const [editingBatch, setEditingBatch] = useState(null);
+
+    const getCurrentMonthDateRange = () => {
+        const date = new Date();
+        const from = new Date(date.getFullYear(), date.getMonth(), 1);
+        const to = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return {
+            from: from.toISOString().split('T')[0],
+            to: to.toISOString().split('T')[0]
+        };
+    };
+
+    const [dateRange, setDateRange] = useState(getCurrentMonthDateRange());
+
+    const handleSaveBatch = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const batchData = {
+            name: formData.get('name'),
+            productCost: Number(formData.get('productCost')),
+            alibabaShipping: Number(formData.get('alibabaShipping')),
+            mailpacShipping: Number(formData.get('mailpacShipping')),
+            numSets: Number(formData.get('numSets')),
+        };
+        batchData.costPerSet = batchData.numSets > 0 ? (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets : 0;
+
+        await onUpdate('costBatches', editingBatch.id, batchData);
+        setEditingBatch(null);
+    };
+
+    const handleCreateNewBatch = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const newBatchData = {
+            name: formData.get('name'),
+            productCost: Number(formData.get('productCost')),
+            alibabaShipping: Number(formData.get('alibabaShipping')),
+            mailpacShipping: Number(formData.get('mailpacShipping')),
+            numSets: Number(formData.get('numSets')),
+            startDate: new Date().toISOString(),
+            endDate: null,
+            isActive: true,
+        };
+        newBatchData.costPerSet = newBatchData.numSets > 0 ? (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets : 0;
+
+        const updates = costBatches
+            .filter(b => b.isActive)
+            .map(b => ({
+                collectionName: 'costBatches',
+                docId: b.id,
+                data: { isActive: false, endDate: new Date().toISOString() }
+            }));
+
+        await onBatchUpdate(updates);
+        await onAdd('costBatches', newBatchData);
+
+        setEditingBatch(null);
+    };
+
+    const handleToggleBatchStatus = (batchIdToToggle) => {
+         const targetBatch = costBatches.find(b => b.id === batchIdToToggle);
+            if (!targetBatch) return;
+
+            if (targetBatch.isActive) {
+                const activeBatchesCount = costBatches.filter(b => b.isActive).length;
+                if (activeBatchesCount <= 1) {
+                    showToast("Cannot deactivate the only active batch.", "error");
+                    return;
+                }
+            }
+
+        const updates = costBatches.map(batch => {
+            if(batch.id === batchIdToToggle) {
+                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : null }}
+            }
+             if (targetBatch && !targetBatch.isActive && batch.isActive) {
+                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: false, endDate: new Date().toISOString() }};
+            }
+            return null;
+        }).filter(Boolean);
+
+        onBatchUpdate(updates);
+    };
+
+    const { filteredOrders, reportData } = useMemo(() => {
+        const from = new Date(dateRange.from).setHours(0,0,0,0);
+        const to = new Date(dateRange.to).setHours(23,59,59,999);
+
+        const filtered = !dateRange.from || !dateRange.to
+            ? orders
+            : orders.filter(order => {
+                const orderDate = new Date(order.createdAt).getTime();
+                return orderDate >= from && orderDate <= to;
+            });
+
+        const data = {
+            totalIncome: 0, totalProfit: 0, sales: 0,
+            returnedValue: 0, refundedValue: 0,
+            monthlySales: { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } },
+            popularColors: {}
+        };
+        const now = new Date();
+
+        filtered.forEach(order => {
+            const orderDate = new Date(order.createdAt);
+            const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
+            const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
+            if (key && order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
+                const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+                const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+                const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+                data.monthlySales[key].income += order.total;
+                data.monthlySales[key].profit += order.total - costOfGoods;
+            }
+        });
+
+        return {
+            filteredOrders: filtered,
+            reportData: {
+                ...data,
+                monthlyChartData: [
+                    { name: 'Last Month', Income: data.monthlySales['Last Month'].income, Profit: data.monthlySales['Last Month'].profit },
+                    { name: 'This Month', Income: data.monthlySales['This Month'].income, Profit: data.monthlySales['This Month'].profit },
+                ],
+                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+            }
+        };
+    }, [orders, costBatches, dateRange]);
+
+    const handleExport = () => {
+        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit"];
+
+        const rows = filteredOrders.map(order => {
+            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+            const profit = order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed' ? order.total - costOfGoods : 0;
+
+            const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
+
+            return [
+                order.id,
+                new Date(order.createdAt).toLocaleDateString(),
+                order.customerInfo.name,
+                `"${itemsString}"`,
+                order.subtotal || 0,
+                order.discount || 0,
+                order.fulfillmentCost || 0,
+                order.total,
+                profit.toFixed(2)
+            ].join(',');
+        });
+
+        const csvString = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `byot_report_${dateRange.from}_to_${dateRange.to}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const BatchForm = ({ batch, onSave, onCancel }) => {
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-6">{batch.isNew ? "Create New Cost Batch" : "Edit Cost Batch"}</h2>
+                <form onSubmit={onSave} className="space-y-4">
+                     <div>
+                        <label className="font-semibold block mb-1">Batch Name</label>
+                        <input name="name" defaultValue={batch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
+                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <label className="font-semibold block mb-1">Shipping Cost (Alibaba)</label>
+                            <input name="alibabaShipping" type="number" step="0.01" defaultValue={batch.alibabaShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                             <label className="font-semibold block mb-1">Shipping Cost (Mailpac)</label>
+                            <input name="mailpacShipping" type="number" step="0.01" defaultValue={batch.mailpacShipping} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                            <label className="font-semibold block mb-1">Product Cost (Alibaba)</label>
+                            <input name="productCost" type="number" step="0.01" defaultValue={batch.productCost} className="w-full p-2 border rounded" required />
+                         </div>
+                         <div>
+                             <label className="font-semibold block mb-1">Total # of Sets</label>
+                            <input name="numSets" type="number" defaultValue={batch.numSets} className="w-full p-2 border rounded" required />
+                         </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
+                </form>
+                 <p className="text-xs text-gray-500 mt-4">Note: After saving, please update your stock levels in the 'Inventory' tab to reflect the new batch.</p>
+            </div>
+        );
+    };
+
+    if (editingBatch) {
+        return <BatchForm batch={editingBatch} onSave={editingBatch.isNew ? handleCreateNewBatch : handleSaveBatch} onCancel={() => setEditingBatch(null)} />
+    }
+
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2>
+
+            <div className="p-4 bg-white rounded-lg shadow mb-6">
+                <h3 className="font-bold mb-4">Export Report</h3>
+                <div className="flex items-end gap-4 flex-wrap">
+                    <div>
+                        <label className="text-sm font-medium">From</label>
+                        <input type="date" value={dateRange.from} onChange={e => setDateRange(prev => ({...prev, from: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">To</label>
+                        <input type="date" value={dateRange.to} onChange={e => setDateRange(prev => ({...prev, to: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <button onClick={handleExport} disabled={!dateRange.from || !dateRange.to} className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-gray-400">Export CSV</button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Total Income</h3>
+                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Total Profit</h3>
+                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Sales (Period)</h3>
+                    <p className="text-3xl font-bold">{reportData.sales}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Returned Value</h3>
+                    <p className="text-3xl font-bold text-orange-500">J${reportData.returnedValue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Refunded Value</h3>
+                    <p className="text-3xl font-bold text-red-500">J${reportData.refundedValue.toLocaleString()}</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="font-bold mb-4">Monthly Profitability</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={reportData.monthlyChartData} >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => `J$${value.toLocaleString()}`} />
+                            <Legend />
+                            <Bar dataKey="Profit" fill="#8884d8" />
+                            <Bar dataKey="Income" fill="#82ca9d" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="font-bold mb-4">Most Popular Colors (Period)</h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={reportData.popularColorsChartData} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis type="category" dataKey="name" width={80} />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="#3b82f6" name="Units Sold" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-lg shadow">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold">Cost Batches</h3>
+                     <button onClick={() => setEditingBatch({ name: '', productCost: 0, alibabaShipping: 0, mailpacShipping: 0, numSets: 0, isNew: true })} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
+                 </div>
+                 <div className="space-y-2">
+                    {costBatches.slice().reverse().map(batch => (
+                        <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold">{batch.name}</p>
+                                    <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
+                                    <p className="text-xs text-gray-500">
+                                        {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <button onClick={() => setEditingBatch(batch)} className="p-1 text-blue-600 hover:text-blue-800"><EditIcon/></button>
+                                     <div className="flex items-center">
+                                        <span className={`text-xs mr-2 ${batch.isActive ? 'text-green-600 font-bold' : 'text-gray-500'}`}>{batch.isActive ? 'Active' : 'Inactive'}</span>
+                                        <button onClick={() => handleToggleBatchStatus(batch.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full ${batch.isActive ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${batch.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                 </div>
+            </div>
+        </div>
+    )
+}
+
+// --- Main App Component ---
+export default function App() {
+    const [view, setView] = useState('shop');
+    const [isAdminMode, setIsAdminMode] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [inventory, setInventory] = useState({});
+    const [orders, setOrders] = useState([]);
+    const [coupons, setCoupons] = useState([]);
+    const [costBatches, setCostBatches] = useState([]);
+    const [cart, setCart] = useState({});
+    const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState('success');
+    const [orderData, setOrderData] = useState(null);
+    const [isAuthReady, setIsAuthReady] = useState(false); // New state to track auth readiness
+
+    // Handles authentication and sets a ready flag when a user is available.
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, user => {
+            if (user) {
+                // If we have a user (anonymous or logged in), we're ready to fetch data.
+                setIsAuthReady(true);
+            } else {
+                // If there's no user, attempt to sign in anonymously.
+                // onAuthStateChanged will get called again once this completes.
+                signInAnonymously(auth).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    // Mark as ready anyway to avoid the app getting stuck.
+                    // Data fetches will fail, but the UI won't hang.
+                    setIsAuthReady(true);
+                });
+            }
+        });
+        return () => unsubscribeAuth(); // Cleanup on unmount
+    }, []); // Empty dependency array ensures this runs only once.
+
+    // Handles data fetching from Firestore, runs only when auth is ready.
+    useEffect(() => {
+        // Do nothing if auth isn't ready yet.
+        if (!isAuthReady) return;
+
+        // Set up all Firestore listeners.
+        const unsubscribes = [
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/products`), (snapshot) => {
+                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'products' error:", error)),
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/inventory`), (snapshot) => {
+                const invData = {};
+                snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
+                setInventory(invData);
+            }, (error) => console.error("Firestore 'inventory' error:", error)),
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
+                setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'orders' error:", error)),
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
+                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'coupons' error:", error)),
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
+                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }, (error) => console.error("Firestore 'costBatches' error:", error))
+        ];
+
+        // Return a cleanup function to unsubscribe from all listeners on unmount.
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, [isAuthReady]); // This effect depends on auth readiness.
+
+
+    useEffect(() => {
+        if (!isAdminMode && view !== 'shop') {
+            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)');
+        } else if (isAdminMode) {
+            setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)');
+        } else if (view === 'shop') {
+            setBgGradient('linear-gradient(to bottom, #111827, #374151)');
+        }
+    }, [view, isAdminMode]);
+
+    const showToast = (message, type = 'success') => {
+        setToastMessage(message);
+        setToastType(type);
+        setTimeout(() => setToastMessage(''), 3000);
+    };
+
+    const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
+    const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
+
+    const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); showToast(`${quantity} x ${product.name} added!`); };
+    const handleBuyNow = (product, quantity) => { setCart({ [product.id]: { ...product, quantity } }); setView('checkout'); };
+    const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
+    const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
+
+    const placeOrder = async (order) => {
+        const activeCostBatch = costBatches.find(b => b.isActive);
+        const newOrder = {
+            ...order,
+            costBatchId: activeCostBatch ? activeCostBatch.id : null,
+            createdAt: new Date().toISOString(),
+            paymentStatus: 'Pending',
+            fulfillmentStatus: 'Pending'
+        };
+
+        try {
+            const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/orders`), newOrder);
+            setOrderData({ ...newOrder, id: docRef.id });
+
+            const batch = writeBatch(db);
+            for (const item of Object.values(order.items)) {
+                if (item.id && item.quantity > 0) {
+                    const currentProductInv = inventory[item.id];
+                    if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                        let remainingToDeduct = item.quantity;
+                        const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                        for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                            let batchEntry = updatedBatches[i];
+                            const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                            batchEntry.unengraved -= deductibleFromBatch;
+                            remainingToDeduct -= deductibleFromBatch;
+                        }
+
+                        const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+                        const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.id);
+                        batch.set(productDocRef, { batches: newBatches }, { merge: true });
+                    }
+                }
+            }
+            await batch.commit();
+            showToast("Order placed and inventory updated!", "success");
+
+            if (order.paymentMethod === 'credit_card') {
+                setView('payment');
+            } else {
+                setView('confirmation');
+            }
+            setCart({});
+        } catch (error) {
+            showToast('Failed to place order. ' + error.message, 'error');
+        }
+    };
+
+    const handleContinueShopping = () => { setOrderData(null); setView('shop'); };
+    const handleLogin = async (email, password, toastFn) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setIsAdminMode(true);
+            toastFn("Logged in as admin!");
+        } catch (error) {
+            toastFn('Login Failed! ' + error.message, 'error');
+        }
+    }
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setIsAdminMode(false);
+            setView('shop');
+            showToast("Logged out successfully.");
+        } catch (error) {
+            showToast("Logout failed.", "error");
+        }
+    }
+
+     const handleUpdateFirestore = async (collectionName, docId, data) => {
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
+            showToast(`${collectionName.slice(0,-1)} updated!`);
+        }
+        catch (error) {
+            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
+        }
+    };
+
+    const handleAddFirestore = async (collectionName, data) => {
+        try {
+            await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+            showToast(`${collectionName.slice(0,-1)} added!`);
+        } catch (error) {
+            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
+        }
+    };
+
+    const handleDeleteFirestore = async (collectionName, docId) => {
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
+            showToast(`${collectionName.slice(0,-1)} deleted!`);
+        } catch(error) {
+            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
+        }
+    };
+
+    const handleBatchUpdate = async (updates) => {
+        const batch = writeBatch(db);
+        updates.forEach(({collectionName, docId, data}) => {
+            const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
+            batch.update(docRef, data);
+        });
+        try {
+            await batch.commit();
+            showToast('Batch update successful!');
+        } catch (error) {
+            showToast('Batch update failed.', 'error');
+        }
+    };
+
+    const renderContent = () => {
+        if (isAdminMode) {
+            return <AdminDashboard
+                onLogout={handleLogout}
+                orders={orders}
+                products={products}
+                inventory={inventory}
+                coupons={coupons}
+                costBatches={costBatches}
+                showToast={showToast}
+                onUpdate={handleUpdateFirestore}
+                onAdd={handleAddFirestore}
+                onDelete={handleDeleteFirestore}
+                onBatchUpdate={handleBatchUpdate}
+            />;
+        }
+        switch (view) {
+            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} showToast={showToast} /></div>;
+            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} showToast={showToast}/>;
+            case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} coupons={coupons} showToast={showToast} />;
+            case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
+            case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
+            case 'about': return <AboutView onBack={() => setView('shop')} />;
+            case 'admin': return <AdminLoginView onLogin={handleLogin} showToast={showToast}/>;
+            default: return null;
+        }
+    };
+
+    return (
+        <div style={{ background: bgGradient }} className="flex items-center justify-center p-0 md:p-4 h-screen">
+             <GlobalStyles />
+             <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+                {toastMessage}
+            </div>
+
+             {isAdminMode ? (
+                 <div className="w-full h-full bg-gray-200">
+                    {renderContent()}
+                 </div>
+             ) : (
+                <div className="app-shell">
+                    {renderContent()}
+                    <nav className="bg-white/80 backdrop-blur-lg border-t border-gray-200 flex-shrink-0">
+                        <div className="flex justify-around h-20">
+                             <button onClick={() => setView('shop')} className={`flex flex-col items-center justify-center w-full ${view === 'shop' ? 'text-blue-600' : 'text-gray-500'}`}><HomeIcon /><span className="text-xs font-medium">Shop</span></button>
+                            <button onClick={() => setView('cart')} className={`flex flex-col items-center justify-center w-full relative ${view === 'cart' ? 'text-blue-600' : 'text-gray-500'}`}><CartIcon /><span className="text-xs font-medium">Cart</span>{cartCount > 0 && <span className="absolute top-4 right-8 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>}</button>
+                            <button onClick={() => setView('about')} className={`flex flex-col items-center justify-center w-full ${view === 'about' ? 'text-blue-600' : 'text-gray-500'}`}><InfoIcon /><span className="text-xs font-medium">About</span></button>
+                            <button onClick={() => setView('admin')} className={`flex flex-col items-center justify-center w-full ${view === 'admin' ? 'text-blue-600' : 'text-gray-500'}`}><UserIcon /><span className="text-xs font-medium">Account</span></button>
+                        </div>
+                    </nav>
+                </div>
+             )}
+        </div>
+    );
+}
