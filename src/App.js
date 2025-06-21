@@ -707,7 +707,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={onUpdate} products={products} showToast={showToast} />}
                     {adminView === 'products' && <AdminProductsView products={products} onSave={onUpdate} onAdd={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast}/>}
                     {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} onSave={onUpdate} onAdd={onAdd} showToast={showToast} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} onUpdate={onUpdate} onAdd={onAdd}/>} {/* Pass onUpdate and onAdd */}
                  </div>
             </main>
         </div>
@@ -1564,7 +1564,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
         </div>
     )
 }
-const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, showToast }) => {
+const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, showToast, onUpdate, onAdd }) => { // Added onUpdate, onAdd to props
     const [editingBatch, setEditingBatch] = useState(null);
     
     const getCurrentMonthDateRange = () => {
