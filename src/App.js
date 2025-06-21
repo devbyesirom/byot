@@ -46,7 +46,7 @@ const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0  1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
@@ -57,8 +57,8 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
-const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+// Removed unused ChevronUpIcon (no longer used in AdminProductsView)
+// Removed unused ChevronDownIcon (no longer used in AdminProductsView)
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -192,6 +192,407 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
     return(
         <main ref={feedRef} className="feed">
             <div className="card justify-center text-center" style={{backgroundImage: "url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')"}} data-color-start="#111827" data-color-end="#374151">
+                <div className="card-content">
+                    {/* Adjusted text size for "Bring Yuh Owna Tings" to fit on one line */}
+                    <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1>
+                    <p className="text-lg text-gray-200 mt-2">Reusable Utensil Sets for Everyday Use</p>
+                </div>
+                {/* Adjusted arrow position and made it clickable to scroll */}
+                <button
+                    className="scroll-arrow absolute bottom-24 left-1/2 transform -translate-x-1/2 text-white"
+                    onClick={() => {
+                        if (feedRef.current) {
+                            // Scroll past the current card to reveal the first product card
+                            feedRef.current.scrollTo({
+                                top: feedRef.current.clientHeight,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }}
+                >
+                    <ArrowDownIcon />
+                </button>
+            </div>
+            {sortedProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                    <p className="text-lg font-semibold">No products available.</p>
+                    <p className="text-sm">Please check your Firebase products collection or admin settings.</p>
+                </div>
+            ) : (
+                sortedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
+                ))
+            )}
+        </main>
+    );
+};
+const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack, inventory }) => { // Added inventory prop
+    const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+
+    // Updated updateCartQuantity to respect available stock
+    const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
+        const productInventory = inventory[id];
+        const availableStock = productInventory && Array.isArray(productInventory.batches) 
+            ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+            : 0;
+        
+        let quantityToSet = newQuantity;
+        if (newQuantity < 1) {
+            quantityToSet = 1; // Minimum quantity is 1 unless removed
+        }
+        if (newQuantity > availableStock) {
+            alert(`Only ${availableStock} of this item are available. Quantity capped to ${availableStock}.`);
+            quantityToSet = availableStock;
+        }
+
+        updateCartQuantity(id, quantityToSet);
+    };
+
+    return (
+        <div className="view active bg-gray-100">
+            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header>
+            <main className="flex-grow overflow-y-auto p-4 space-y-4">
+                {Object.keys(cart).length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
+                        <CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p>
+                    </div>
+                ) : (
+                    Object.values(cart).map(item => (
+                        <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow">
+                            <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/>
+                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div>
+                            <input
+                                type="number"
+                                value={item.quantity || 0} // Ensure value is a number, default to 0
+                                onChange={(e) => handleUpdateCartQuantityWithStock(item.id, parseInt(e.target.value))}
+                                className="w-12 text-center border rounded-md mx-2"
+                                min="1"
+                                max={inventory[item.id]?.batches?.reduce((sum, batch) => sum + (batch.unengraved || 0), 0) || 0} // Set max based on available inventory from batches
+                            />
+                            <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button>
+                        </div>
+                    ))
+                )}
+            </main>
+            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
+        </div>
+    );
+};
+const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }) => {
+    const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
+    const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
+    const [paymentMethod, setPaymentMethod] = useState('cod');
+    const [pickupDate, setPickupDate] = useState('');
+    const [pickupTime, setPickupTime] = useState('');
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponMessage, setCouponMessage] = useState(''); // New state for coupon message
+
+    useEffect(() => {
+        if (fulfillmentMethod !== 'pickup') {
+            setPaymentMethod('bank_transfer');
+        } else {
+            setPaymentMethod('cod');
+        }
+    }, [fulfillmentMethod]);
+
+    const fulfillmentCost = useMemo(() => {
+        if (fulfillmentMethod === 'pickup') return 0;
+        if (fulfillmentMethod === 'bearer') return DELIVERY_OPTIONS[bearerLocation];
+        if (fulfillmentMethod === 'knutsford') return KNUTSFORD_FEE;
+        return 0;
+    }, [fulfillmentMethod, bearerLocation]);
+    
+    const discount = useMemo(() => {
+        if (!appliedCoupon) return 0;
+        let calculatedDiscount = 0;
+        const cartItemsArray = Object.values(cart);
+
+        if (appliedCoupon.appliesTo === 'all') {
+            if (appliedCoupon.type === 'percentage') {
+                calculatedDiscount = subtotal * (appliedCoupon.value / 100);
+            } else if (appliedCoupon.type === 'fixed') {
+                calculatedDiscount = appliedCoupon.value;
+            }
+        } else if (Array.isArray(appliedCoupon.appliesTo) && appliedCoupon.appliesTo.length > 0) {
+            const eligibleItemsTotal = cartItemsArray.reduce((sum, item) => {
+                if (appliedCoupon.appliesTo.includes(item.id)) {
+                    return sum + (item.price * item.quantity);
+                }
+                return sum;
+            }, 0);
+
+            if (appliedCoupon.type === 'percentage') {
+                calculatedDiscount = eligibleItemsTotal * (appliedCoupon.value / 100);
+            } else if (appliedCoupon.type === 'fixed') {
+                // For fixed amount on specific products, apply per eligible item if not exceeding item price
+                // Or apply to the total of eligibleItemsTotal, capped by eligibleItemsTotal
+                calculatedDiscount = Math.min(appliedCoupon.value, eligibleItemsTotal);
+            }
+        }
+        return calculatedDiscount;
+    }, [appliedCoupon, subtotal, cart]);
+
+    const total = subtotal + fulfillmentCost - discount;
+    
+    const handleApplyCoupon = () => {
+        const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
+        setAppliedCoupon(null); // Reset applied coupon first
+        setCouponMessage(''); // Clear previous message
+
+        if(!coupon) {
+            showToast('Invalid or inactive coupon.', 'error');
+            setCouponMessage('Invalid or inactive coupon.');
+            return;
+        }
+
+        // Check if current date is within coupon's start and end dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to start of day
+        
+        const couponStartDate = coupon.startDate ? new Date(coupon.startDate) : null;
+        if (couponStartDate) couponStartDate.setHours(0, 0, 0, 0);
+
+        const couponEndDate = coupon.endDate ? new Date(coupon.endDate) : null;
+        if (couponEndDate) couponEndDate.setHours(23, 59, 59, 999); // Normalize to end of day
+
+
+        if (couponStartDate && today < couponStartDate) {
+            showToast('Coupon is not yet active.', 'error');
+            setCouponMessage(`Coupon will be active from ${couponStartDate.toLocaleDateString()}.`);
+            return;
+        }
+        if (couponEndDate && today > couponEndDate) {
+            showToast('Coupon has expired.', 'error');
+            setCouponMessage(`Coupon expired on ${couponEndDate.toLocaleDateString()}.`);
+            return;
+        }
+
+
+        // Check if any product in the cart is eligible for this coupon
+        const isCouponApplicableToCart = Object.values(cart).some(item => {
+            return coupon.appliesTo === 'all' || (Array.isArray(coupon.appliesTo) && coupon.appliesTo.includes(item.id));
+        });
+
+        if (!isCouponApplicableToCart) {
+            showToast('Coupon not applicable to items in your cart.', 'error');
+            setCouponMessage('Coupon not applicable to items in your cart.');
+            return;
+        }
+
+        setAppliedCoupon(coupon);
+        showToast('Coupon applied!', 'success');
+        // This message will be re-calculated in the useEffect below after state update
+    };
+
+    // Recalculate coupon message when discount changes (after appliedCoupon or cart changes)
+    useEffect(() => {
+        if (appliedCoupon) {
+            // Re-evaluate discount to ensure it's accurate after state updates
+            const currentDiscount = (() => {
+                if (!appliedCoupon) return 0;
+                let calculatedDiscount = 0;
+                const cartItemsArray = Object.values(cart);
+
+                if (appliedCoupon.appliesTo === 'all') {
+                    if (appliedCoupon.type === 'percentage') {
+                        calculatedDiscount = subtotal * (appliedCoupon.value / 100);
+                    } else if (appliedCoupon.type === 'fixed') {
+                        calculatedDiscount = appliedCoup```javascript
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Disclosure } from '@headlessui/react'; // Import Disclosure for expandable sections
+
+import { initializeApp } from "firebase/app";
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
+    signOut,
+    signInAnonymously 
+} from "firebase/auth";
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    addDoc, 
+    doc,
+    deleteDoc,
+    writeBatch,
+    setDoc
+} from "firebase/firestore";
+
+
+// --- Firebase Configuration ---
+const firebaseConfig = {
+   apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Replace with your actual Firebase API Key
+   authDomain: "byot-40fe2.firebaseapp.com",
+   projectId: "byot-40fe2",
+   storageBucket: "byot-40fe2.appspot.com",
+   messagingSenderId: "643015540811",
+   appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
+   measurementId: "G-S8QD6WWN90"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+
+// --- SVGs as React Components ---
+const HomeIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+const CartIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
+const InfoIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+const UserIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+const ArrowDownIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
+const BackArrowIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+const TrashIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0  1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const TicketIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
+const CheckCircleIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const XCircleIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+const WhatsAppIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.17.28-.3.4-.28.2-.45.28-.35.13-.53.13c-.18 0-.38-.04-.58-.13s-.43-.2-.65-.35-.45-.3-.68-.5-.45-.4-.68-.63c-.23-.23-.45-.48-.65-.75s-.38-.5-.53-.75c-.15-.25-.23-.5-.23-.78 0-.28.08-.53.23-.75s.33-.4.53-.53.4-.2.6-.23c.2-.03.4-.04.6-.04.2 0 .4.03.58.08s.35.13.5.22.28.2.4.33.2.25.25.4c.05.14.08.3.08.48s-.03.33-.08.45-.13.25-.23.38c-.1.13-.23.25-.38.38s-.3.25-.45.35-.3.18-.45.25c-.15.08-.3.12-.43.12-.13 0-.25-.02-.38-.08s-.25-.12-.35-.22-.2-.2-.28-.3c-.08-.1-.12-.23-.12-.38 0-.15.04-.28.12-.4.08-.12.2-.23.35-.32.15-.1.3-.15.48-.15.18 0 .35.04.5.13.15.08.3.2.43.32zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path></svg>;
+const ClipboardListIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><line x1="12" y1="11" x2="12" y2="16"></line><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"></line></svg>;
+const PackageIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10V6a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 6v4"></path><path d="M21 10v4a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 14v-4"></path><path d="m3.29 7 8.71 5 8.71-5"></path><path d="M12 22V12"></path></svg>;
+const TagIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2H2v10l9.29 9.29a2.41 2.41 0 0 0 3.42 0L22 13.42a2.41 2.41 0 0 0 0-3.42z"></path><circle cx="7" cy="7" r="1"></circle></svg>;
+const BarChartIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
+const EditIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
+const CopyIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+const ChevronUpIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
+const ChevronDownIcon = () => <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+
+
+const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
+const KNUTSFORD_FEE = 500;
+const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "Gutters", "Harbour View", "New Kingston", "Luana", "Lucea", "Mandeville", "May Pen", "Montego Bay (Pier 1)", "Montego Bay Airport", "Negril", "Ocho Rios", "Port Antonio", "Port Maria", "Portmore", "Savanna-La-Mar", "Washington Boulevard"];
+const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
+
+const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
+
+// --- View Components (Customer Facing) ---
+const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => {
+    const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
+    const feedRef = useRef(null);
+    useEffect(() => {
+        const feedEl = feedRef.current;
+        if (!feedEl) return;
+        let scrollTimeout;
+        const handleScroll = () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const feedHeight = feedEl.clientHeight;
+                const currentIndex = Math.round(feedEl.scrollTop / feedHeight);
+                const currentCard = feedEl.children[currentIndex];
+                if(currentCard){
+                    const { colorStart, colorEnd } = currentCard.dataset;
+                    if (colorStart && colorEnd) {
+                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`;
+                    }
+                }
+            }, 50);
+        };
+        feedEl.addEventListener('scroll', handleScroll);
+        return () => feedEl.removeEventListener('scroll', handleScroll);
+    }, [products, setBgGradient]);
+
+    const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => { // Added inventory prop
+        const [quantity, setQuantity] = useState(1);
+        // Calculate available stock by summing unengraved stock from all batches
+        const availableStock = useMemo(() => {
+            const productInventory = inventory[product.id];
+            if (!productInventory || !Array.isArray(productInventory.batches)) return 0;
+            return productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
+        }, [product.id, inventory]);
+
+        // Enforce quantity limits on change directly
+        const handleQuantityInputChange = (e) => {
+            let newQuantity = parseInt(e.target.value) || 0;
+            newQuantity = Math.max(1, Math.min(newQuantity, availableStock));
+            setQuantity(newQuantity);
+        };
+
+        const handleQuantityStepperChange = (change) => {
+            setQuantity(prevQuantity => {
+                const newQuantity = prevQuantity + change;
+                return Math.max(1, Math.min(newQuantity, availableStock));
+            });
+        };
+
+        const handleAddToCartClick = () => {
+            if (quantity === 0) {
+                alert("Please select a quantity greater than 0.");
+                return;
+            }
+            if (quantity > availableStock) {
+                // This case should ideally be prevented by min/max and stepper, but as a fallback
+                alert(`Only ${availableStock} of ${product.name} are available. Adding max available to cart.`);
+                onAddToCart(product, availableStock);
+            } else {
+                onAddToCart(product, quantity);
+            }
+        };
+
+        const handleBuyNowClick = () => {
+            if (quantity === 0) {
+                alert("Please select a quantity greater than 0.");
+                return;
+            }
+            if (quantity > availableStock) {
+                // This case should ideally be prevented by min/max and stepper, but as a fallback
+                alert(`Only ${availableStock} of ${product.name} are available. Proceeding with max available.`);
+                onBuyNow(product, availableStock);
+            } else {
+                onBuyNow(product, quantity);
+            }
+        };
+
+        return (
+            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}>
+                <div className="card-content">
+                    <h2 className="text-3xl font-bold">{product.name}</h2>
+                    <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
+                    {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
+                        <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
+                    )}
+                    {availableStock === 0 && ( // Display out of stock message
+                        <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
+                    )}
+                    <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit">
+                        <button onClick={() => handleQuantityStepperChange(-1)} className="p-2 text-white" disabled={quantity <= 1 || availableStock === 0}>-</button>
+                        <input
+                            type="number"
+                            className="w-12 bg-transparent text-white text-center font-bold"
+                            value={quantity}
+                            onChange={handleQuantityInputChange} // Allow direct input but validate
+                            min="1"
+                            max={availableStock}
+                            disabled={availableStock === 0} // Disable input if out of stock
+                        />
+                        <button onClick={() => handleQuantityStepperChange(1)} className="p-2 text-white" disabled={quantity >= availableStock}>+</button>
+                    </div>
+                    <div className="flex items-center space-x-2 mt-4">
+                        <button
+                            onClick={handleAddToCartClick}
+                            className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg"
+                            disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
+                        >
+                            Add to Cart
+                        </button>
+                        <button
+                            onClick={handleBuyNowClick}
+                            className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}
+                            disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
+                        >
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+    return(
+        <main ref={feedRef} className="feed">
+            <div className="card justify-center text-center" style={{backgroundImage: "url('[https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png](https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png)')"}} data-color-start="#111827" data-color-end="#374151">
                 <div className="card-content">
                     {/* Adjusted text size for "Bring Yuh Owna Tings" to fit on one line */}
                     <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1>
@@ -579,8 +980,8 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                                 value={couponCode}
                                 onChange={(e) => setCouponCode(e.target.value)}
                                 placeholder="Enter coupon code"
-                                className="w-full p-3 border rounded-lg"
                                 disabled={!!appliedCoupon}
+                                className="w-full p-3 border rounded-lg"
                             />
                             <button 
                                 type="button" 
@@ -667,15 +1068,15 @@ const ConfirmationView = ({ order, onContinue }) => {
                 {paymentMethod === 'credit_card' && <p>Your payment is being processed. Thank You!</p>}
                 {/* Only show WhatsApp button if bank transfer is selected */}
                 {paymentMethod === 'bank_transfer' && (
-                    <a href="https://api.whatsapp.com/send?phone=18764365244" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
+                    <a href="[https://api.whatsapp.com/send?phone=18764365244](https://api.whatsapp.com/send?phone=18764365244)" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg mt-4"><WhatsAppIcon /> <span className="ml-2">Upload Receipt to WhatsApp</span></a>
                 )}
             </div>
             <button onClick={onContinue} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Continue Shopping</button>
         </div>
     );
 };
-const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
-const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
+const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "[https://secure.ezeepayments.com/?CQY6un2](https://secure.ezeepayments.com/?CQY6un2)" : "[https://secure.ezeepayments.com/?kgRMTcZ](https://secure.ezeepayments.com/?kgRMTcZ)"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
+const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="[https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg](https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg)" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
@@ -1677,474 +2078,4 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                 const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
                 const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
                 data.monthlySales[key].income += order.total;
-                data.monthlySales[key].profit += order.total - costOfGoods;
-            }
-        });
-        
-        return {
-            filteredOrders: filtered,
-            reportData: {
-                ...data,
-                monthlyChartData: [
-                    { name: 'Last Month', Income: data.monthlySales['Last Month'].income, Profit: data.monthlySales['Last Month'].profit },
-                    { name: 'This Month', Income: data.monthlySales['This Month'].income, Profit: data.monthlySales['This Month'].profit },
-                ],
-                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
-            }
-        };
-    }, [orders, costBatches, dateRange]);
-
-    const handleExport = () => {
-        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit"];
-        
-        const rows = filteredOrders.map(order => {
-            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
-            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
-            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-            const profit = order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed' ? order.total - costOfGoods : 0;
-            
-            const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
-
-            return [
-                order.id,
-                new Date(order.createdAt).toLocaleDateString(),
-                order.customerInfo.name,
-                `"${itemsString}"`, // Quote to handle commas in item names
-                order.subtotal || 0,
-                order.discount || 0,
-                order.fulfillmentCost || 0,
-                order.total,
-                profit.toFixed(2)
-            ].join(',');
-        });
-
-        const csvString = [headers.join(','), ...rows].join('\\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `byot_report_${dateRange.from}_to_${dateRange.to}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-    
-    const BatchForm = ({ batch, onSave, onCancel }) => {
-        return (
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-6">{batch.isNew ? "Create New Cost Batch" : "Edit Cost Batch"}</h2>
-                <form onSubmit={onSave} className="space-y-4">
-                     <div>
-                        <label className="font-semibold block mb-1">Batch Name</label>
-                        <input name="name" defaultValue={batch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
-                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="font-semibold block mb-1">Shipping Cost (Alibaba)</label>
-                            <input name="alibabaShipping" type="number" step="0.01" defaultValue={batch.alibabaShipping} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                             <label className="font-semibold block mb-1">Shipping Cost (Mailpac)</label>
-                            <input name="mailpacShipping" type="number" step="0.01" defaultValue={batch.mailpacShipping} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                            <label className="font-semibold block mb-1">Product Cost (Alibaba)</label>
-                            <input name="productCost" type="number" step="0.01" defaultValue={batch.productCost} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                             <label className="font-semibold block mb-1">Total # of Sets</label>
-                            <input name="numSets" type="number" defaultValue={batch.numSets} className="w-full p-2 border rounded" required />
-                         </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
-                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
-                    </div>
-                </form>
-                 <p className="text-xs text-gray-500 mt-4">Note: After saving, please update your stock levels in the 'Inventory' tab to reflect the new batch.</p>
-            </div>
-        );
-    };
-
-    if (editingBatch) {
-        return <BatchForm batch={editingBatch} onSave={editingBatch.isNew ? handleCreateNewBatch : handleSaveBatch} onCancel={() => setEditingBatch(null)} />
-    }
-    
-
-    return ( 
-        <div> 
-            <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2> 
-            
-            {/* Reporting Section */}
-            <div className="p-4 bg-white rounded-lg shadow mb-6">
-                <h3 className="font-bold mb-4">Export Report</h3>
-                <div className="flex items-end gap-4 flex-wrap">
-                    <div>
-                        <label className="text-sm font-medium">From</label>
-                        <input type="date" value={dateRange.from} onChange={e => setDateRange(prev => ({...prev, from: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium">To</label>
-                        <input type="date" value={dateRange.to} onChange={e => setDateRange(prev => ({...prev, to: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
-                    </div>
-                    <button onClick={handleExport} disabled={!dateRange.from || !dateRange.to} className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-gray-400">Export CSV</button>
-                </div>
-            </div>
-            
-             {/* --- Key Metrics --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6"> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="text-gray-500">Total Income</h3> 
-                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString()}</p>
-                </div> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="text-gray-500">Total Profit</h3> 
-                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString()}</p>
-                </div> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="text-gray-500">Sales (Period)</h3> 
-                    <p className="text-3xl font-bold">{reportData.sales}</p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                    <h3 className="text-gray-500">Returned Value</h3>
-                    <p className="text-3xl font-bold text-orange-500">J${reportData.returnedValue.toLocaleString()}</p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                    <h3 className="text-gray-500">Refunded Value</h3>
-                    <p className="text-3xl font-bold text-red-500">J${reportData.refundedValue.toLocaleString()}</p>
-                </div>
-            </div> 
-
-            {/* --- Charts & Batches --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="font-bold mb-4">Monthly Profitability</h3> 
-                    <ResponsiveContainer width="100%" height={200}> 
-                        <BarChart data={reportData.monthlyChartData} > 
-                            <CartesianGrid strokeDasharray="3 3" /> 
-                            <XAxis dataKey="name" /> 
-                            <YAxis /> 
-                            <Tooltip formatter={(value) => `J$${value.toLocaleString()}`} /> 
-                            <Legend /> 
-                            <Bar dataKey="Profit" fill="#8884d8" /> 
-                            <Bar dataKey="Income" fill="#82ca9d" /> 
-                        </BarChart> 
-                    </ResponsiveContainer> 
-                </div> 
-                <div className="p-4 bg-white rounded-lg shadow"> 
-                    <h3 className="font-bold mb-4">Most Popular Colors (Period)</h3> 
-                    <ResponsiveContainer width="100%" height={200}> 
-                        <BarChart data={reportData.popularColorsChartData} layout="vertical"> 
-                            <CartesianGrid strokeDasharray="3 3" /> 
-                            <XAxis type="number" /> 
-                            <YAxis type="category" dataKey="name" width={80} /> 
-                            <Tooltip /> 
-                            <Bar dataKey="count" fill="#3b82f6" name="Units Sold" /> 
-                        </BarChart> 
-                    </ResponsiveContainer> 
-                </div> 
-            </div>
-
-            <div className="p-4 bg-white rounded-lg shadow">
-                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold">Cost Batches</h3>
-                     <button onClick={() => setEditingBatch({ name: '', productCost: 0, alibabaShipping: 0, mailpacShipping: 0, numSets: 0, isNew: true })} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
-                 </div>
-                 <div className="space-y-2">
-                    {costBatches.slice().reverse().map(batch => (
-                        <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{batch.name}</p>
-                                    <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
-                                    <p className="text-xs text-gray-500">
-                                        {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     <button onClick={() => setEditingBatch(batch)} className="p-1 text-blue-600 hover:text-blue-800"><EditIcon/></button>
-                                     <div className="flex items-center">
-                                        <span className={`text-xs mr-2 ${batch.isActive ? 'text-green-600 font-bold' : 'text-gray-500'}`}>{batch.isActive ? 'Active' : 'Inactive'}</span>
-                                        <button onClick={() => handleToggleBatchStatus(batch.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full ${batch.isActive ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${batch.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-            </div>
-        </div> 
-    ) 
-}
-
-// --- Main App Component ---
-export default function App() {
-    const [view, setView] = useState('shop');
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // Retained for general auth status feedback
-    const [isAdminMode, setIsAdminMode] = useState(false); // New state to control admin panel access
-    const [products, setProducts] = useState([]);
-    const [inventory, setInventory] = useState({});
-    const [orders, setOrders] = useState([]);
-    const [coupons, setCoupons] = useState([]);
-    const [costBatches, setCostBatches] = useState([]);
-    const [cart, setCart] = useState({});
-    const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
-    const [toastMessage, setToastMessage] = useState('');
-    const [toastType, setToastType] = useState('success');
-    const [orderData, setOrderData] = useState(null);
-    
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, user => {
-            setIsLoggedIn(!!user); // Set general logged-in status
-            if (!user) {
-                // If no user is authenticated (not even anonymous), sign in anonymously
-                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed", error));
-            }
-            // IMPORTANT: isAdminMode is NOT set here based on auth state directly,
-            // it's only set via successful admin login
-            // If the user logs out, isAdminMode will be explicitly set to false by handleLogout.
-        });
-
-        const unsubscribes = [
-            onSnapshot(collection(db, "products"), (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setProducts(data);
-                console.log("Products loaded:", data);
-            }),
-            onSnapshot(collection(db, "inventory"), (snapshot) => {
-                const invData = {};
-                snapshot.forEach(doc => {
-                    invData[doc.id] = doc.data();
-                });
-                setInventory(invData);
-                console.log("Inventory loaded:", invData);
-            }),
-            onSnapshot(collection(db, "orders"), (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setOrders(data);
-                console.log("Orders loaded:", data);
-            }),
-            onSnapshot(collection(db, "coupons"), (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setCoupons(data);
-                console.log("Coupons loaded:", data);
-            }),
-            onSnapshot(collection(db, "costBatches"), (snapshot) => {
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setCostBatches(data);
-                console.log("Cost Batches loaded:", data);
-            })
-        ];
-
-        return () => {
-            unsubscribeAuth(); // Unsubscribe from auth listener
-            unsubscribes.forEach(unsub => unsub()); // Unsubscribe from Firestore listeners
-        };
-    }, []);
-
-    useEffect(() => { 
-        if (!isAdminMode && view !== 'shop') { // Only set gradient for public non-shop views
-            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)'); 
-        } else if (isAdminMode) { // Admin mode has its own background style
-            setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); 
-        } else if (view === 'shop') { // Default shop background
-            setBgGradient('linear-gradient(to bottom, #111827, #374151)');
-        }
-    }, [view, isAdminMode]); // Depend on isAdminMode to change background for admin section
-    
-    const showToast = (message, type = 'success') => {
-        setToastMessage(message);
-        setToastType(type);
-        setTimeout(() => setToastMessage(''), 3000);
-    };
-
-    const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
-    const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
-    
-    const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); showToast(`${quantity} x ${product.name} added!`); };
-    const handleBuyNow = (product, quantity) => { setCart({ [product.id]: { ...product, quantity } }); setView('checkout'); };
-    const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p[id], quantity: q})); };
-    const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
-    
-    const placeOrder = async (order) => {
-        const activeCostBatch = costBatches.find(b => b.isActive);
-        const newOrder = {
-            ...order, 
-            costBatchId: activeCostBatch ? activeCostBatch.id : null,
-            createdAt: new Date().toISOString()
-        }; 
-        
-        try {
-            const docRef = await addDoc(collection(db, "orders"), newOrder); 
-            setOrderData({ ...newOrder, id: docRef.id }); 
-
-            // Deduct from inventory (simplified: deducts from aggregated unengraved stock)
-            const batch = writeBatch(db);
-            for (const item of Object.values(order.items)) { // Iterate over items in the placed order
-                if (item.id && item.quantity > 0) {
-                    const currentProductInv = inventory[item.id]; // Access inventory from state directly
-                    if (currentProductInv && Array.isArray(currentProductInv.batches)) {
-                        let remainingToDeduct = item.quantity;
-                        // Sort batches by dateAdded to ensure FIFO-like deduction for display
-                        const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
-
-                        for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
-                            let batchEntry = updatedBatches[i]; // Use a different variable name to avoid conflict with writeBatch
-                            const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
-                            batchEntry.unengraved -= deductibleFromBatch;
-                            remainingToDeduct -= deductibleFromBatch;
-                        }
-                        
-                        // Filter out batches that are now empty, or store 0 explicitly
-                        const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-
-                        const productDocRef = doc(db, 'inventory', item.id);
-                        batch.set(productDocRef, { batches: newBatches }, { merge: true }); // Update with new batches array
-                    }
-                }
-            }
-            await batch.commit();
-            showToast("Order placed and inventory updated!", "success");
-
-            if (order.paymentMethod === 'credit_card') { 
-                setView('payment'); 
-            } else { 
-                setView('confirmation'); 
-            } 
-            setCart({});
-        } catch (error) {
-            console.error("Error placing order: ", error);
-            showToast('Failed to place order. ' + error.message, 'error'); // Display Firebase error message
-        }
-    };
-    
-    const handleContinueShopping = () => { setOrderData(null); setView('shop'); };
-    const handleLogin = async (email, password) => {
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            setIsAdminMode(true); // Successfully logged in as admin
-            showToast("Logged in as admin!");
-        } catch (error) {
-            alert('Login Failed! ' + error.message);
-        }
-    }
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            setIsAdminMode(false); // Exit admin mode on logout
-            setView('shop'); // Redirect to shop view
-            showToast("Logged out successfully.");
-        } catch (error) {
-            console.error("Error signing out: ", error);
-            showToast("Logout failed.", "error");
-        }
-    }
-    
-     const handleUpdateFirestore = async (collectionName, docId, data) => {
-        try {
-            // Use setDoc with merge: true to handle both creation and update
-            await setDoc(doc(db, collectionName, docId), data, { merge: true });
-            showToast(`${collectionName.slice(0,-1)} updated!`);
-        } 
-        catch (error) {
-            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error updating ${collectionName}: `, error);
-        }
-    };
-    
-    const handleAddFirestore = async (collectionName, data) => {
-        try {
-            await addDoc(collection(db, collectionName), data);
-            showToast(`${collectionName.slice(0,-1)} added!`);
-        } catch (error) {
-            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error adding ${collectionName}: `, error);
-        }
-    };
-
-    const handleDeleteFirestore = async (collectionName, docId) => {
-        try {
-            await deleteDoc(doc(db, collectionName, docId));
-            showToast(`${collectionName.slice(0,-1)} deleted!`);
-        } catch(error) {
-            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
-            console.error(`Error deleting ${collectionName}: `, error);
-        }
-    };
-
-    const handleBatchUpdate = async (updates) => {
-        const batch = writeBatch(db);
-        updates.forEach(({collectionName, docId, data}) => {
-            const docRef = doc(db, collectionName, docId);
-            batch.update(docRef, data);
-        });
-        try {
-            await batch.commit();
-            showToast('Batch update successful!');
-        } catch (error) {
-            showToast('Batch update failed.', 'error');
-            console.error("Batch update failed: ", error);
-        }
-    };
-
-    const renderContent = () => {
-        if (isAdminMode) { // Render AdminDashboard ONLY if isAdminMode is true
-            return <AdminDashboard 
-                onLogout={handleLogout} 
-                orders={orders} 
-                products={products} 
-                inventory={inventory} 
-                coupons={coupons} 
-                costBatches={costBatches} 
-                showToast={showToast}
-                onUpdate={handleUpdateFirestore}
-                onAdd={handleAddFirestore}
-                onDelete={handleDeleteFirestore}
-                onBatchUpdate={handleBatchUpdate}
-            />;
-        }
-        // Otherwise, render public views
-        switch (view) {
-            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
-            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; 
-            case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} coupons={coupons} showToast={showToast} />;
-            case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
-            case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
-            case 'about': return <AboutView onBack={() => setView('shop')} />;
-            case 'admin': return <AdminLoginView onLogin={handleLogin} />;
-            default: return null;
-        }
-    };
-
-    return (
-        <div style={{ background: bgGradient }} className="flex items-center justify-center p-0 md:p-4 h-screen">
-             <GlobalStyles />
-             {/* Toast Notification */}
-             <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
-                {toastMessage}
-            </div>
-
-             {/* Main Content Render */}
-             {isAdminMode ? ( // Render Admin content if in admin mode
-                 <div className="w-full h-full bg-gray-200">
-                    {renderContent()}
-                 </div>
-             ) : ( // Else render public facing content
-                <div className="app-shell">
-                    {renderContent()}
-                    <nav className="bg-white/80 backdrop-blur-lg border-t border-gray-200 flex-shrink-0">
-                        <div className="flex justify-around h-20">
-                             <button onClick={() => setView('shop')} className={`flex flex-col items-center justify-center w-full ${view === 'shop' ? 'text-blue-600' : 'text-gray-500'}`}><HomeIcon /><span className="text-xs font-medium">Shop</span></button>
-                            <button onClick={() => setView('cart')} className={`flex flex-col items-center justify-center w-full relative ${view === 'cart' ? 'text-blue-600' : 'text-gray-500'}`}><CartIcon /><span className="text-xs font-medium">Cart</span>{cartCount > 0 && <span className="absolute top-4 right-8 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>}</button>
-                            <button onClick={() => setView('about')} className={`flex flex-col items-center justify-center w-full ${view === 'about' ? 'text-blue-600' : 'text-gray-500'}`}><InfoIcon /><span className="text-xs font-medium">About</span></button>
-                            <button onClick={() => setView('admin')} className={`flex flex-col items-center justify-center w-full ${view === 'admin' ? 'text-blue-600' : 'text-gray-500'}`}><UserIcon /><span className="text-xs font-medium">Account</span></button>
-                        </div>
-                    </nav>
-                </div>
-             )}
-        </div>
-    );
-}
+                data.month
