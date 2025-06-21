@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { 
     getAuth, 
     onAuthStateChanged, 
     signInWithEmailAndPassword, 
     signOut 
-} from "firebase/auth";
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { 
     getFirestore, 
     collection, 
@@ -19,7 +19,7 @@ import {
     query,
     where,
     getDocs
-} from "firebase/firestore";
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 
 // --- Firebase Configuration ---
@@ -1491,17 +1491,39 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
 export default function App() {
     const [view, setView] = useState('shop');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [products, setProducts] = useState(PRODUCTS_DATA);
-    const [inventory, setInventory] = useState(DUMMY_INVENTORY);
-    const [orders, setOrders] = useState(DUMMY_ORDERS);
-    const [coupons, setCoupons] = useState(DUMMY_COUPONS);
-    const [costBatches, setCostBatches] = useState(DUMMY_COST_BATCHES);
+    const [products, setProducts] = useState([]);
+    const [inventory, setInventory] = useState({});
+    const [orders, setOrders] = useState([]);
+    const [coupons, setCoupons] = useState([]);
+    const [costBatches, setCostBatches] = useState([]);
     const [cart, setCart] = useState({});
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
     
+    useEffect(() => {
+        onAuthStateChanged(auth, user => {
+            setIsLoggedIn(!!user);
+        });
+
+        const unsubscribes = [
+            onSnapshot(collection(db, "products"), (snapshot) => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
+            onSnapshot(collection(db, "inventory"), (snapshot) => {
+                const invData = {};
+                snapshot.forEach(doc => {
+                    invData[doc.id] = doc.data();
+                });
+                setInventory(invData);
+            }),
+            onSnapshot(collection(db, "orders"), (snapshot) => setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
+            onSnapshot(collection(db, "coupons"), (snapshot) => setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
+            onSnapshot(collection(db, "costBatches"), (snapshot) => setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
+        ];
+
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, []);
+
     useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
     
     const showToast = (message, type = 'success') => {
@@ -1518,30 +1540,45 @@ export default function App() {
     const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
     
-    const placeOrder = (order) => {
+    const placeOrder = async (order) => {
         const activeCostBatch = costBatches.find(b => b.isActive);
         const newOrder = {
             ...order, 
-            id: `BYOT-${Date.now()}`,
             costBatchId: activeCostBatch ? activeCostBatch.id : null,
-            paymentStatus: order.paymentStatus || 'Pending', 
-            fulfillmentStatus: order.fulfillmentStatus || 'Pending',
             createdAt: new Date().toISOString()
         }; 
-        setOrderData(newOrder); 
-        setOrders(prev => [newOrder, ...prev]); 
-
-        if (order.paymentMethod === 'credit_card') { 
-            setView('payment'); 
-        } else { 
-            setView('confirmation'); 
-        } 
-        setCart({}); 
+        
+        try {
+            const docRef = await addDoc(collection(db, "orders"), newOrder);
+            setOrderData({ ...newOrder, id: docRef.id });
+             if (order.paymentMethod === 'credit_card') { 
+                setView('payment'); 
+            } else { 
+                setView('confirmation'); 
+            } 
+            setCart({});
+        } catch (error) {
+            console.error("Error placing order: ", error);
+            showToast('Failed to place order.', 'error');
+        }
     };
     
     const handleContinueShopping = () => { setOrderData(null); setView('shop'); };
-    const handleLogin = (email, password) => { if (email === 'foundation@esirom.com' && password === 'M@$t3rK3Y') { setIsLoggedIn(true); } else { alert('Login Failed!'); } }
-    const handleLogout = () => { setIsLoggedIn(false); setView('shop'); }
+    const handleLogin = async (email, password) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            alert('Login Failed! ' + error.message);
+        }
+    }
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setView('shop');
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    }
     
     const renderContent = () => {
         if (isLoggedIn) {
