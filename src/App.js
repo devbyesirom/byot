@@ -1072,9 +1072,14 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
         e.preventDefault(); 
         const formData = new FormData(e.target); 
         
-        let displayOrder = isAddingNew 
-            ? products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1 
-            : editingProduct.displayOrder;
+        let displayOrder = Number(formData.get('displayOrder')); // Get displayOrder from form
+        
+        if (isAddingNew && isNaN(displayOrder)) { // If new product and no displayOrder provided
+            displayOrder = products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1; 
+        } else if (!isAddingNew && isNaN(displayOrder)) { // If editing existing product and displayOrder is cleared
+             displayOrder = editingProduct.displayOrder; // Revert to old value if cleared/invalidated
+        }
+
 
         const productData = { 
             name: formData.get('name'), 
@@ -1096,38 +1101,83 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
         setIsAddingNew(false); 
     };
 
-    const handleMove = async (productId, direction) => {
-        const sortedProducts = [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-        const currentIndex = sortedProducts.findIndex(p => p.id === productId);
-        
-        let updates = [];
+    // Removed handleMove as we're now assigning position directly
 
-        if (direction === 'up' && currentIndex > 0) {
-            const otherProduct = sortedProducts[currentIndex - 1];
-            updates = [
-                { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
-                { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
-            ];
-        } else if (direction === 'down' && currentIndex < sortedProducts.length - 1) {
-            const otherProduct = sortedProducts[currentIndex + 1];
-             updates = [
-                { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
-                { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
-            ];
-        }
-        if (updates.length > 0) {
-           await onBatchUpdate(updates);
-        }
-    };
-    
     const sortedProducts = useMemo(() => {
         return [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     }, [products]);
 
 
-    const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
-    if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
-    return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {sortedProducts.map((p, index) => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <div className="flex items-center gap-2"> <div className="flex flex-col"> <button onClick={() => handleMove(p.id, 'up')} disabled={index === 0} className="disabled:opacity-20"><ChevronUpIcon /></button> <button onClick={() => handleMove(p.id, 'down')} disabled={index === sortedProducts.length - 1} className="disabled:opacity-20"><ChevronDownIcon /></button> </div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> </div> ))} </div> </div> ) }
+    const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:'', displayOrder: products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1} : null);
+    
+    if (formInitialData) { return ( 
+        <div> 
+            <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> 
+            <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> 
+                <div>
+                    <label className="font-semibold">Product Name</label>
+                    <input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1" required/>
+                </div> 
+                <div>
+                    <label className="font-semibold">Price</label>
+                    <input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1" required/>
+                </div> 
+                <div>
+                    <label className="font-semibold">Description</label>
+                    <textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea>
+                </div> 
+                <div>
+                    <label className="font-semibold">Image URL</label>
+                    <input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/>
+                </div> 
+                 <div>
+                    <label className="font-semibold">Display Order</label>
+                    <input name="displayOrder" type="number" defaultValue={formInitialData.displayOrder} className="w-full p-2 border rounded mt-1"/>
+                    <p className="text-xs text-gray-500 mt-1">Products are ordered from smallest to largest display order.</p>
+                </div> 
+                <div className="flex justify-end space-x-2">
+                    <button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                </div> 
+            </form> 
+        </div> 
+    ) }
+    return ( 
+        <div> 
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Product Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button>
+            </div> 
+            <div className="bg-white rounded-lg shadow overflow-hidden"> 
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {sortedProducts.map((p) => ( 
+                            <tr key={p.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{p.displayOrder || '-'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                                    <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name}/>
+                                    <p className="font-bold">{p.name}</p>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${p.price}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button>
+                                </td>
+                            </tr> 
+                        ))} 
+                    </tbody>
+                </table>
+            </div> 
+        </div> 
+    ) 
+}
 const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
