@@ -55,8 +55,8 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
-const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+// Removed unused ChevronUpIcon
+// Removed unused ChevronDownIcon
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -1770,7 +1770,7 @@ export default function App() {
         }; 
         
         try {
-            const docRef = await addDoc(collection(db, "orders"), newOrder); // Defined docRef here
+            const docRef = await addDoc(collection(db, "orders"), newOrder); // Declared docRef here
             setOrderData({ ...newOrder, id: docRef.id }); 
              if (order.paymentMethod === 'credit_card') { 
                 setView('payment'); 
@@ -1806,7 +1806,8 @@ export default function App() {
             // Use setDoc with merge: true to handle both creation and update
             await setDoc(doc(db, collectionName, docId), data, { merge: true });
             showToast(`${collectionName.slice(0,-1)} updated!`);
-        } catch (error) {
+        } <<<<<<< HEAD
+        catch (error) {
             showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
             console.error(`Error updating ${collectionName}: `, error);
         }
