@@ -1474,7 +1474,7 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
         };
         batchData.costPerSet = batchData.numSets > 0 ? (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets : 0;
         
-        await onBatchUpdate('costBatches', editingBatch.id, batchData);
+        await onUpdate('costBatches', editingBatch.id, batchData); // Corrected to onUpdate
         setEditingBatch(null);
     };
 
@@ -1502,7 +1502,7 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
             }));
             
         await onBatchUpdate(updates);
-        await onAddBatch('costBatches', newBatchData);
+        await onAdd('costBatches', newBatchData); // Corrected to onAdd
         
         setEditingBatch(null);
     };
