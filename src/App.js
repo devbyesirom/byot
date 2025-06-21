@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Disclosure } from '@headlessui/react'; // Import Disclosure for expandable sections
 
 import { initializeApp } from "firebase/app";
 import { 
@@ -56,7 +57,8 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -94,7 +96,12 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
 
     const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => { // Added inventory prop
         const [quantity, setQuantity] = useState(1);
-        const availableStock = inventory[product.id]?.unengravedStock || 0; // Assuming customer buys unengraved stock
+        // Calculate available stock by summing unengraved stock from all batches
+        const availableStock = useMemo(() => {
+            const productInventory = inventory[product.id];
+            if (!productInventory || !Array.isArray(productInventory.batches)) return 0;
+            return productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
+        }, [product.id, inventory]);
 
         // Enforce quantity limits on change directly
         const handleQuantityInputChange = (e) => {
@@ -224,8 +231,10 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
 
     // Updated updateCartQuantity to respect available stock
     const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
-        const productInInventory = inventory[id];
-        const availableStock = productInInventory ? productInInventory.unengravedStock : 0;
+        const productInventory = inventory[id];
+        const availableStock = productInventory && Array.isArray(productInventory.batches) 
+            ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+            : 0;
         
         let quantityToSet = newQuantity;
         if (newQuantity < 1) {
@@ -258,7 +267,7 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
                                 onChange={(e) => handleUpdateCartQuantityWithStock(item.id, parseInt(e.target.value))}
                                 className="w-12 text-center border rounded-md mx-2"
                                 min="1"
-                                max={inventory[item.id]?.unengravedStock || 0} // Set max based on available inventory
+                                max={inventory[item.id]?.batches?.reduce((sum, batch) => sum + (batch.unengraved || 0), 0) || 0} // Set max based on available inventory from batches
                             />
                             <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button>
                         </div>
@@ -724,9 +733,14 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         
         for (const item of manualOrderItems) {
             if(!item.productId) continue;
-            const stock = inventory.current[item.productId]?.unengravedStock || 0;
-            if (item.quantity > stock) {
-                showToast(`Cannot add order: Quantity for ${products.find(p=>p.id === item.productId).name} exceeds available stock of ${stock}.`, 'error');
+            // When adding manual orders, deduct from aggregated unengraved stock
+            const productInventory = inventory.current[item.productId];
+            const availableStock = productInventory && Array.isArray(productInventory.batches) 
+                ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                : 0;
+
+            if (item.quantity > availableStock) {
+                showToast(`Cannot add order: Quantity for ${products.find(p=>p.id === item.productId).name} exceeds available stock of ${availableStock}.`, 'error');
                 return;
             }
         }
@@ -766,6 +780,44 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
         };
         await onAdd("orders", newOrder);
+        showToast("Manual order added successfully!");
+
+        // Deduct from inventory (simplified: deducts from unengraved stock regardless of batch for now)
+        const batch = writeBatch(db);
+        for (const item of manualOrderItems) {
+            if (item.productId && item.quantity > 0) {
+                const currentProductInv = inventory.current[item.productId];
+                if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                    let remainingToDeduct = item.quantity;
+                    const updatedBatches = [...currentProductInv.batches]; // Create a mutable copy
+
+                    // Sort batches by dateAdded to ensure FIFO-like deduction
+                    updatedBatches.sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                    for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                        let batch = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batch.unengraved);
+                        batch.unengraved -= deductibleFromBatch;
+                        remainingToDeduct -= deductibleFromBatch;
+                    }
+                    
+                    // Filter out batches that are now empty, or store 0 explicitly
+                    const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+
+                    const productDocRef = doc(db, 'inventory', item.productId);
+                    batch.set(productDocRef, { batches: newBatches }, { merge: true }); // Update with new batches array
+                }
+            }
+        }
+        try {
+            await batch.commit();
+            showToast("Inventory updated for manual order!");
+        } catch (error) {
+            console.error("Error updating inventory for manual order: ", error);
+            showToast("Failed to update inventory for manual order.", "error");
+        }
+
+
         setShowManualForm(false);
     };
     
@@ -875,7 +927,11 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             } else if (field === 'quantity') {
                 const productId = currentItem.productId;
                 if (productId && inventory.current[productId]) {
-                    const availableStock = inventory.current[productId].unengravedStock;
+                    const productInventory = inventory.current[productId];
+                    const availableStock = productInventory && Array.isArray(productInventory.batches) 
+                        ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                        : 0;
+
                     let requestedQuantity = parseInt(value, 10);
                     if (isNaN(requestedQuantity) || requestedQuantity < 1) {
                         requestedQuantity = 1;
@@ -921,7 +977,10 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                         <div className="space-y-2"> 
                             {manualOrderItems.map((item, index) => {
                                 const productInventory = item.productId ? inventory.current[item.productId] : null;
-                                const availableStock = productInventory ? productInventory.unengravedStock : 0;
+                                const availableStock = productInventory && Array.isArray(productInventory.batches) 
+                                    ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                                    : 0;
+
                                 return (
                                     <div key={index} className="flex gap-2 items-center"> 
                                         <select 
@@ -1108,19 +1167,46 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         }
     }, [inventory]);
 
-    const handleValueChange = (productId, field, value) => {
+    const handleBatchValueChange = (productId, batchIndex, field, value) => {
         const val = parseInt(value, 10) || 0;
         setLocalInventory(prev => {
-            const productInv = { ...prev[productId], [field]: val };
-            const { engravedStock = 0, unengravedStock = 0, defective = 0 } = productInv;
-            productInv.totalStock = engravedStock + unengravedStock + defective;
-            return { ...prev, [productId]: productInv };
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            if (updatedBatches[batchIndex]) {
+                updatedBatches[batchIndex] = { ...updatedBatches[batchIndex], [field]: val };
+            }
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
         });
     };
 
-    const handleSave = async (productId) => {
+    const handleAddBatch = (productId) => {
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            updatedBatches.push({ 
+                batchId: `manual_${Date.now()}`, // Unique ID for new manual batch
+                dateAdded: new Date().toISOString().split('T')[0], // Default to today
+                engraved: 0, 
+                unengraved: 0, 
+                defective: 0 
+            });
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleRemoveBatch = (productId, batchIndex) => {
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleSaveProductInventory = async (productId) => {
         if(localInventory[productId]) {
-            await onSave('inventory', productId, localInventory[productId]);
+            // Save the entire batches array for the product
+            await onSave('inventory', productId, { batches: localInventory[productId].batches || [] });
+            showToast('Inventory batches updated!');
         }
     };
 
@@ -1133,18 +1219,49 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
             <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> 
             <div className="space-y-4"> 
                 {products.map(p => {
-                    const inv = localInventory[p.id] || { totalStock: 0, engravedStock: 0, unengravedStock: 0, defective: 0 };
+                    const productInventory = localInventory[p.id] || { batches: [] };
+                    const totalUnengravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
+                    const totalEngravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.engraved || 0), 0);
+                    const totalDefectiveStock = productInventory.batches.reduce((sum, batch) => sum + (batch.defective || 0), 0);
+                    const overallTotalStock = totalUnengravedStock + totalEngravedStock + totalDefectiveStock;
+
                     return (
                         <div key={p.id} className="bg-white rounded-lg shadow p-4"> 
                             <h3 className="font-bold">{p.name}</h3> 
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> 
-                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inv.totalStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
-                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inv.engravedStock} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
-                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inv.unengravedStock} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
-                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inv.defective} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
-                                <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> 
+                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={overallTotalStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={totalEngravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={totalUnengravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={totalDefectiveStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <button onClick={() => handleSaveProductInventory(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save All Changes</button> 
                             </div> 
-                            {(inv.unengravedStock || 0) <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
+                            {totalUnengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low unengraved stock warning!</p>} 
+
+                            {/* Collapsible section for batches */}
+                            <Disclosure>
+                                {({ open }) => (
+                                    <>
+                                        <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-blue-900 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 mt-4">
+                                            <span>Stock Batches ({productInventory.batches.length})</span>
+                                            <ChevronUpIcon className={`${open ? '' : 'transform rotate-180'} w-5 h-5 text-blue-500`} />
+                                        </Disclosure.Button>
+                                        <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 bg-white border border-t-0 rounded-b-lg">
+                                            <div className="space-y-3">
+                                                {productInventory.batches.map((batch, batchIndex) => (
+                                                    <div key={batch.batchId || batchIndex} className="flex items-center gap-2 p-2 border rounded-md bg-gray-50">
+                                                        <span className="font-semibold text-gray-800 text-xs truncate">Batch: {batch.batchId || `Batch ${batchIndex + 1}`} ({new Date(batch.dateAdded).toLocaleDateString()})</span>
+                                                        <input type="number" value={batch.engraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'engraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Engraved"/>
+                                                        <input type="number" value={batch.unengraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'unengraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Unengraved"/>
+                                                        <input type="number" value={batch.defective || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'defective', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Defective"/>
+                                                        <button onClick={() => handleRemoveBatch(p.id, batchIndex)} className="text-red-500 hover:text-red-700 p-1"><TrashIcon /></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => handleAddBatch(p.id)} className="mt-2 px-3 py-1 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Add New Batch Entry</button>
+                                            </div>
+                                        </Disclosure.Panel>
+                                    </>
+                                )}
+                            </Disclosure>
                         </div>
                     )
                 })} 
@@ -1863,7 +1980,36 @@ export default function App() {
         try {
             const docRef = await addDoc(collection(db, "orders"), newOrder); 
             setOrderData({ ...newOrder, id: docRef.id }); 
-             if (order.paymentMethod === 'credit_card') { 
+
+            // Deduct from inventory (simplified: deducts from aggregated unengraved stock)
+            const batch = writeBatch(db);
+            for (const item of Object.values(order.items)) { // Iterate over items in the placed order
+                if (item.id && item.quantity > 0) {
+                    const currentProductInv = inventory[item.id]; // Access inventory from state directly
+                    if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                        let remainingToDeduct = item.quantity;
+                        // Sort batches by dateAdded to ensure FIFO-like deduction for display
+                        const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                        for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                            let batchEntry = updatedBatches[i]; // Use a different variable name to avoid conflict with writeBatch
+                            const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                            batchEntry.unengraved -= deductibleFromBatch;
+                            remainingToDeduct -= deductibleFromBatch;
+                        }
+                        
+                        // Filter out batches that are now empty, or store 0 explicitly
+                        const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+
+                        const productDocRef = doc(db, 'inventory', item.id);
+                        batch.set(productDocRef, { batches: newBatches }, { merge: true }); // Update with new batches array
+                    }
+                }
+            }
+            await batch.commit();
+            showToast("Order placed and inventory updated!", "success");
+
+            if (order.paymentMethod === 'credit_card') { 
                 setView('payment'); 
             } else { 
                 setView('confirmation'); 
@@ -1871,7 +2017,7 @@ export default function App() {
             setCart({});
         } catch (error) {
             console.error("Error placing order: ", error);
-            showToast('Failed to place order.', 'error');
+            showToast('Failed to place order. ' + error.message, 'error'); // Display Firebase error message
         }
     };
     
