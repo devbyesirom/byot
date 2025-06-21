@@ -15,7 +15,8 @@ import {
     addDoc, 
     updateDoc, 
     doc,
-    deleteDoc
+    deleteDoc,
+    writeBatch
 } from "firebase/firestore";
 
 
@@ -557,10 +558,56 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, setProducts, setInventory, setOrders, setCoupons, setCostBatches, showToast }) => {
+const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, showToast }) => {
     const [adminView, setAdminView] = useState('orders');
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
+    const handleUpdateFirestore = async (collectionName, docId, data) => {
+        try {
+            await updateDoc(doc(db, collectionName, docId), data);
+            showToast(`${collectionName.slice(0,-1)} updated!`);
+        } catch (error) {
+            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error updating ${collectionName}: `, error);
+        }
+    };
+    
+    const handleAddFirestore = async (collectionName, data) => {
+        try {
+            await addDoc(collection(db, collectionName), data);
+            showToast(`${collectionName.slice(0,-1)} added!`);
+        } catch (error) {
+            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error adding ${collectionName}: `, error);
+        }
+    };
+
+    const handleDeleteFirestore = async (collectionName, docId) => {
+        try {
+            await deleteDoc(doc(db, collectionName, docId));
+            showToast(`${collectionName.slice(0,-1)} deleted!`);
+        } catch(error) {
+            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
+            console.error(`Error deleting ${collectionName}: `, error);
+        }
+    };
+
+    const handleBatchUpdate = async (updates) => {
+        const batch = writeBatch(db);
+        updates.forEach(({collectionName, docId, data}) => {
+            const docRef = doc(db, collectionName, docId);
+            batch.update(docRef, data);
+        });
+        try {
+            await batch.commit();
+            showToast('Batch update successful!');
+        } catch (error) {
+            showToast('Batch update failed.', 'error');
+            console.error("Batch update failed: ", error);
+        }
+    };
+
 
     return (
         <div className="view active bg-gray-200 flex-col">
@@ -581,31 +628,28 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                     <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
                  </header>
                  <div className="flex-grow overflow-y-auto p-2 sm:p-6">
-                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} setOrders={setOrders} showToast={showToast} inventory={inventoryRef} setInventory={setInventory} />}
-                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} setInventory={setInventory} products={products} showToast={showToast} />}
-                    {adminView === 'products' && <AdminProductsView products={products} setProducts={setProducts} showToast={showToast}/>}
-                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} setCoupons={setCoupons} showToast={showToast} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} setCostBatches={setCostBatches} showToast={showToast} />}
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={handleUpdateFirestore} onDelete={handleDeleteFirestore} onAdd={handleAddFirestore} showToast={showToast} inventory={inventoryRef} />}
+                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={handleUpdateFirestore} products={products} showToast={showToast} />}
+                    {adminView === 'products' && <AdminProductsView products={products} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} showToast={showToast}/>}
+                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} onSave={handleUpdateFirestore} onAdd={handleAddFirestore} showToast={showToast} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={handleAddFirestore} onBatchUpdate={handleBatchUpdate} showToast={showToast} />}
                  </div>
             </main>
         </div>
     );
 }
-const AdminOrdersView = ({ orders, products, showToast, inventory }) => {
+const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToast, inventory }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
-
+    
     const handleStatusUpdate = async (orderId, field, value) => {
-        const orderRef = doc(db, "orders", orderId);
-        await updateDoc(orderRef, { [field]: value });
-        showToast('Order status updated!');
+        await onUpdate('orders', orderId, { [field]: value });
     };
     
     const handleDeleteOrder = async (orderId) => {
-        await deleteDoc(doc(db, "orders", orderId));
-        showToast("Order deleted!");
+        await onDelete('orders', orderId);
         setSelectedOrder(null);
     };
 
@@ -655,9 +699,8 @@ const AdminOrdersView = ({ orders, products, showToast, inventory }) => {
             knutsfordLocation: formData.get('manualFulfillmentMethod') === 'knutsford' ? formData.get('manualKnutsfordLocation') : null,
             bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
         };
-        await addDoc(collection(db, "orders"), newOrder);
+        await onAdd("orders", newOrder);
         setShowManualForm(false);
-        showToast("Manual order added!");
     };
     
     const filteredOrders = useMemo(() => {
@@ -739,8 +782,8 @@ const AdminOrdersView = ({ orders, products, showToast, inventory }) => {
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
-                        <TrashIcon className="mr-1"/> Delete Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
+                        <EditIcon className="mr-1"/> Edit Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
@@ -989,41 +1032,87 @@ const AdminOrdersView = ({ orders, products, showToast, inventory }) => {
         </div>
     )
 }
-const AdminInventoryView = ({ inventory, setInventory, products, showToast }) => {
+const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
+    const [localInventory, setLocalInventory] = useState(inventory);
+    
+    useEffect(() => {
+        setLocalInventory(inventory);
+    }, [inventory]);
+
     const handleValueChange = (productId, field, value) => {
-        const newInventory = {
-            ...inventory,
-            [productId]: {
-                ...inventory[productId],
-                [field]: parseInt(value) || 0
-            }
-        };
-
-        // Recalculate totalStock based on engraved, unengraved, and defective
-        const { engravedStock, unengravedStock, defective } = newInventory[productId];
-        newInventory[productId].totalStock = (engravedStock || 0) + (unengravedStock || 0) + (defective || 0);
-
-        setInventory(newInventory);
+        const val = parseInt(value, 10) || 0;
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId], [field]: val };
+            const { engravedStock = 0, unengravedStock = 0, defective = 0 } = productInv;
+            productInv.totalStock = engravedStock + unengravedStock + defective;
+            return { ...prev, [productId]: productInv };
+        });
     };
 
-    const handleSave = (id) => {
-        console.log(`Saving inventory for ${id}:`, inventory[id]); 
-        showToast(`Inventory for ${products.find(p=>p.id===id).name} saved!`);
+    const handleSave = async (productId) => {
+        if(localInventory[productId]) {
+            await onSave('inventory', productId, localInventory[productId]);
+        }
     };
-    return ( <div> <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> <div className="space-y-4"> {products.map(p => ( <div key={p.id} className="bg-white rounded-lg shadow p-4"> <h3 className="font-bold">{p.name}</h3> <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inventory[p.id]?.totalStock || 0} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inventory[p.id]?.engravedStock || 0} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inventory[p.id]?.unengravedStock || 0} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inventory[p.id]?.defective || 0} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> </div> {inventory[p.id]?.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} </div> ))} </div> </div> ) }
-const AdminProductsView = ({products, setProducts, showToast}) => { const [editingProduct, setEditingProduct] = useState(null); const [isAddingNew, setIsAddingNew] = useState(false); const handleSave = (e) => { e.preventDefault(); const formData = new FormData(e.target); const productData = { id: editingProduct ? editingProduct.id : `byot-${Date.now()}`, name: formData.get('name'), price: Number(formData.get('price')), description: formData.get('description'), image: formData.get('image'), colorStart: '#cccccc', colorEnd: '#eeeeee', buttonTextColor: 'text-gray-800', }; if (isAddingNew) { setProducts(prev => [...prev, productData]); showToast("Product added!"); } else { setProducts(prev => prev.map(p => p.id === productData.id ? {...p, ...productData} : p)); showToast("Product updated!"); } setEditingProduct(null); setIsAddingNew(false); }
+
+    return ( 
+        <div> 
+            <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> 
+            <div className="space-y-4"> 
+                {products.map(p => {
+                    const inv = localInventory[p.id] || {};
+                    return (
+                        <div key={p.id} className="bg-white rounded-lg shadow p-4"> 
+                            <h3 className="font-bold">{p.name}</h3> 
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> 
+                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inv.totalStock || 0} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inv.engravedStock || 0} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inv.unengravedStock || 0} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inv.defective || 0} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> 
+                            </div> 
+                            {(inv.unengravedStock || 0) <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
+                        </div>
+                    )
+                })} 
+            </div> 
+        </div> 
+    ) 
+}
+const AdminProductsView = ({products, onSave, onAdd, showToast}) => { 
+    const [editingProduct, setEditingProduct] = useState(null); 
+    const [isAddingNew, setIsAddingNew] = useState(false); 
+    
+    const handleSave = async (e) => { 
+        e.preventDefault(); 
+        const formData = new FormData(e.target); 
+        const productData = { 
+            name: formData.get('name'), 
+            price: Number(formData.get('price')), 
+            description: formData.get('description'), 
+            image: formData.get('image'), 
+            colorStart: '#cccccc', colorEnd: '#eeeeee', buttonTextColor: 'text-gray-800', 
+        }; 
+        
+        if (isAddingNew) { 
+            await onAdd('products', productData)
+        } else { 
+            await onSave('products', editingProduct.id, productData);
+        } 
+        setEditingProduct(null); 
+        setIsAddingNew(false); 
+    }
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
     return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {products.map(p => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> ))} </div> </div> ) }
-const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
+const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const couponData = {
-            id: editingCoupon ? editingCoupon.id : `coup-${Date.now()}`,
             code: formData.get('code').toUpperCase(),
             type: formData.get('type'),
             value: Number(formData.get('value')),
@@ -1031,11 +1120,9 @@ const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
         };
 
         if (isAddingNew) {
-            setCoupons(prev => [...prev, couponData]);
-            showToast("Coupon added!");
+            await onAdd('coupons', couponData)
         } else {
-            setCoupons(prev => prev.map(c => c.id === couponData.id ? couponData : c));
-            showToast("Coupon updated!");
+            await onSave('coupons', editingCoupon.id, couponData);
         }
         setEditingCoupon(null);
         setIsAddingNew(false);
@@ -1117,7 +1204,7 @@ const AdminCouponsView = ({ coupons, setCoupons, showToast }) => {
         </div>
     )
 }
-const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) => {
+const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, showToast }) => {
     const [editingBatch, setEditingBatch] = useState(null);
     
     const getCurrentMonthDateRange = () => {
@@ -1132,11 +1219,10 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
     
     const [dateRange, setDateRange] = useState(getCurrentMonthDateRange());
 
-    const handleSaveBatch = (e) => {
+    const handleSaveBatch = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const batchData = {
-            id: editingBatch.id,
             name: formData.get('name'),
             productCost: Number(formData.get('productCost')),
             alibabaShipping: Number(formData.get('alibabaShipping')),
@@ -1145,16 +1231,14 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
         };
         batchData.costPerSet = batchData.numSets > 0 ? (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets : 0;
         
-        setCostBatches(prev => prev.map(b => b.id === editingBatch.id ? { ...b, ...batchData } : b));
+        await onBatchUpdate('costBatches', editingBatch.id, batchData);
         setEditingBatch(null);
-        showToast("Batch updated successfully!");
     };
 
-    const handleCreateNewBatch = (e) => {
+    const handleCreateNewBatch = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const newBatchData = {
-            id: `batch-${Date.now()}`,
             name: formData.get('name'),
             productCost: Number(formData.get('productCost')),
             alibabaShipping: Number(formData.get('alibabaShipping')),
@@ -1166,44 +1250,43 @@ const AdminInsightsView = ({ orders, costBatches, setCostBatches, showToast }) =
         };
         newBatchData.costPerSet = newBatchData.numSets > 0 ? (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets : 0;
 
-        setCostBatches(prevBatches => {
-            const updatedBatches = prevBatches.map(batch => 
-                batch.isActive ? { ...batch, isActive: false, endDate: new Date().toISOString() } : batch
-            );
-            return [...updatedBatches, newBatchData];
-        });
+        const updates = costBatches
+            .filter(b => b.isActive)
+            .map(b => ({
+                collectionName: 'costBatches',
+                docId: b.id,
+                data: { isActive: false, endDate: new Date().toISOString() }
+            }));
+            
+        await onBatchUpdate(updates);
+        await onAddBatch('costBatches', newBatchData);
         
         setEditingBatch(null);
-        showToast("New cost batch created and activated!");
     };
     
     const handleToggleBatchStatus = (batchIdToToggle) => {
-         setCostBatches(prevBatches => {
-            const targetBatch = prevBatches.find(b => b.id === batchIdToToggle);
-            if (!targetBatch) return prevBatches;
+         const targetBatch = costBatches.find(b => b.id === batchIdToToggle);
+            if (!targetBatch) return;
 
-            // If we are trying to DEACTIVATE the batch
             if (targetBatch.isActive) {
-                // Check if it's the only active batch
-                const activeBatchesCount = prevBatches.filter(b => b.isActive).length;
+                const activeBatchesCount = costBatches.filter(b => b.isActive).length;
                 if (activeBatchesCount <= 1) {
                     showToast("Cannot deactivate the only active batch.", "error");
-                    return prevBatches; // Do not allow deactivation
+                    return;
                 }
             }
-            
-            // Proceed with toggling
-            return prevBatches.map(batch => {
-                 if (batch.id === batchIdToToggle) {
-                    return { ...batch, isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : null };
-                }
-                // If we are ACTIVATING the target batch, deactivate all others.
-                if (targetBatch && !targetBatch.isActive && batch.isActive) {
-                    return { ...batch, isActive: false, endDate: new Date().toISOString() };
-                }
-                return batch;
-            });
-        });
+        
+        const updates = costBatches.map(batch => {
+            if(batch.id === batchIdToToggle) {
+                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : null }}
+            }
+             if (targetBatch && !targetBatch.isActive && batch.isActive) {
+                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: false, endDate: new Date().toISOString() }};
+            }
+            return null;
+        }).filter(Boolean);
+        
+        onBatchUpdate(updates);
     };
     
     const { filteredOrders, reportData } = useMemo(() => {
