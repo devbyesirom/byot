@@ -591,48 +591,25 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
         </div>
     );
 }
-const AdminOrdersView = ({ orders, products, setOrders, showToast, inventory, setInventory }) => {
+const AdminOrdersView = ({ orders, products, showToast, inventory }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showManualForm, setShowManualForm] = useState(false);
-    
-    const handleStatusUpdate = (orderId, field, value) => {
-        setOrders(prevOrders => {
-            const oldOrder = prevOrders.find(o => o.id === orderId);
-            if (!oldOrder) return prevOrders;
 
-            const updatedOrder = { ...oldOrder, [field]: value };
-
-            setInventory(prevInventory => {
-                const newInventory = { ...prevInventory };
-
-                if (field === 'fulfillmentStatus' && value === 'Completed' && oldOrder.fulfillmentStatus !== 'Completed') {
-                     Object.values(oldOrder.items).forEach(item => {
-                        if (newInventory[item.id]) {
-                            newInventory[item.id].unengravedStock -= item.quantity;
-                        }
-                    });
-                } else if (field === 'fulfillmentStatus' && ['Returned', 'Cancelled'].includes(value) && !['Returned', 'Cancelled'].includes(oldOrder.fulfillmentStatus)) {
-                    Object.values(oldOrder.items).forEach(item => {
-                         if (newInventory[item.id]) {
-                           newInventory[item.id].unengravedStock += item.quantity;
-                        }
-                    });
-                }
-                return newInventory;
-            });
-            return prevOrders.map(o => o.id === orderId ? updatedOrder : o);
-        });
+    const handleStatusUpdate = async (orderId, field, value) => {
+        const orderRef = doc(db, "orders", orderId);
+        await updateDoc(orderRef, { [field]: value });
         showToast('Order status updated!');
     };
-    const handleDeleteOrder = (orderId) => {
-        setOrders(prev => prev.filter(o => o.id !== orderId));
+    
+    const handleDeleteOrder = async (orderId) => {
+        await deleteDoc(doc(db, "orders", orderId));
         showToast("Order deleted!");
         setSelectedOrder(null);
     };
 
-    const handleManualSubmit = (e, manualOrderItems) => {
+    const handleManualSubmit = async (e, manualOrderItems) => {
         e.preventDefault();
         
         for (const item of manualOrderItems) {
@@ -666,7 +643,6 @@ const AdminOrdersView = ({ orders, products, setOrders, showToast, inventory, se
         })();
 
         const newOrder = {
-            id: `BYOT-${Date.now()}`,
             customerInfo: { name: formData.get('customerName'), email: formData.get('customerEmail'), phone: formData.get('customerPhone')},
             items, subtotal, fulfillmentCost, total: subtotal + fulfillmentCost,
             createdAt: new Date().toISOString(),
@@ -679,7 +655,7 @@ const AdminOrdersView = ({ orders, products, setOrders, showToast, inventory, se
             knutsfordLocation: formData.get('manualFulfillmentMethod') === 'knutsford' ? formData.get('manualKnutsfordLocation') : null,
             bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
         };
-        setOrders(prev => [newOrder, ...prev]);
+        await addDoc(collection(db, "orders"), newOrder);
         setShowManualForm(false);
         showToast("Manual order added!");
     };
