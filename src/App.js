@@ -642,7 +642,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
             if(!item.productId) continue;
             const stock = inventory.current[item.productId]?.unengravedStock || 0;
             if (item.quantity > stock) {
-                showToast(`Cannot add order: Quantity for ${PRODUCTS_DATA.find(p=>p.id === item.productId).name} exceeds available stock of ${stock}.`, 'error');
+                showToast(`Cannot add order: Quantity for ${products.find(p=>p.id === item.productId).name} exceeds available stock of ${stock}.`, 'error');
                 return;
             }
         }
@@ -652,7 +652,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
         let subtotal = 0;
         manualOrderItems.forEach((itemInput) => {
             if(itemInput.productId) {
-                const product = PRODUCTS_DATA.find(p => p.id === itemInput.productId);
+                const product = products.find(p => p.id === itemInput.productId);
                 if (product) {
                     items[product.id] = { ...product, quantity: parseInt(itemInput.quantity) || 1 };
                     subtotal += product.price * items[product.id].quantity;
