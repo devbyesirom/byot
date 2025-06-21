@@ -23,7 +23,7 @@ import {
 
 // --- Firebase Configuration ---
 const firebaseConfig = {
-   apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ",
+   apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Replace with your actual Firebase API Key
    authDomain: "byot-40fe2.firebaseapp.com",
    projectId: "byot-40fe2",
    storageBucket: "byot-40fe2.appspot.com",
@@ -317,7 +317,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                 calculatedDiscount = eligibleItemsTotal * (appliedCoupon.value / 100);
             } else if (appliedCoupon.type === 'fixed') {
                 // For fixed amount on specific products, apply per eligible item if not exceeding item price
-                // Or apply to the total of eligible items, capped by eligibleItemsTotal
+                // Or apply to the total of eligibleItemsTotal, capped by eligibleItemsTotal
                 calculatedDiscount = Math.min(appliedCoupon.value, eligibleItemsTotal);
             }
         }
@@ -337,6 +337,29 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
             return;
         }
 
+        // Check if current date is within coupon's start and end dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to start of day
+        
+        const couponStartDate = coupon.startDate ? new Date(coupon.startDate) : null;
+        if (couponStartDate) couponStartDate.setHours(0, 0, 0, 0);
+
+        const couponEndDate = coupon.endDate ? new Date(coupon.endDate) : null;
+        if (couponEndDate) couponEndDate.setHours(23, 59, 59, 999); // Normalize to end of day
+
+
+        if (couponStartDate && today < couponStartDate) {
+            showToast('Coupon is not yet active.', 'error');
+            setCouponMessage(`Coupon will be active from ${couponStartDate.toLocaleDateString()}.`);
+            return;
+        }
+        if (couponEndDate && today > couponEndDate) {
+            showToast('Coupon has expired.', 'error');
+            setCouponMessage(`Coupon expired on ${couponEndDate.toLocaleDateString()}.`);
+            return;
+        }
+
+
         // Check if any product in the cart is eligible for this coupon
         const isCouponApplicableToCart = Object.values(cart).some(item => {
             return coupon.appliesTo === 'all' || (Array.isArray(coupon.appliesTo) && coupon.appliesTo.includes(item.id));
@@ -350,21 +373,49 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
 
         setAppliedCoupon(coupon);
         showToast('Coupon applied!', 'success');
-        setCouponMessage(`Coupon "${coupon.code}" applied! You saved J$${discount.toLocaleString()}`); // This will re-calculate after state update
+        // This message will be re-calculated in the useEffect below after state update
     };
 
     // Recalculate coupon message when discount changes (after appliedCoupon or cart changes)
     useEffect(() => {
-        if (appliedCoupon && discount > 0) {
-            setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${discount.toLocaleString()}`);
-        } else if (appliedCoupon && discount === 0) {
-             // If discount is 0 but coupon is applied, it means it's not applicable
-             setCouponMessage('Coupon not applicable to items in your cart.');
-        } else if (!appliedCoupon && couponCode) {
-            // Only clear message if coupon was manually removed or invalid attempt
-            setCouponMessage('');
+        if (appliedCoupon) {
+            // Re-evaluate discount to ensure it's accurate after state updates
+            const currentDiscount = (() => {
+                if (!appliedCoupon) return 0;
+                let calculatedDiscount = 0;
+                const cartItemsArray = Object.values(cart);
+
+                if (appliedCoupon.appliesTo === 'all') {
+                    if (appliedCoupon.type === 'percentage') {
+                        calculatedDiscount = subtotal * (appliedCoupon.value / 100);
+                    } else if (appliedCoupon.type === 'fixed') {
+                        calculatedDiscount = appliedCoupon.value;
+                    }
+                } else if (Array.isArray(appliedCoupon.appliesTo) && appliedCoupon.appliesTo.length > 0) {
+                    const eligibleItemsTotal = cartItemsArray.reduce((sum, item) => {
+                        if (appliedCoupon.appliesTo.includes(item.id)) {
+                            return sum + (item.price * item.quantity);
+                        }
+                        return sum;
+                    }, 0);
+                    if (appliedCoupon.type === 'percentage') {
+                        calculatedDiscount = eligibleItemsTotal * (appliedCoupon.value / 100);
+                    } else if (appliedCoupon.type === 'fixed') {
+                        calculatedDiscount = Math.min(appliedCoupon.value, eligibleItemsTotal);
+                    }
+                }
+                return calculatedDiscount;
+            })();
+
+            if (currentDiscount > 0) {
+                setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
+            } else {
+                setCouponMessage('Coupon not applicable to items in your cart.');
+            }
+        } else {
+            setCouponMessage(''); // Clear message if no coupon is applied
         }
-    }, [appliedCoupon, discount, couponCode, cart]);
+    }, [appliedCoupon, subtotal, cart, coupons]); // Added coupons to dependencies for completeness
 
 
     const handleCopyBankInfo = () => {
@@ -1250,7 +1301,9 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
             type: formData.get('type'),
             value: Number(formData.get('value')),
             isActive: formData.get('isActive') === 'on',
-            appliesTo: appliesToValue
+            appliesTo: appliesToValue,
+            startDate: formData.get('startDate'), // Capture start date
+            endDate: formData.get('endDate'),     // Capture end date
         };
 
         if (isAddingNew) {
@@ -1270,7 +1323,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
         );
     };
 
-    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true, appliesTo: 'all' } : null);
+    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true, appliesTo: 'all', startDate: '', endDate: '' } : null);
 
     if (formInitialData) {
         return (
@@ -1292,6 +1345,17 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
                         <div>
                             <label className="font-semibold">Value</label>
                             <input name="value" type="number" defaultValue={formInitialData.value} className="w-full p-2 border rounded mt-1" required/>
+                        </div>
+                    </div>
+                    {/* Start Date and End Date fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Start Date</label>
+                            <input name="startDate" type="date" defaultValue={formInitialData.startDate} className="w-full p-2 border rounded mt-1" />
+                        </div>
+                        <div>
+                            <label className="font-semibold">End Date</label>
+                            <input name="endDate" type="date" defaultValue={formInitialData.endDate} className="w-full p-2 border rounded mt-1" />
                         </div>
                     </div>
                     <div>
@@ -1347,6 +1411,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applies To</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th> {/* New column for dates */}
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
@@ -1359,6 +1424,12 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
                                 <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
                                 <td className="px-6 py-4">
                                     {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? 'Specific Products' : 'N/A')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {c.startDate && new Date(c.startDate).toLocaleDateString()}
+                                    {c.startDate && c.endDate && ' - '}
+                                    {c.endDate && new Date(c.endDate).toLocaleDateString()}
+                                    {!c.startDate && !c.endDate && 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -1481,29 +1552,6 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
         const now = new Date();
 
         filtered.forEach(order => {
-            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
-            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
-            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-            
-            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
-                data.totalIncome += order.total;
-                data.totalProfit += order.total - costOfGoods;
-                data.sales += orderQty;
-                
-                Object.values(order.items).forEach(item => {
-                    const color = item.name.replace(' Kit', '');
-                    data.popularColors[color] = (data.popularColors[color] || 0) + item.quantity;
-                });
-
-            } else if (order.fulfillmentStatus === 'Returned') {
-                data.returnedValue += order.total;
-            } else if (order.paymentStatus === 'Refunded') {
-                data.refundedValue += order.total;
-            }
-        });
-
-        // This part is for the smaller monthly chart, separate from the main report data
-        orders.forEach(order => {
             const orderDate = new Date(order.createdAt);
             const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
             const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
