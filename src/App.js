@@ -13,7 +13,6 @@ import {
     collection, 
     onSnapshot, 
     addDoc, 
-    // updateDoc, // Removed unused import
     doc,
     deleteDoc,
     writeBatch,
@@ -271,6 +270,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
     const [pickupTime, setPickupTime] = useState('');
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponMessage, setCouponMessage] = useState(''); // New state for coupon message
 
     useEffect(() => {
         if (fulfillmentMethod !== 'pickup') {
@@ -321,14 +321,44 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
     
     const handleApplyCoupon = () => {
         const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.isActive);
-        if(coupon) {
-            setAppliedCoupon(coupon);
-            showToast('Coupon applied!', 'success');
-        } else {
+        setAppliedCoupon(null); // Reset applied coupon first
+        setCouponMessage(''); // Clear previous message
+
+        if(!coupon) {
             showToast('Invalid or inactive coupon.', 'error');
-            setAppliedCoupon(null);
+            setCouponMessage('Invalid or inactive coupon.');
+            return;
         }
+
+        // Check if any product in the cart is eligible for this coupon
+        const isCouponApplicableToCart = Object.values(cart).some(item => {
+            return coupon.appliesTo === 'all' || (Array.isArray(coupon.appliesTo) && coupon.appliesTo.includes(item.id));
+        });
+
+        if (!isCouponApplicableToCart) {
+            showToast('Coupon not applicable to items in your cart.', 'error');
+            setCouponMessage('Coupon not applicable to items in your cart.');
+            return;
+        }
+
+        setAppliedCoupon(coupon);
+        showToast('Coupon applied!', 'success');
+        setCouponMessage(`Coupon "${coupon.code}" applied! You saved J$${discount.toLocaleString()}`); // This will re-calculate after state update
     };
+
+    // Recalculate coupon message when discount changes (after appliedCoupon or cart changes)
+    useEffect(() => {
+        if (appliedCoupon && discount > 0) {
+            setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${discount.toLocaleString()}`);
+        } else if (appliedCoupon && discount === 0) {
+             // If discount is 0 but coupon is applied, it means it's not applicable
+             setCouponMessage('Coupon not applicable to items in your cart.');
+        } else if (!appliedCoupon && couponCode) {
+            // Only clear message if coupon was manually removed or invalid attempt
+            setCouponMessage('');
+        }
+    }, [appliedCoupon, discount, couponCode, cart]);
+
 
     const handleCopyBankInfo = () => {
         const bankInfo = `Company: Esirom Foundation Limited\nBank: Scotiabank\nBranch: Oxford Road\nAccount #: 846837, SAVINGS (JMD Account)`;
@@ -494,10 +524,10 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                                 Apply
                             </button>
                         </div>
-                        {appliedCoupon && (
-                             <p className="text-green-600 text-sm mt-2">
-                                 Coupon "{appliedCoupon.code}" applied! You saved J${discount.toLocaleString()}
-                                 <button onClick={() => {setAppliedCoupon(null); setCouponCode('')}} className="ml-2 text-red-500 font-bold">[Remove]</button>
+                        {couponMessage && ( // Display coupon message
+                             <p className={`text-sm mt-2 ${discount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                 {couponMessage}
+                                 {appliedCoupon && <button onClick={() => {setAppliedCoupon(null); setCouponCode(''); setCouponMessage('');}} className="ml-2 text-red-500 font-bold">[Remove]</button>}
                              </p>
                         )}
                     </div>
@@ -1536,7 +1566,7 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                      <div>
                         <label className="font-semibold block mb-1">Batch Name</label>
                         <input name="name" defaultValue={batch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
-                    </div>
+                     </div>
                     <div className="grid grid-cols-2 gap-4">
                          <div>
                             <label className="font-semibold block mb-1">Shipping Cost (Alibaba)</label>
@@ -1740,8 +1770,8 @@ export default function App() {
         }; 
         
         try {
-            const docRef = await addDoc(collection(db, "orders"), newOrder);
-            setOrderData({ ...newOrder, id: docRef.id });
+            await addDoc(collection(db, "orders"), newOrder);
+            setOrderData({ ...newOrder, id: docRef.id }); // This docRef needs to be defined from the addDoc call.
              if (order.paymentMethod === 'credit_card') { 
                 setView('payment'); 
             } else { 
