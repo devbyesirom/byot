@@ -6,7 +6,8 @@ import {
     getAuth, 
     onAuthStateChanged, 
     signInWithEmailAndPassword, 
-    signOut 
+    signOut,
+    signInAnonymously // Import signInAnonymously
 } from "firebase/auth";
 import { 
     getFirestore, 
@@ -55,8 +56,7 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-// Removed unused ChevronUpIcon
-// Removed unused ChevronDownIcon
+
 
 
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -206,9 +206,16 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
                     <ArrowDownIcon />
                 </button>
             </div>
-            {sortedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
-            ))}
+            {sortedProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                    <p className="text-lg font-semibold">No products available.</p>
+                    <p className="text-sm">Please check your Firebase products collection or admin settings.</p>
+                </div>
+            ) : (
+                sortedProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
+                ))
+            )}
         </main>
     );
 };
@@ -1724,25 +1731,49 @@ export default function App() {
     const [orderData, setOrderData] = useState(null);
     
     useEffect(() => {
-        onAuthStateChanged(auth, user => {
+        const unsubscribeAuth = onAuthStateChanged(auth, user => {
             setIsLoggedIn(!!user);
+            if (!user) {
+                // If no user is authenticated (not even anonymous), sign in anonymously
+                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed", error));
+            }
         });
 
         const unsubscribes = [
-            onSnapshot(collection(db, "products"), (snapshot) => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
+            onSnapshot(collection(db, "products"), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setProducts(data);
+                console.log("Products loaded:", data);
+            }),
             onSnapshot(collection(db, "inventory"), (snapshot) => {
                 const invData = {};
                 snapshot.forEach(doc => {
                     invData[doc.id] = doc.data();
                 });
                 setInventory(invData);
+                console.log("Inventory loaded:", invData);
             }),
-            onSnapshot(collection(db, "orders"), (snapshot) => setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            onSnapshot(collection(db, "coupons"), (snapshot) => setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
-            onSnapshot(collection(db, "costBatches"), (snapshot) => setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
+            onSnapshot(collection(db, "orders"), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setOrders(data);
+                console.log("Orders loaded:", data);
+            }),
+            onSnapshot(collection(db, "coupons"), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setCoupons(data);
+                console.log("Coupons loaded:", data);
+            }),
+            onSnapshot(collection(db, "costBatches"), (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setCostBatches(data);
+                console.log("Cost Batches loaded:", data);
+            })
         ];
 
-        return () => unsubscribes.forEach(unsub => unsub());
+        return () => {
+            unsubscribeAuth(); // Unsubscribe from auth listener
+            unsubscribes.forEach(unsub => unsub()); // Unsubscribe from Firestore listeners
+        };
     }, []);
 
     useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
