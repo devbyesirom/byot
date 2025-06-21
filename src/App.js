@@ -7,7 +7,7 @@ import {
     onAuthStateChanged, 
     signInWithEmailAndPassword, 
     signOut,
-    signInAnonymously // Import signInAnonymously
+    signInAnonymously 
 } from "firebase/auth";
 import { 
     getFirestore, 
@@ -1718,7 +1718,8 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
 // --- Main App Component ---
 export default function App() {
     const [view, setView] = useState('shop');
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // Retained for general auth status feedback
+    const [isAdminMode, setIsAdminMode] = useState(false); // New state to control admin panel access
     const [products, setProducts] = useState([]);
     const [inventory, setInventory] = useState({});
     const [orders, setOrders] = useState([]);
@@ -1732,11 +1733,14 @@ export default function App() {
     
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, user => {
-            setIsLoggedIn(!!user);
+            setIsLoggedIn(!!user); // Set general logged-in status
             if (!user) {
                 // If no user is authenticated (not even anonymous), sign in anonymously
                 signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed", error));
             }
+            // IMPORTANT: isAdminMode is NOT set here based on auth state directly,
+            // it's only set via successful admin login
+            // If the user logs out, isAdminMode will be explicitly set to false by handleLogout.
         });
 
         const unsubscribes = [
@@ -1776,7 +1780,15 @@ export default function App() {
         };
     }, []);
 
-    useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
+    useEffect(() => { 
+        if (!isAdminMode && view !== 'shop') { // Only set gradient for public non-shop views
+            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)'); 
+        } else if (isAdminMode) { // Admin mode has its own background style
+            setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); 
+        } else if (view === 'shop') { // Default shop background
+            setBgGradient('linear-gradient(to bottom, #111827, #374151)');
+        }
+    }, [view, isAdminMode]); // Depend on isAdminMode to change background for admin section
     
     const showToast = (message, type = 'success') => {
         setToastMessage(message);
@@ -1789,7 +1801,7 @@ export default function App() {
     
     const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); showToast(`${quantity} x ${product.name} added!`); };
     const handleBuyNow = (product, quantity) => { setCart({ [product.id]: { ...product, quantity } }); setView('checkout'); };
-    const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
+    const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p[id], quantity: q})); };
     const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
     
     const placeOrder = async (order) => {
@@ -1801,7 +1813,7 @@ export default function App() {
         }; 
         
         try {
-            const docRef = await addDoc(collection(db, "orders"), newOrder); // Declared docRef here
+            const docRef = await addDoc(collection(db, "orders"), newOrder); 
             setOrderData({ ...newOrder, id: docRef.id }); 
              if (order.paymentMethod === 'credit_card') { 
                 setView('payment'); 
@@ -1819,6 +1831,8 @@ export default function App() {
     const handleLogin = async (email, password) => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
+            setIsAdminMode(true); // Successfully logged in as admin
+            showToast("Logged in as admin!");
         } catch (error) {
             alert('Login Failed! ' + error.message);
         }
@@ -1826,9 +1840,12 @@ export default function App() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
-            setView('shop');
+            setIsAdminMode(false); // Exit admin mode on logout
+            setView('shop'); // Redirect to shop view
+            showToast("Logged out successfully.");
         } catch (error) {
             console.error("Error signing out: ", error);
+            showToast("Logout failed.", "error");
         }
     }
     
@@ -1880,7 +1897,7 @@ export default function App() {
     };
 
     const renderContent = () => {
-        if (isLoggedIn) {
+        if (isAdminMode) { // Render AdminDashboard ONLY if isAdminMode is true
             return <AdminDashboard 
                 onLogout={handleLogout} 
                 orders={orders} 
@@ -1895,6 +1912,7 @@ export default function App() {
                 onBatchUpdate={handleBatchUpdate}
             />;
         }
+        // Otherwise, render public views
         switch (view) {
             case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} /></div>; 
             case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} />; 
@@ -1910,15 +1928,18 @@ export default function App() {
     return (
         <div style={{ background: bgGradient }} className="flex items-center justify-center p-0 md:p-4 h-screen">
              <GlobalStyles />
-             {isLoggedIn ? (
+             {/* Toast Notification */}
+             <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+                {toastMessage}
+            </div>
+
+             {/* Main Content Render */}
+             {isAdminMode ? ( // Render Admin content if in admin mode
                  <div className="w-full h-full bg-gray-200">
                     {renderContent()}
                  </div>
-             ) : (
+             ) : ( // Else render public facing content
                 <div className="app-shell">
-                    <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
-                        {toastMessage}
-                    </div>
                     {renderContent()}
                     <nav className="bg-white/80 backdrop-blur-lg border-t border-gray-200 flex-shrink-0">
                         <div className="flex justify-around h-20">
