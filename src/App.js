@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+import { initializeApp } from "firebase/app";
 import { 
     getAuth, 
     onAuthStateChanged, 
     signInWithEmailAndPassword, 
     signOut 
-} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+} from "firebase/auth";
 import { 
     getFirestore, 
     collection, 
@@ -19,7 +19,7 @@ import {
     query,
     where,
     getDocs
-} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+} from "firebase/firestore";
 
 
 // --- Firebase Configuration ---
@@ -850,7 +850,7 @@ const AdminOrdersView = ({ orders, setOrders, showToast, inventory, setInventory
                                             required
                                         > 
                                             <option value="">Select Product</option> 
-                                            {PRODUCTS_DATA.map(p => <option key={p.id} value={p.id}>{p.name}</option>)} 
+                                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)} 
                                         </select> 
                                         <div className="flex items-center border rounded">
                                             <input 
