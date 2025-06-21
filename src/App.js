@@ -70,29 +70,29 @@ const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-directio
 // --- View Components (Customer Facing) ---
 const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory }) => {
     const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
-    const feedRef = useRef(null); 
-    useEffect(() => { 
-        const feedEl = feedRef.current; 
-        if (!feedEl) return; 
-        let scrollTimeout; 
-        const handleScroll = () => { 
-            clearTimeout(scrollTimeout); 
-            scrollTimeout = setTimeout(() => { 
-                const feedHeight = feedEl.clientHeight; 
-                const currentIndex = Math.round(feedEl.scrollTop / feedHeight); 
-                const currentCard = feedEl.children[currentIndex]; 
-                if(currentCard){ 
-                    const { colorStart, colorEnd } = currentCard.dataset; 
-                    if (colorStart && colorEnd) { 
-                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`; 
-                    } 
-                } 
-            }, 50); 
-        }; 
-        feedEl.addEventListener('scroll', handleScroll); 
-        return () => feedEl.removeEventListener('scroll', handleScroll); 
-    }, [products, setBgGradient]); 
-    
+    const feedRef = useRef(null);
+    useEffect(() => {
+        const feedEl = feedRef.current;
+        if (!feedEl) return;
+        let scrollTimeout;
+        const handleScroll = () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const feedHeight = feedEl.clientHeight;
+                const currentIndex = Math.round(feedEl.scrollTop / feedHeight);
+                const currentCard = feedEl.children[currentIndex];
+                if(currentCard){
+                    const { colorStart, colorEnd } = currentCard.dataset;
+                    if (colorStart && colorEnd) {
+                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`;
+                    }
+                }
+            }, 50);
+        };
+        feedEl.addEventListener('scroll', handleScroll);
+        return () => feedEl.removeEventListener('scroll', handleScroll);
+    }, [products, setBgGradient]);
+
     const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => { // Added inventory prop
         const [quantity, setQuantity] = useState(1);
         const availableStock = inventory[product.id]?.unengravedStock || 0; // Assuming customer buys unengraved stock
@@ -119,7 +119,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
             if (quantity > availableStock) {
                 // This case should ideally be prevented by min/max and stepper, but as a fallback
                 alert(`Only ${availableStock} of ${product.name} are available. Adding max available to cart.`);
-                onAddToCart(product, availableStock); 
+                onAddToCart(product, availableStock);
             } else {
                 onAddToCart(product, quantity);
             }
@@ -133,89 +133,89 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory })
             if (quantity > availableStock) {
                 // This case should ideally be prevented by min/max and stepper, but as a fallback
                 alert(`Only ${availableStock} of ${product.name} are available. Proceeding with max available.`);
-                onBuyNow(product, availableStock); 
+                onBuyNow(product, availableStock);
             } else {
                 onBuyNow(product, quantity);
             }
         };
 
-        return ( 
-            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}> 
-                <div className="card-content"> 
-                    <h2 className="text-3xl font-bold">{product.name}</h2> 
-                    <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p> 
+        return (
+            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}>
+                <div className="card-content">
+                    <h2 className="text-3xl font-bold">{product.name}</h2>
+                    <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
                     {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
                         <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
                     )}
                     {availableStock === 0 && ( // Display out of stock message
                         <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
                     )}
-                    <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit"> 
-                        <button onClick={() => handleQuantityStepperChange(-1)} className="p-2 text-white" disabled={quantity <= 1 || availableStock === 0}>-</button> 
-                        <input 
-                            type="number" 
-                            className="w-12 bg-transparent text-white text-center font-bold" 
-                            value={quantity} 
+                    <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit">
+                        <button onClick={() => handleQuantityStepperChange(-1)} className="p-2 text-white" disabled={quantity <= 1 || availableStock === 0}>-</button>
+                        <input
+                            type="number"
+                            className="w-12 bg-transparent text-white text-center font-bold"
+                            value={quantity}
                             onChange={handleQuantityInputChange} // Allow direct input but validate
-                            min="1" 
-                            max={availableStock} 
+                            min="1"
+                            max={availableStock}
                             disabled={availableStock === 0} // Disable input if out of stock
-                        /> 
-                        <button onClick={() => handleQuantityStepperChange(1)} className="p-2 text-white" disabled={quantity >= availableStock}>+</button> 
-                    </div> 
-                    <div className="flex items-center space-x-2 mt-4"> 
-                        <button 
-                            onClick={handleAddToCartClick} 
+                        />
+                        <button onClick={() => handleQuantityStepperChange(1)} className="p-2 text-white" disabled={quantity >= availableStock}>+</button>
+                    </div>
+                    <div className="flex items-center space-x-2 mt-4">
+                        <button
+                            onClick={handleAddToCartClick}
                             className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg"
                             disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
                         >
                             Add to Cart
-                        </button> 
-                        <button 
-                            onClick={handleBuyNowClick} 
+                        </button>
+                        <button
+                            onClick={handleBuyNowClick}
                             className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}
                             disabled={availableStock === 0 || quantity === 0} // Disable if out of stock or quantity is 0
                         >
                             Buy Now
-                        </button> 
-                    </div> 
-                </div> 
-            </div> 
-        ); 
-    }; 
-    return( 
-        <main ref={feedRef} className="feed"> 
-            <div className="card justify-center text-center" style={{backgroundImage: "url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')"}} data-color-start="#111827" data-color-end="#374151"> 
-                <div className="card-content"> 
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+    return(
+        <main ref={feedRef} className="feed">
+            <div className="card justify-center text-center" style={{backgroundImage: "url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')"}} data-color-start="#111827" data-color-end="#374151">
+                <div className="card-content">
                     {/* Adjusted text size for "Bring Yuh Owna Tings" to fit on one line */}
-                    <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1> 
-                    <p className="text-lg text-gray-200 mt-2">Reusable Utensil Sets for Everyday Use</p> 
-                </div> 
+                    <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1>
+                    <p className="text-lg text-gray-200 mt-2">Reusable Utensil Sets for Everyday Use</p>
+                </div>
                 {/* Adjusted arrow position and made it clickable to scroll */}
-                <button 
-                    className="scroll-arrow absolute bottom-24 left-1/2 transform -translate-x-1/2 text-white" 
+                <button
+                    className="scroll-arrow absolute bottom-24 left-1/2 transform -translate-x-1/2 text-white"
                     onClick={() => {
                         if (feedRef.current) {
                             // Scroll past the current card to reveal the first product card
                             feedRef.current.scrollTo({
-                                top: feedRef.current.clientHeight, 
+                                top: feedRef.current.clientHeight,
                                 behavior: 'smooth'
                             });
                         }
                     }}
                 >
                     <ArrowDownIcon />
-                </button> 
-            </div> 
-            {sortedProducts.map((product) => ( 
+                </button>
+            </div>
+            {sortedProducts.map((product) => (
                 <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} /> // Pass inventory to ProductCard
-            ))} 
-        </main> 
-    ); 
+            ))}
+        </main>
+    );
 };
 const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack, inventory }) => { // Added inventory prop
-    const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]); 
-    
+    const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+
     // Updated updateCartQuantity to respect available stock
     const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
         const productInInventory = inventory[id];
@@ -233,35 +233,35 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
         updateCartQuantity(id, quantityToSet);
     };
 
-    return ( 
-        <div className="view active bg-gray-100"> 
-            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header> 
-            <main className="flex-grow overflow-y-auto p-4 space-y-4"> 
+    return (
+        <div className="view active bg-gray-100">
+            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header>
+            <main className="flex-grow overflow-y-auto p-4 space-y-4">
                 {Object.keys(cart).length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
                         <CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p>
                     </div>
                 ) : (
-                    Object.values(cart).map(item => ( 
-                        <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow"> 
-                            <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/> 
-                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div> 
-                            <input 
-                                type="number" 
+                    Object.values(cart).map(item => (
+                        <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow">
+                            <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/>
+                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div>
+                            <input
+                                type="number"
                                 value={item.quantity || 0} // Ensure value is a number, default to 0
-                                onChange={(e) => handleUpdateCartQuantityWithStock(item.id, parseInt(e.target.value))} 
-                                className="w-12 text-center border rounded-md mx-2" 
+                                onChange={(e) => handleUpdateCartQuantityWithStock(item.id, parseInt(e.target.value))}
+                                className="w-12 text-center border rounded-md mx-2"
                                 min="1"
                                 max={inventory[item.id]?.unengravedStock || 0} // Set max based on available inventory
-                            /> 
-                            <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button> 
-                        </div> 
+                            />
+                            <button onClick={() => removeFromCart(item.id)} className="p-2 text-red-500"><TrashIcon /></button>
+                        </div>
                     ))
-                )} 
-            </main> 
-            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>} 
-        </div> 
-    ); 
+                )}
+            </main>
+            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
+        </div>
+    );
 };
 const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }) => {
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
@@ -289,14 +289,33 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
     
     const discount = useMemo(() => {
         if (!appliedCoupon) return 0;
-        if (appliedCoupon.type === 'percentage') {
-            return subtotal * (appliedCoupon.value / 100);
+        let calculatedDiscount = 0;
+        const cartItemsArray = Object.values(cart);
+
+        if (appliedCoupon.appliesTo === 'all') {
+            if (appliedCoupon.type === 'percentage') {
+                calculatedDiscount = subtotal * (appliedCoupon.value / 100);
+            } else if (appliedCoupon.type === 'fixed') {
+                calculatedDiscount = appliedCoupon.value;
+            }
+        } else if (Array.isArray(appliedCoupon.appliesTo) && appliedCoupon.appliesTo.length > 0) {
+            const eligibleItemsTotal = cartItemsArray.reduce((sum, item) => {
+                if (appliedCoupon.appliesTo.includes(item.id)) {
+                    return sum + (item.price * item.quantity);
+                }
+                return sum;
+            }, 0);
+
+            if (appliedCoupon.type === 'percentage') {
+                calculatedDiscount = eligibleItemsTotal * (appliedCoupon.value / 100);
+            } else if (appliedCoupon.type === 'fixed') {
+                // For fixed amount on specific products, apply per eligible item if not exceeding item price
+                // Or apply to the total of eligible items, capped by eligibleItemsTotal
+                calculatedDiscount = Math.min(appliedCoupon.value, eligibleItemsTotal);
+            }
         }
-        if (appliedCoupon.type === 'fixed') {
-            return appliedCoupon.value;
-        }
-        return 0;
-    }, [appliedCoupon, subtotal]);
+        return calculatedDiscount;
+    }, [appliedCoupon, subtotal, cart]);
 
     const total = subtotal + fulfillmentCost - discount;
     
@@ -590,7 +609,7 @@ const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBa
                     {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd} showToast={showToast} inventory={inventoryRef} />}
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={onUpdate} products={products} showToast={showToast} />}
                     {adminView === 'products' && <AdminProductsView products={products} onSave={onUpdate} onAdd={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast}/>}
-                    {adminView === 'coupons' && <AdminCouponsView coupons={coupons} onSave={onUpdate} onAdd={onAdd} showToast={showToast} />}
+                    {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} onSave={onUpdate} onAdd={onAdd} showToast={showToast} />}
                     {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} />}
                  </div>
             </main>
@@ -1078,7 +1097,7 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
     };
 
     const handleMove = async (productId, direction) => {
-        const sortedProducts = [...products].sort((a, b) => a.displayOrder - b.displayOrder);
+        const sortedProducts = [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
         const currentIndex = sortedProducts.findIndex(p => p.id === productId);
         
         let updates = [];
@@ -1109,18 +1128,42 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
     const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:''} : null);
     if (formInitialData) { return ( <div> <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2> <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4"> <div><label className="font-semibold">Product Name</label><input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Price</label><input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1"/></div> <div><label className="font-semibold">Description</label><textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea></div> <div><label className="font-semibold">Image URL</label><input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/></div> <div className="flex justify-end space-x-2"><button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button></div> </form> </div> ) }
     return ( <div> <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">Product Management</h2><button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button></div> <div className="bg-white rounded-lg shadow overflow-hidden"> {sortedProducts.map((p, index) => ( <div key={p.id} className="flex items-center p-4 border-b"> <img src={p.image} className="w-12 h-12 object-cover rounded-md mr-4" alt={p.name}/> <div className="flex-grow"><p className="font-bold">{p.name}</p><p className="text-sm text-gray-500">J${p.price}</p></div> <div className="flex items-center gap-2"> <div className="flex flex-col"> <button onClick={() => handleMove(p.id, 'up')} disabled={index === 0} className="disabled:opacity-20"><ChevronUpIcon /></button> <button onClick={() => handleMove(p.id, 'down')} disabled={index === sortedProducts.length - 1} className="disabled:opacity-20"><ChevronDownIcon /></button> </div> <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button> </div> </div> ))} </div> </div> ) }
-const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
+const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
+    const [appliesToOption, setAppliesToOption] = useState('all'); // 'all' or 'specific'
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
+
+    useEffect(() => {
+        if (editingCoupon) {
+            if (Array.isArray(editingCoupon.appliesTo)) {
+                setAppliesToOption('specific');
+                setSelectedProductIds(editingCoupon.appliesTo);
+            } else {
+                setAppliesToOption('all');
+                setSelectedProductIds([]);
+            }
+        } else {
+            setAppliesToOption('all');
+            setSelectedProductIds([]);
+        }
+    }, [editingCoupon]);
+
 
     const handleSave = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+        let appliesToValue = 'all';
+        if (appliesToOption === 'specific') {
+            appliesToValue = selectedProductIds;
+        }
+
         const couponData = {
             code: formData.get('code').toUpperCase(),
             type: formData.get('type'),
             value: Number(formData.get('value')),
             isActive: formData.get('isActive') === 'on',
+            appliesTo: appliesToValue
         };
 
         if (isAddingNew) {
@@ -1132,7 +1175,15 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
         setIsAddingNew(false);
     };
 
-    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true } : null);
+    const handleProductSelection = (productId) => {
+        setSelectedProductIds(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true, appliesTo: 'all' } : null);
 
     if (formInitialData) {
         return (
@@ -1155,6 +1206,32 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
                             <label className="font-semibold">Value</label>
                             <input name="value" type="number" defaultValue={formInitialData.value} className="w-full p-2 border rounded mt-1" required/>
                         </div>
+                    </div>
+                    <div>
+                        <label className="font-semibold">Applies To</label>
+                        <select
+                            value={appliesToOption}
+                            onChange={(e) => setAppliesToOption(e.target.value)}
+                            className="w-full p-2 border rounded mt-1"
+                        >
+                            <option value="all">All Products (Store-wide)</option>
+                            <option value="specific">Specific Products</option>
+                        </select>
+                        {appliesToOption === 'specific' && (
+                            <div className="mt-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
+                                {products.map(p => (
+                                    <label key={p.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProductIds.includes(p.id)}
+                                            onChange={() => handleProductSelection(p.id)}
+                                            className="h-4 w-4"
+                                        />
+                                        <span>{p.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center">
                         <input name="isActive" type="checkbox" defaultChecked={formInitialData.isActive} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
@@ -1182,6 +1259,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applies To</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
@@ -1192,6 +1270,9 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast }) => {
                                 <td className="px-6 py-4 whitespace-nowrap font-mono">{c.code}</td>
                                 <td className="px-6 py-4 whitespace-nowrap capitalize">{c.type}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
+                                <td className="px-6 py-4">
+                                    {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? 'Specific Products' : 'N/A')}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                         {c.isActive ? 'Active' : 'Inactive'}
@@ -1385,7 +1466,7 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
             ].join(',');
         });
 
-        const csvString = [headers.join(','), ...rows].join('\n');
+        const csvString = [headers.join(','), ...rows].join('\\n');
         const blob = new Blob([csvString], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1584,7 +1665,7 @@ export default function App() {
         return () => unsubscribes.forEach(unsub => unsub());
     }, []);
 
-    useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
+    useEffect(() => { if (!isLoggedIn && view !== 'shop') { setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)'); } else if (isLoggedIn) { setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)'); } }, [view, isLoggedIn]);
     
     const showToast = (message, type = 'success') => {
         setToastMessage(message);
@@ -1642,7 +1723,8 @@ export default function App() {
     
      const handleUpdateFirestore = async (collectionName, docId, data) => {
         try {
-            await updateDoc(doc(db, collectionName, docId), data);
+            // Use setDoc with merge: true to handle both creation and update
+            await setDoc(doc(db, collectionName, docId), data, { merge: true });
             showToast(`${collectionName.slice(0,-1)} updated!`);
         } catch (error) {
             showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
