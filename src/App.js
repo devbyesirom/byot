@@ -785,8 +785,8 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
-                        <EditIcon className="mr-1"/> Edit Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-500 text-white rounded-md flex items-center text-sm hover:bg-red-600">
+                        <TrashIcon className="mr-1"/> Delete Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
@@ -1036,10 +1036,13 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
     )
 }
 const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
-    const [localInventory, setLocalInventory] = useState(inventory);
-    
+    const [localInventory, setLocalInventory] = useState({});
+
     useEffect(() => {
-        setLocalInventory(inventory);
+        // Only set local inventory if it has been fetched from Firebase
+        if (Object.keys(inventory).length > 0) {
+            setLocalInventory(inventory);
+        }
     }, [inventory]);
 
     const handleValueChange = (productId, field, value) => {
@@ -1058,23 +1061,27 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         }
     };
 
+    if (products.length === 0 || Object.keys(localInventory).length === 0) {
+        return <div>Loading inventory...</div>;
+    }
+
     return ( 
         <div> 
             <h2 className="text-2xl font-bold mb-4">Inventory Management</h2> 
             <div className="space-y-4"> 
                 {products.map(p => {
-                    const inv = localInventory[p.id] || {};
+                    const inv = localInventory[p.id] || { totalStock: 0, engravedStock: 0, unengravedStock: 0, defective: 0 };
                     return (
                         <div key={p.id} className="bg-white rounded-lg shadow p-4"> 
                             <h3 className="font-bold">{p.name}</h3> 
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end"> 
-                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inv.totalStock || 0} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
-                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inv.engravedStock || 0} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
-                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inv.unengravedStock || 0} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
-                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inv.defective || 0} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={inv.totalStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div> 
+                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={inv.engravedStock} onChange={e => handleValueChange(p.id, 'engravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={inv.unengravedStock} onChange={e => handleValueChange(p.id, 'unengravedStock', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
+                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={inv.defective} onChange={e => handleValueChange(p.id, 'defective', e.target.value)} className="w-full p-2 border rounded mt-1"/></div> 
                                 <button onClick={() => handleSave(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save</button> 
                             </div> 
-                            {(inv.unengravedStock || 0) <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
+                            {inv.unengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low stock warning!</p>} 
                         </div>
                     )
                 })} 
@@ -1118,25 +1125,28 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
         const sortedProducts = [...products].sort((a, b) => a.displayOrder - b.displayOrder);
         const currentIndex = sortedProducts.findIndex(p => p.id === productId);
         
+        let updates = [];
+
         if (direction === 'up' && currentIndex > 0) {
             const otherProduct = sortedProducts[currentIndex - 1];
-            const updates = [
+            updates = [
                 { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
                 { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
             ];
-            await onBatchUpdate(updates);
         } else if (direction === 'down' && currentIndex < sortedProducts.length - 1) {
             const otherProduct = sortedProducts[currentIndex + 1];
-             const updates = [
+             updates = [
                 { collectionName: 'products', docId: productId, data: { displayOrder: otherProduct.displayOrder } },
                 { collectionName: 'products', docId: otherProduct.id, data: { displayOrder: sortedProducts[currentIndex].displayOrder } }
             ];
-            await onBatchUpdate(updates);
+        }
+        if (updates.length > 0) {
+           await onBatchUpdate(updates);
         }
     };
     
     const sortedProducts = useMemo(() => {
-        return [...products].sort((a, b) => a.displayOrder - b.displayOrder);
+        return [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     }, [products]);
 
 
