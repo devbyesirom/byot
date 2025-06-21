@@ -1806,7 +1806,7 @@ export default function App() {
             // Use setDoc with merge: true to handle both creation and update
             await setDoc(doc(db, collectionName, docId), data, { merge: true });
             showToast(`${collectionName.slice(0,-1)} updated!`);
-        } <<<<<<< HEAD
+        } 
         catch (error) {
             showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
             console.error(`Error updating ${collectionName}: `, error);
