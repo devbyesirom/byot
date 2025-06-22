@@ -1,34 +1,29 @@
 /* global __firebase_config, __app_id */
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useContext, createContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Disclosure } from '@headlessui/react'; // Import Disclosure for expandable sections
-
+import { Disclosure } from '@headlessui/react';
 import { initializeApp } from "firebase/app";
-import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signInWithEmailAndPassword, 
-    signOut,
-    signInAnonymously 
-} from "firebase/auth";
-import { 
-    getFirestore, 
-    collection, 
-    onSnapshot, 
-    addDoc, 
-    doc,
-    deleteDoc,
-    writeBatch,
-    setDoc
-} from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously } from "firebase/auth";
+import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc } from "firebase/firestore";
 
+// --- Constants ---
+const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
+const KNUTSFORD_FEE = 500;
+const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "Gutters", "Harbour View", "New Kingston", "Luana", "Lucea", "Mandeville", "May Pen", "Montego Bay (Pier 1)", "Montego Bay Airport", "Negril", "Ocho Rios", "Port Antonio", "Port Maria", "Portmore", "Savanna-La-Mar", "Washington Boulevard"];
+const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
+const COLLECTION_NAMES = {
+    products: "Product",
+    coupons: "Coupon",
+    orders: "Order",
+    inventory: "Inventory",
+    costBatches: "Cost Batch",
+};
 
 // --- Firebase Configuration ---
-// Determine Firebase config based on environment
 const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config) // Use provided config for deployed environment
+    ? JSON.parse(__firebase_config)
     : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Fallback local key for development
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ",
         authDomain: "byot-40fe2.firebaseapp.com",
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
@@ -37,23 +32,25 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         measurementId: "G-S8QD6WWN90"
     };
 
-// Determine appId for Firestore paths based on environment
-const currentAppId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
-
-// Initialize Firebase
+// --- Firebase Initialization ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2';
 
+// --- React Contexts for State Management ---
+const DataContext = createContext(null);
+const CartContext = createContext(null);
+const AuthContext = createContext(null);
 
-// --- SVGs as React Components (Corrected Attributes) ---
+// --- Icon Components ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="pointer-events-none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
@@ -64,22 +61,17 @@ const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
-// Removed ChevronDownIcon import as it's not directly used; ChevronUpIcon is rotated
-
-
-const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
-const KNUTSFORD_FEE = 500;
-const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "Gutters", "Harbour View", "New Kingston", "Luana", "Lucea", "Mandeville", "May Pen", "Montego Bay (Pier 1)", "Montego Bay Airport", "Negril", "Ocho Rios", "Port Antonio", "Port Maria", "Portmore", "Savanna-La-Mar", "Washington Boulevard"];
-const PICKUP_TIMES = ["10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 1:00 PM", "1:00 PM - 2:00 PM", "2:00 PM - 3:00 PM", "3:00 PM - 4:00 PM"];
+const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
 
 const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
-
 // --- View Components (Customer Facing) ---
-const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, showToast }) => {
+const ShopView = ({ setBgGradient, showToast }) => {
+    const { products, inventory, inventoryLoaded } = useContext(DataContext);
+    const { addToCart, buyNow } = useContext(CartContext);
     const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
     const feedRef = useRef(null);
+
     useEffect(() => {
         const feedEl = feedRef.current;
         if (!feedEl) return;
@@ -102,13 +94,14 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
         return () => feedEl.removeEventListener('scroll', handleScroll);
     }, [products]);
 
-    const ProductCard = ({ product, onAddToCart, onBuyNow, inventory }) => {
+    const ProductCard = React.memo(({ product, onAddToCart, onBuyNow, inventory, inventoryLoaded }) => {
         const [quantity, setQuantity] = useState(1);
         const availableStock = useMemo(() => {
+            if (!inventoryLoaded) return 0;
             const productInventory = inventory[product.id];
             if (!productInventory || !Array.isArray(productInventory.batches)) return 0;
             return productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
-        }, [product.id, inventory]);
+        }, [product.id, inventory, inventoryLoaded]);
 
         const handleQuantityInputChange = (e) => {
             let newQuantity = parseInt(e.target.value) || 0;
@@ -154,11 +147,12 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
                     <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
-                    {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
-                        <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
-                    )}
-                    {availableStock === 0 && ( // Display out of stock message
+                    {!inventoryLoaded ? (
+                        <p className="text-sm text-yellow-300 font-semibold mt-1">Loading stock...</p>
+                    ) : availableStock === 0 ? (
                         <p className="text-sm text-red-400 font-semibold mt-1">Out of Stock!</p>
+                    ) : availableStock <= 15 && (
+                        <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
                     )}
                     <div className="flex items-center bg-white/20 rounded-lg mt-4 w-fit">
                         <button onClick={() => handleQuantityStepperChange(-1)} className="p-2 text-white" disabled={quantity <= 1 || availableStock === 0}>-</button>
@@ -192,7 +186,8 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
                 </div>
             </div>
         );
-    };
+    });
+
     return(
         <main ref={feedRef} className="feed">
             <div className="card justify-center text-center" style={{backgroundImage: `url('https://esirom.com/wp-content/uploads/2025/06/byot-hero-new-rob.png')`}} data-color-start="#111827" data-color-end="#374151">
@@ -221,14 +216,15 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
                 </div>
             ) : (
                 sortedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} inventory={inventory} />
+                    <ProductCard key={product.id} product={product} onAddToCart={addToCart} onBuyNow={buyNow} inventory={inventory} inventoryLoaded={inventoryLoaded} />
                 ))
             )}
         </main>
     );
 };
-const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, onBack, inventory, showToast }) => {
-    const subtotal = useMemo(() => Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+const CartView = ({ onBack, onGoToCheckout, showToast }) => {
+    const { cart, updateCartQuantity, removeFromCart, subtotal } = useContext(CartContext);
+    const { inventory } = useContext(DataContext);
 
     const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
         const productInventory = inventory[id];
@@ -278,7 +274,9 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
         </div>
     );
 };
-const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }) => {
+const CheckoutView = ({ onBack, showToast }) => {
+    const { cart, subtotal, placeOrder } = useContext(CartContext);
+    const { coupons } = useContext(DataContext);
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
     const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
     const [paymentMethod, setPaymentMethod] = useState('cod');
@@ -287,6 +285,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [couponMessage, setCouponMessage] = useState('');
+    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     useEffect(() => {
         if (fulfillmentMethod !== 'pickup') {
@@ -382,7 +381,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
 
     useEffect(() => {
         if (appliedCoupon) {
-            const currentDiscount = discount;
+            const currentDiscount = discount; 
             if (currentDiscount > 0) {
                 setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
             } else {
@@ -396,29 +395,25 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
 
     const handleCopyBankInfo = () => {
         const bankInfo = `Company: Esirom Foundation Limited\nBank: Scotiabank\nBranch: Oxford Road\nAccount #: 846837, SAVINGS (JMD Account)`;
-        const textArea = document.createElement("textarea");
-        textArea.value = bankInfo;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showToast('Bank info copied to clipboard!', 'success');
-        } catch (err) {
+        navigator.clipboard.writeText(bankInfo).then(() => {
+            showToast('Bank info copied to clipboard!');
+        }).catch(err => {
             showToast('Failed to copy text.', 'error');
-        }
-        document.body.removeChild(textArea);
+        });
     };
 
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsPlacingOrder(true);
+
         const formData = new FormData(e.target);
         const fullName = formData.get('fullName');
         const email = formData.get('email');
         const phone = formData.get('phone');
         const knutsfordLocation = formData.get('knutsford_location');
 
-        placeOrder({
+        await placeOrder({
             customerInfo: { name: fullName, email, phone },
             items: cart,
             subtotal,
@@ -433,6 +428,8 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
             knutsfordLocation: fulfillmentMethod === 'knutsford' ? knutsfordLocation : null,
             bearerLocation: fulfillmentMethod === 'bearer' ? bearerLocation : null,
         });
+
+        setIsPlacingOrder(false);
     };
 
     const getNextWeekday = (date) => {
@@ -602,7 +599,9 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                     <span>Total</span>
                     <span>J${total.toLocaleString()}</span>
                 </div>
-                <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Place Order</button>
+                <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg" disabled={isPlacingOrder}>
+                    {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+                </button>
             </footer>
         </div>
     );
@@ -640,8 +639,29 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin, showToast }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password, showToast); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, orders, products, inventory, coupons, costBatches, showToast, onUpdate, onAdd, onDelete, onBatchUpdate }) => {
+const AdminDashboard = ({ onLogout, onUpdate, onAdd, onDelete, onBatchUpdate, showToast }) => {
     const [adminView, setAdminView] = useState('orders');
+    const { products, inventory } = useContext(DataContext);
+    // Admin-specific data fetching
+    const [orders, setOrders] = useState([]);
+    const [coupons, setCoupons] = useState([]);
+    const [costBatches, setCostBatches] = useState([]);
+
+    useEffect(() => {
+        const unsubscribes = [
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
+                setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
+                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
+                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+        ];
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, []);
+
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
@@ -685,8 +705,10 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
     };
 
     const handleDeleteOrder = async (orderId) => {
-        await onDelete('orders', orderId);
-        setSelectedOrder(null);
+        if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+            await onDelete('orders', orderId);
+            setSelectedOrder(null);
+        }
     };
 
     const handleManualSubmit = async (e, manualOrderItems) => {
@@ -695,12 +717,20 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         for (const item of manualOrderItems) {
             if(!item.productId) continue;
             const productInventory = inventory.current[item.productId];
-            const availableStock = productInventory && Array.isArray(productInventory.batches)
+            if (!productInventory) {
+                 showToast(`Inventory data not found for product.`, 'error');
+                 return;
+            }
+            const availableStock = Array.isArray(productInventory.batches)
                 ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
                 : 0;
-
+            const product = products.find(p => p.id === item.productId);
+            if (!product) {
+                showToast(`Product with ID ${item.productId} not found.`, 'error');
+                continue;
+            }
             if (item.quantity > availableStock) {
-                showToast(`Cannot add order: Quantity for ${products.find(p=>p.id === item.productId).name} exceeds available stock of ${availableStock}.`, 'error');
+                showToast(`Cannot add order: Quantity for ${product.name} exceeds available stock of ${availableStock}.`, 'error');
                 return;
             }
         }
@@ -726,7 +756,11 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             return 0;
         })();
 
+        const orderId = doc(collection(db, '_')).id; // Generate a new ID client-side
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+
         const newOrder = {
+            id: orderId,
             customerInfo: { name: formData.get('customerName'), email: formData.get('customerEmail'), phone: formData.get('customerPhone')},
             items, subtotal, fulfillmentCost, total: subtotal + fulfillmentCost,
             createdAt: new Date().toISOString(),
@@ -739,10 +773,10 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             knutsfordLocation: formData.get('manualFulfillmentMethod') === 'knutsford' ? formData.get('manualKnutsfordLocation') : null,
             bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
         };
-        await onAdd("orders", newOrder);
-        showToast("Manual order added successfully!");
-
+        
         const batch = writeBatch(db);
+        batch.set(newOrderRef, newOrder);
+
         for (const item of manualOrderItems) {
             if (item.productId && item.quantity > 0) {
                 const currentProductInv = inventory.current[item.productId];
@@ -753,27 +787,24 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                     updatedBatches.sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
 
                     for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
-                        let batch = updatedBatches[i];
-                        const deductibleFromBatch = Math.min(remainingToDeduct, batch.unengraved);
-                        batch.unengraved -= deductibleFromBatch;
+                        let batchEntry = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                        batchEntry.unengraved -= deductibleFromBatch;
                         remainingToDeduct -= deductibleFromBatch;
                     }
 
                     const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-
-                    const productDocRef = doc(db, `artifacts/${currentAppId}/public/data/inventory`, item.productId);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.productId);
                     batch.set(productDocRef, { batches: newBatches }, { merge: true });
                 }
             }
         }
         try {
             await batch.commit();
-            showToast("Inventory updated for manual order!");
+            showToast("Manual order added and inventory updated!");
         } catch (error) {
-            showToast("Failed to update inventory for manual order.", "error");
+            showToast("Failed to create order and update inventory.", "error");
         }
-
-
         setShowManualForm(false);
     };
 
@@ -852,8 +883,8 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                 </div>
 
                 <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
-                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-blue-500 text-white rounded-md flex items-center text-sm hover:bg-blue-600">
-                        <EditIcon className="mr-1"/> Edit Order
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-600 text-white rounded-md flex items-center text-sm hover:bg-red-700">
+                        <TrashIcon className="mr-1"/> Delete Order
                     </button>
                     <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
                 </div>
@@ -1141,11 +1172,13 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
     };
 
     const handleRemoveBatch = (productId, batchIndex) => {
-        setLocalInventory(prev => {
-            const productInv = { ...prev[productId] };
-            const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
-            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
-        });
+        if(window.confirm('Are you sure you want to remove this batch entry?')) {
+            setLocalInventory(prev => {
+                const productInv = { ...prev[productId] };
+                const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
+                return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+            });
+        }
     };
 
     const handleSaveProductInventory = async (productId) => {
@@ -1213,7 +1246,7 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         </div>
     )
 }
-const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) => {
+const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
     const [editingProduct, setEditingProduct] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -1248,6 +1281,13 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
         setEditingProduct(null);
         setIsAddingNew(false);
     };
+    
+    const handleDelete = async (productId) => {
+        if(window.confirm('Are you sure you want to delete this product? This will also remove associated inventory data.')) {
+            await onDelete('products', productId);
+            await onDelete('inventory', productId);
+        }
+    };
 
     const sortedProducts = useMemo(() => {
         return [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -1281,9 +1321,14 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
                     <input name="displayOrder" type="number" defaultValue={formInitialData.displayOrder} className="w-full p-2 border rounded mt-1"/>
                     <p className="text-xs text-gray-500 mt-1">Products are ordered from smallest to largest display order.</p>
                 </div>
-                <div className="flex justify-end space-x-2">
-                    <button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                <div className="flex justify-between items-center">
+                    {!isAddingNew && (
+                         <button type="button" onClick={() => handleDelete(editingProduct.id)} className="px-4 py-2 bg-red-600 text-white rounded-md">Delete Product</button>
+                    )}
+                    <div className="flex justify-end space-x-2 w-full">
+                        <button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1324,7 +1369,7 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
         </div>
     )
 }
-const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
+const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showToast, products }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [appliesToOption, setAppliesToOption] = useState('all');
@@ -1372,6 +1417,14 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
         setEditingCoupon(null);
         setIsAddingNew(false);
     };
+
+    const handleDelete = async (couponId) => {
+        if(window.confirm('Are you sure you want to delete this coupon?')) {
+            await onDelete('coupons', couponId);
+            setEditingCoupon(null);
+            setIsAddingNew(false);
+        }
+    }
 
     const handleProductSelection = (productId) => {
         setSelectedProductIds(prev =>
@@ -1445,9 +1498,14 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, showToast, products }) => {
                         <input name="isActive" type="checkbox" defaultChecked={formInitialData.isActive} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
                         <label className="ml-2 block text-sm text-gray-900">Active</label>
                     </div>
-                    <div className="flex justify-end space-x-2">
-                        <button type="button" onClick={() => { setEditingCoupon(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    <div className="flex justify-between items-center">
+                        {!isAddingNew && (
+                            <button type="button" onClick={() => handleDelete(editingCoupon.id)} className="px-4 py-2 bg-red-600 text-white rounded-md">Delete Coupon</button>
+                        )}
+                        <div className="flex justify-end space-x-2 w-full">
+                            <button type="button" onClick={() => { setEditingCoupon(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1817,66 +1875,21 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
     )
 }
 
-// --- Main App Component ---
-export default function App() {
+// --- App Structure & Providers ---
+const App = () => {
     const [view, setView] = useState('shop');
-    const [isAdminMode, setIsAdminMode] = useState(false);
-    const [products, setProducts] = useState([]);
-    const [inventory, setInventory] = useState({});
-    const [orders, setOrders] = useState([]);
-    const [coupons, setCoupons] = useState([]);
-    const [costBatches, setCostBatches] = useState([]);
-    const [cart, setCart] = useState({});
-    const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
     const [toastMessage, setToastMessage] = useState('');
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
-    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
 
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, user => {
-            if (user) {
-                setIsAuthReady(true);
-            } else {
-                signInAnonymously(auth).catch(error => {
-                    console.error("Anonymous sign-in failed:", error);
-                    setIsAuthReady(true);
-                });
-            }
-        });
-        return () => unsubscribeAuth();
-    }, []);
+    const showToast = (message, type = 'success') => {
+        setToastMessage(message);
+        setToastType(type);
+        setTimeout(() => setToastMessage(''), 3000);
+    };
 
-    useEffect(() => {
-        if (!isAuthReady) return;
-
-        const unsubscribes = [
-            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/products`), (snapshot) => {
-                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }, (error) => console.error("Firestore 'products' error:", error)),
-
-            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/inventory`), (snapshot) => {
-                const invData = {};
-                snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
-                setInventory(invData);
-            }, (error) => console.error("Firestore 'inventory' error:", error)),
-
-            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/orders`), (snapshot) => {
-                setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }, (error) => console.error("Firestore 'orders' error:", error)),
-
-            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/coupons`), (snapshot) => {
-                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }, (error) => console.error("Firestore 'coupons' error:", error)),
-
-            onSnapshot(collection(db, `artifacts/${currentAppId}/public/data/costBatches`), (snapshot) => {
-                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }, (error) => console.error("Firestore 'costBatches' error:", error))
-        ];
-
-        return () => unsubscribes.forEach(unsub => unsub());
-    }, [isAuthReady]); // Removed currentAppId as it's constant and doesn't need to trigger re-renders
-
+    const { isAdminMode } = useContext(AuthContext);
 
     useEffect(() => {
         if (!isAdminMode && view !== 'shop') {
@@ -1888,156 +1901,25 @@ export default function App() {
         }
     }, [view, isAdminMode]);
 
-    const showToast = (message, type = 'success') => {
-        setToastMessage(message);
-        setToastType(type);
-        setTimeout(() => setToastMessage(''), 3000);
-    };
-
-    const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
-    const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
-
-    const handleAddToCart = (product, quantity) => { setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); showToast(`${quantity} x ${product.name} added!`); };
-    const handleBuyNow = (product, quantity) => { setCart({ [product.id]: { ...product, quantity } }); setView('checkout'); };
-    const handleUpdateCartQuantity = (id, q) => { if (q < 1) { handleRemoveFromCart(id); return; } setCart(p => ({...p, [id]: {...p[id], quantity: q}})); };
-    const handleRemoveFromCart = (id) => { setCart(p => { const n = {...p}; delete n[id]; return n; }); };
-
-    const placeOrder = async (order) => {
-        const activeCostBatch = costBatches.find(b => b.isActive);
-        const newOrder = {
-            ...order,
-            costBatchId: activeCostBatch ? activeCostBatch.id : null,
-            createdAt: new Date().toISOString(),
-            paymentStatus: 'Pending',
-            fulfillmentStatus: 'Pending'
-        };
-
-        try {
-            const docRef = await addDoc(collection(db, `artifacts/${currentAppId}/public/data/orders`), newOrder);
-            setOrderData({ ...newOrder, id: docRef.id });
-
-            const batch = writeBatch(db);
-            for (const item of Object.values(order.items)) {
-                if (item.id && item.quantity > 0) {
-                    const currentProductInv = inventory[item.id];
-                    if (currentProductInv && Array.isArray(currentProductInv.batches)) {
-                        let remainingToDeduct = item.quantity;
-                        const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
-
-                        for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
-                            let batchEntry = updatedBatches[i];
-                            const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
-                            batchEntry.unengraved -= deductibleFromBatch;
-                            remainingToDeduct -= deductibleFromBatch;
-                        }
-
-                        const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-                        const productDocRef = doc(db, `artifacts/${currentAppId}/public/data/inventory`, item.id);
-                        batch.set(productDocRef, { batches: newBatches }, { merge: true });
-                    }
-                }
-            }
-            await batch.commit();
-            showToast("Order placed and inventory updated!", "success");
-
-            if (order.paymentMethod === 'credit_card') {
-                setView('payment');
-            } else {
-                setView('confirmation');
-            }
-            setCart({});
-        } catch (error) {
-            showToast('Failed to place order. ' + error.message, 'error');
-        }
-    };
-
-    const handleContinueShopping = () => { setOrderData(null); setView('shop'); };
-    const handleLogin = async (email, password, toastFn) => {
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            setIsAdminMode(true);
-            toastFn("Logged in as admin!");
-        } catch (error) {
-            toastFn('Login Failed! ' + error.message, 'error');
-        }
-    }
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            setIsAdminMode(false);
-            setView('shop');
-            showToast("Logged out successfully.");
-        } catch (error) {
-            showToast("Logout failed.", "error");
-        }
-    }
-
-     const handleUpdateFirestore = async (collectionName, docId, data) => {
-        try {
-            await setDoc(doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId), data, { merge: true });
-            showToast(`${collectionName.slice(0,-1)} updated!`);
-        }
-        catch (error) {
-            showToast(`Error updating ${collectionName.slice(0,-1)}`, 'error');
-        }
-    };
-
-    const handleAddFirestore = async (collectionName, data) => {
-        try {
-            await addDoc(collection(db, `artifacts/${currentAppId}/public/data/${collectionName}`), data);
-            showToast(`${collectionName.slice(0,-1)} added!`);
-        } catch (error) {
-            showToast(`Error adding ${collectionName.slice(0,-1)}`, 'error');
-        }
-    };
-
-    const handleDeleteFirestore = async (collectionName, docId) => {
-        try {
-            await deleteDoc(doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId));
-            showToast(`${collectionName.slice(0,-1)} deleted!`);
-        } catch(error) {
-            showToast(`Error deleting ${collectionName.slice(0,-1)}`, 'error');
-        }
-    };
-
-    const handleBatchUpdate = async (updates) => {
-        const batch = writeBatch(db);
-        updates.forEach(({collectionName, docId, data}) => {
-            const docRef = doc(db, `artifacts/${currentAppId}/public/data/${collectionName}`, docId);
-            batch.update(docRef, data);
-        });
-        try {
-            await batch.commit();
-            showToast('Batch update successful!');
-        } catch (error) {
-            showToast('Batch update failed.', 'error');
-        }
-    };
-
     const renderContent = () => {
         if (isAdminMode) {
-            return <AdminDashboard
-                onLogout={handleLogout}
-                orders={orders}
-                products={products}
-                inventory={inventory}
-                coupons={coupons}
-                costBatches={costBatches}
-                showToast={showToast}
-                onUpdate={handleUpdateFirestore}
-                onAdd={handleAddFirestore}
-                onDelete={handleDeleteFirestore}
+            return <AdminDashboard 
+                onLogout={async () => { await signOut(auth); }} 
+                onUpdate={(...args) => handleUpdateFirestore(...args, showToast)}
+                onAdd={(...args) => handleAddFirestore(...args, showToast)}
+                onDelete={(...args) => handleDeleteFirestore(...args, showToast)}
                 onBatchUpdate={handleBatchUpdate}
+                showToast={showToast}
             />;
         }
         switch (view) {
-            case 'shop': return <div className="view active"><ShopView products={products} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} setBgGradient={setBgGradient} inventory={inventory} showToast={showToast} /></div>;
-            case 'cart': return <CartView cart={cart} updateCartQuantity={handleUpdateCartQuantity} removeFromCart={handleRemoveFromCart} onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} inventory={inventory} showToast={showToast}/>;
-            case 'checkout': return <CheckoutView cart={cart} subtotal={subtotal} placeOrder={placeOrder} onBack={() => setView('cart')} coupons={coupons} showToast={showToast} />;
-            case 'confirmation': return <ConfirmationView order={orderData} onContinue={handleContinueShopping} />;
-            case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); setCart(orderData.items); }} />;
+            case 'shop': return <div className="view active"><ShopView setBgGradient={setBgGradient} showToast={showToast} /></div>; 
+            case 'cart': return <CartView onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} showToast={showToast}/>; 
+            case 'checkout': return <CheckoutView onBack={() => setView('cart')} showToast={showToast} />;
+            case 'confirmation': return <ConfirmationView order={orderData} onContinue={() => setView('shop')} />;
+            case 'payment': return <CreditCardView order={orderData} onBack={() => setView('checkout')} />;
             case 'about': return <AboutView onBack={() => setView('shop')} />;
-            case 'admin': return <AdminLoginView onLogin={handleLogin} showToast={showToast}/>;
+            case 'admin': return <AdminLoginView onLogin={(...args) => handleLogin(...args, showToast)} />;
             default: return null;
         }
     };
@@ -2059,7 +1941,7 @@ export default function App() {
                     <nav className="bg-white/80 backdrop-blur-lg border-t border-gray-200 flex-shrink-0">
                         <div className="flex justify-around h-20">
                              <button onClick={() => setView('shop')} className={`flex flex-col items-center justify-center w-full ${view === 'shop' ? 'text-blue-600' : 'text-gray-500'}`}><HomeIcon /><span className="text-xs font-medium">Shop</span></button>
-                            <button onClick={() => setView('cart')} className={`flex flex-col items-center justify-center w-full relative ${view === 'cart' ? 'text-blue-600' : 'text-gray-500'}`}><CartIcon /><span className="text-xs font-medium">Cart</span>{cartCount > 0 && <span className="absolute top-4 right-8 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>}</button>
+                             <CartButtonWithCount setView={setView} view={view}/>
                             <button onClick={() => setView('about')} className={`flex flex-col items-center justify-center w-full ${view === 'about' ? 'text-blue-600' : 'text-gray-500'}`}><InfoIcon /><span className="text-xs font-medium">About</span></button>
                             <button onClick={() => setView('admin')} className={`flex flex-col items-center justify-center w-full ${view === 'admin' ? 'text-blue-600' : 'text-gray-500'}`}><UserIcon /><span className="text-xs font-medium">Account</span></button>
                         </div>
@@ -2069,3 +1951,238 @@ export default function App() {
         </div>
     );
 }
+
+const CartButtonWithCount = ({setView, view}) => {
+    const { cartCount } = useContext(CartContext);
+    return (
+        <button onClick={() => setView('cart')} className={`flex flex-col items-center justify-center w-full relative ${view === 'cart' ? 'text-blue-600' : 'text-gray-500'}`}>
+            <CartIcon />
+            <span className="text-xs font-medium">Cart</span>
+            {cartCount > 0 && <span className="absolute top-4 right-8 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>}
+        </button>
+    );
+}
+
+// --- Firestore CRUD Handlers ---
+const handleUpdateFirestore = async (collectionName, docId, data, showToast) => {
+    try {
+        await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
+        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} updated!`);
+    } 
+    catch (error) {
+        showToast(`Error updating ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+    }
+};
+
+const handleAddFirestore = async (collectionName, data, showToast) => {
+    try {
+        await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} added!`);
+    } catch (error) {
+        showToast(`Error adding ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+    }
+};
+
+const handleDeleteFirestore = async (collectionName, docId, showToast) => {
+    try {
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
+        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
+    } catch(error) {
+        showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+    }
+};
+
+const handleBatchUpdate = async (updates, showToast) => {
+    const batch = writeBatch(db);
+    updates.forEach(({collectionName, docId, data}) => {
+        const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
+        batch.update(docRef, data);
+    });
+    try {
+        await batch.commit();
+        showToast('Batch update successful!');
+    } catch (error) {
+        showToast('Batch update failed.', 'error');
+    }
+};
+
+const handleLogin = async (email, password, showToast, setIsAdminMode) => {
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        setIsAdminMode(true);
+        showToast("Logged in as admin!");
+    } catch (error) {
+        showToast('Login Failed! ' + error.message, 'error');
+    }
+}
+
+// --- Context Provider Components ---
+const DataProvider = ({ children }) => {
+    const [products, setProducts] = useState([]);
+    const [inventory, setInventory] = useState({});
+    const [inventoryLoaded, setInventoryLoaded] = useState(false);
+    const [coupons, setCoupons] = useState([]);
+    const [costBatches, setCostBatches] = useState([]);
+    const { isAuthReady } = useContext(AuthContext);
+
+    useEffect(() => {
+        if (!isAuthReady) return;
+
+        const unsubscribes = [
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/products`), (snapshot) => {
+                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/inventory`), (snapshot) => {
+                const invData = {};
+                snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
+                setInventory(invData);
+                setInventoryLoaded(true);
+            }),
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
+                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+             onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
+                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            }),
+        ];
+
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, [isAuthReady]);
+
+    const value = { products, inventory, inventoryLoaded, coupons, costBatches };
+    return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+};
+
+const CartProvider = ({ children, setView, showToast, setOrderData }) => {
+    const [cart, setCart] = useState({});
+    const { inventory, costBatches } = useContext(DataContext);
+    const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
+    const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
+
+    const addToCart = (product, quantity) => { 
+        setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); 
+        showToast(`${quantity} x ${product.name} added!`); 
+    };
+    
+    const buyNow = (product, quantity) => { 
+        setCart({ [product.id]: { ...product, quantity } }); 
+        setView('checkout'); 
+    };
+
+    const updateCartQuantity = (id, q) => { 
+        if (q < 1) { 
+            removeFromCart(id); 
+            return; 
+        } 
+        setCart(p => ({...p, [id]: {...p[id], quantity: q}})); 
+    };
+
+    const removeFromCart = (id) => { 
+        setCart(p => { const n = {...p}; delete n[id]; return n; }); 
+    };
+    
+    const placeOrder = async (order) => {
+        const activeCostBatch = costBatches.find(b => b.isActive);
+        const orderId = doc(collection(db, '_')).id;
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+
+        const newOrder = {
+            id: orderId,
+            ...order,
+            costBatchId: activeCostBatch ? activeCostBatch.id : null,
+            createdAt: new Date().toISOString(),
+            paymentStatus: 'Pending',
+            fulfillmentStatus: 'Pending'
+        };
+
+        const batch = writeBatch(db);
+        batch.set(newOrderRef, newOrder);
+        
+        for (const item of Object.values(order.items)) {
+            if (item.id && item.quantity > 0) {
+                const currentProductInv = inventory[item.id];
+                if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                    let remainingToDeduct = item.quantity;
+                    const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                    for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                        let batchEntry = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                        batchEntry.unengraved -= deductibleFromBatch;
+                        remainingToDeduct -= deductibleFromBatch;
+                    }
+
+                    const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.id);
+                    batch.set(productDocRef, { batches: newBatches }, { merge: true });
+                }
+            }
+        }
+        try {
+            await batch.commit();
+            setOrderData({ ...newOrder, id: orderId }); 
+            showToast("Order placed and inventory updated!", "success");
+
+            if (order.paymentMethod === 'credit_card') {
+                setView('payment');
+            } else {
+                setView('confirmation');
+            }
+            setCart({});
+        } catch (error) {
+            showToast('Failed to place order. ' + error.message, 'error');
+        }
+    };
+
+    const value = { cart, cartCount, subtotal, addToCart, buyNow, updateCartQuantity, removeFromCart, placeOrder };
+
+    return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+};
+
+const AuthProvider = ({ children }) => {
+    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [isAdminMode, setIsAdminMode] = useState(false);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setUser(user);
+                // Persist admin state on refresh if user is not anonymous
+                if(!user.isAnonymous) {
+                    setIsAdminMode(true);
+                }
+                setIsAuthReady(true);
+            } else {
+                try {
+                    const anonUser = await signInAnonymously(auth);
+                    setUser(anonUser.user);
+                } catch(error) {
+                    console.error("Anonymous sign-in failed:", error);
+                }
+                setIsAdminMode(false);
+                setIsAuthReady(true);
+            }
+        });
+        return () => unsubscribeAuth();
+    }, []);
+
+    const value = { user, isAuthReady, isAdminMode, setIsAdminMode };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+
+// --- Root Component ---
+export default function AppWrapper() {
+  return (
+    <AuthProvider>
+        <DataProvider>
+            <CartProvider>
+                <App />
+            </CartProvider>
+        </DataProvider>
+    </AuthProvider>
+  )
+}
+
