@@ -16,16 +16,13 @@ const COLLECTION_NAMES = {
     coupons: "Coupon",
     orders: "Order",
     inventory: "Inventory",
-    costBatches: "Cost Batch",
 };
 
 // --- Firebase Configuration ---
-// This uses the globally provided config first, with a fallback for local dev.
-// FIXED: The fallback apiKey had a typo, which is now corrected.
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", // CORRECTED API KEY
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", 
         authDomain: "byot-40fe2.firebaseapp.com",
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
@@ -46,12 +43,11 @@ const DataContext = createContext(null);
 const CartContext = createContext(null);
 const AuthContext = createContext(null);
 const AppContext = createContext(null);
-const ModalContext = createContext(null); // NEW: Context for confirmation modals
+const ModalContext = createContext(null); 
 
 // --- Helper Hooks & Functions ---
 const useModal = () => useContext(ModalContext);
 
-// NEW: Improved clipboard copy function for better compatibility.
 const copyToClipboard = (text, showToast) => {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -70,7 +66,7 @@ const copyToClipboard = (text, showToast) => {
 };
 
 
-// --- Icon Components (No Changes) ---
+// --- Icon Components ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
@@ -119,7 +115,7 @@ const ShopView = () => {
                 }
             }, 50);
         };
-        handleScroll(); // Set initial gradient
+        handleScroll(); 
         feedEl.addEventListener('scroll', handleScroll);
         return () => feedEl.removeEventListener('scroll', handleScroll);
     }, [products, setBgGradient]);
@@ -419,7 +415,7 @@ const CheckoutView = ({ onBack, showToast }) => {
                 setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
             } else {
                 setCouponMessage('Coupon not applicable to items in your cart.');
-                 setAppliedCoupon(null); // Reset if not applicable
+                 setAppliedCoupon(null);
             }
         } else {
             setCouponMessage('');
@@ -678,7 +674,6 @@ const AdminDashboard = ({ onLogout }) => {
     // Admin-specific data fetching
     const [orders, setOrders] = useState([]);
     const [coupons, setCoupons] = useState([]);
-    const [costBatches, setCostBatches] = useState([]);
 
     useEffect(() => {
         const createSubscription = (collectionName, setter) => {
@@ -697,7 +692,6 @@ const AdminDashboard = ({ onLogout }) => {
         const unsubscribes = [
             createSubscription('orders', setOrders),
             createSubscription('coupons', setCoupons),
-            createSubscription('costBatches', setCostBatches),
         ];
         return () => unsubscribes.forEach(unsub => unsub());
     }, [showToast]);
@@ -705,7 +699,6 @@ const AdminDashboard = ({ onLogout }) => {
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
-    // Combine CRUD handlers into one object to pass down
     const crudHandlers = {
       onUpdate: (...args) => handleUpdateFirestore(...args, showToast),
       onAdd: (...args) => handleAddFirestore(...args, showToast),
@@ -738,7 +731,7 @@ const AdminDashboard = ({ onLogout }) => {
                     {adminView === 'inventory' && <AdminInventoryView inventory={inventory} products={products} {...crudHandlers} />}
                     {adminView === 'products' && <AdminProductsView products={products} {...crudHandlers}/>}
                     {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} {...crudHandlers} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} {...crudHandlers}/>}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} {...crudHandlers}/>}
                  </div>
             </main>
         </div>
@@ -1338,7 +1331,7 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showModal}) => {
     const handleDelete = (productId) => {
         showModal('Are you sure? This will delete the product and its inventory data.', async () => {
             await onDelete('products', productId);
-            await onDelete('inventory', productId, false); // Don't show modal again
+            await onDelete('inventory', productId, false); 
         });
     };
 
@@ -1625,8 +1618,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showModal, product
         </div>
     )
 }
-const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate, showToast }) => {
-    const [editingBatch, setEditingBatch] = useState(null);
+const AdminInsightsView = ({ orders }) => {
 
     const getCurrentMonthDateRange = () => {
         const date = new Date();
@@ -1639,81 +1631,7 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
     };
 
     const [dateRange, setDateRange] = useState(getCurrentMonthDateRange());
-
-    const handleSaveBatch = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const batchData = {
-            name: formData.get('name'),
-            productCost: Number(formData.get('productCost')),
-            alibabaShipping: Number(formData.get('alibabaShipping')),
-            mailpacShipping: Number(formData.get('mailpacShipping')),
-            numSets: Number(formData.get('numSets')),
-        };
-        batchData.costPerSet = batchData.numSets > 0 ? (batchData.productCost + batchData.alibabaShipping + batchData.mailpacShipping) / batchData.numSets : 0;
-
-        await onUpdate('costBatches', editingBatch.id, batchData);
-        setEditingBatch(null);
-    };
-
-    const handleCreateNewBatch = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const newBatchData = {
-            name: formData.get('name'),
-            productCost: Number(formData.get('productCost')),
-            alibabaShipping: Number(formData.get('alibabaShipping')),
-            mailpacShipping: Number(formData.get('mailpacShipping')),
-            numSets: Number(formData.get('numSets')),
-            startDate: new Date().toISOString(),
-            endDate: null,
-            isActive: true,
-        };
-        newBatchData.costPerSet = newBatchData.numSets > 0 ? (newBatchData.productCost + newBatchData.alibabaShipping + newBatchData.mailpacShipping) / newBatchData.numSets : 0;
-
-        const updates = costBatches
-            .filter(b => b.isActive)
-            .map(b => ({
-                collectionName: 'costBatches',
-                docId: b.id,
-                data: { isActive: false, endDate: new Date().toISOString() }
-            }));
-
-        if (updates.length > 0) {
-            await onBatchUpdate(updates);
-        }
-        await onAdd('costBatches', newBatchData);
-
-        setEditingBatch(null);
-    };
-
-    const handleToggleBatchStatus = (batchIdToToggle) => {
-         const targetBatch = costBatches.find(b => b.id === batchIdToToggle);
-            if (!targetBatch) return;
-
-            if (targetBatch.isActive) {
-                const activeBatchesCount = costBatches.filter(b => b.isActive).length;
-                if (activeBatchesCount <= 1) {
-                    showToast("Cannot deactivate the only active batch.", "error");
-                    return;
-                }
-            }
-
-        const updates = costBatches.map(batch => {
-            if(batch.id === batchIdToToggle) {
-                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: !batch.isActive, endDate: !batch.isActive ? new Date().toISOString() : null }}
-            }
-             if (targetBatch && !targetBatch.isActive && batch.isActive) {
-                return { collectionName: 'costBatches', docId: batch.id, data: { isActive: false, endDate: new Date().toISOString() }};
-            }
-            return null;
-        }).filter(Boolean);
-
-        if (updates.length > 0) {
-            onBatchUpdate(updates);
-        }
-    };
-
+    
     const { reportData } = useMemo(() => {
         const from = new Date(dateRange.from).setHours(0,0,0,0);
         const to = new Date(dateRange.to).setHours(23,59,59,999);
@@ -1726,30 +1644,19 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
             });
 
         const data = {
-            totalIncome: 0, totalProfit: 0, sales: 0,
+            totalIncome: 0, sales: 0,
             returnedValue: 0, refundedValue: 0,
-            popularColors: {}
+            popularProducts: {}
         };
 
         filtered.forEach(order => {
             const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
             
-            // Find cost batch active at the time of the order
-            const orderDate = new Date(order.createdAt);
-            const costBatch = costBatches.find(b => {
-                const startDate = new Date(b.startDate);
-                const endDate = b.endDate ? new Date(b.endDate) : new Date(); // Use now if not ended
-                return orderDate >= startDate && orderDate <= endDate;
-            }) || costBatches.find(b => b.isActive); // Fallback to current active
-
-            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-            
             if (order.paymentStatus === 'Paid' && order.fulfillmentStatus !== 'Cancelled') {
                 data.totalIncome += order.total;
                 data.sales += orderQty;
-                data.totalProfit += order.total - costOfGoods;
                  Object.values(order.items).forEach(item => {
-                    data.popularColors[item.name] = (data.popularColors[item.name] || 0) + item.quantity;
+                    data.popularProducts[item.name] = (data.popularProducts[item.name] || 0) + item.quantity;
                  });
             }
             if (order.fulfillmentStatus === 'Returned') {
@@ -1763,13 +1670,13 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
         return {
             reportData: {
                 ...data,
-                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5) // Top 5
+                popularProductsChartData: Object.entries(data.popularProducts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5) // Top 5
             }
         };
-    }, [orders, costBatches, dateRange]);
+    }, [orders, dateRange]);
 
     const handleExport = () => {
-        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit", "Payment Status", "Fulfillment Status"];
+        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Payment Status", "Fulfillment Status"];
         
         const from = new Date(dateRange.from).setHours(0,0,0,0);
         const to = new Date(dateRange.to).setHours(23,59,59,999);
@@ -1782,16 +1689,7 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
             });
 
         const rows = filtered.map(order => {
-            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
             const orderDate = new Date(order.createdAt);
-            const costBatch = costBatches.find(b => {
-                const startDate = new Date(b.startDate);
-                const endDate = b.endDate ? new Date(b.endDate) : new Date();
-                return orderDate >= startDate && orderDate <= endDate;
-            }) || costBatches.find(b => b.isActive);
-            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-            const profit = order.paymentStatus === 'Paid' ? order.total - costOfGoods : 0;
-
             const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
 
             return [
@@ -1803,7 +1701,6 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
                 order.discount || 0,
                 order.fulfillmentCost || 0,
                 order.total,
-                profit.toFixed(2),
                 order.paymentStatus,
                 order.fulfillmentStatus
             ].join(',');
@@ -1820,48 +1717,6 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-
-    const BatchForm = ({ batch, onSave, onCancel }) => {
-        return (
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-6">{batch.isNew ? "Create New Cost Batch" : "Edit Cost Batch"}</h2>
-                <form onSubmit={onSave} className="space-y-4">
-                     <div>
-                        <label className="font-semibold block mb-1">Batch Name</label>
-                        <input name="name" defaultValue={batch.name} placeholder="e.g. July 2025 Order" className="w-full p-2 border rounded" required />
-                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                         <div>
-                            <label className="font-semibold block mb-1">Shipping Cost (Alibaba)</label>
-                            <input name="alibabaShipping" type="number" step="0.01" defaultValue={batch.alibabaShipping} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                             <label className="font-semibold block mb-1">Shipping Cost (Mailpac)</label>
-                            <input name="mailpacShipping" type="number" step="0.01" defaultValue={batch.mailpacShipping} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                            <label className="font-semibold block mb-1">Product Cost (Alibaba)</label>
-                            <input name="productCost" type="number" step="0.01" defaultValue={batch.productCost} className="w-full p-2 border rounded" required />
-                         </div>
-                         <div>
-                             <label className="font-semibold block mb-1">Total # of Sets</label>
-                            <input name="numSets" type="number" defaultValue={batch.numSets} className="w-full p-2 border rounded" required />
-                         </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
-                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
-                    </div>
-                </form>
-                 <p className="text-xs text-gray-500 mt-4">Note: After saving, please update your stock levels in the 'Inventory' tab to reflect the new batch.</p>
-            </div>
-        );
-    };
-
-    if (editingBatch) {
-        return <BatchForm batch={editingBatch} onSave={editingBatch.isNew ? handleCreateNewBatch : handleSaveBatch} onCancel={() => setEditingBatch(null)} />
-    }
-
 
     return (
         <div>
@@ -1882,14 +1737,10 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Total Income</h3>
                     <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                    <h3 className="text-gray-500">Total Profit</h3>
-                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Sales (Period)</h3>
@@ -1908,7 +1759,7 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
             <div className="p-4 bg-white rounded-lg shadow mb-6">
                 <h3 className="font-bold mb-4">Most Popular Products (Period)</h3>
                 <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={reportData.popularColorsChartData} layout="vertical">
+                    <BarChart data={reportData.popularProductsChartData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
                         <YAxis type="category" dataKey="name" width={80} />
@@ -1916,37 +1767,6 @@ const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate
                         <Bar dataKey="count" fill="#3b82f6" name="Units Sold" />
                     </BarChart>
                 </ResponsiveContainer>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg shadow">
-                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold">Cost Batches</h3>
-                     <button onClick={() => setEditingBatch({ name: '', productCost: 0, alibabaShipping: 0, mailpacShipping: 0, numSets: 0, isNew: true })} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
-                 </div>
-                 <div className="space-y-2">
-                    {costBatches.slice().sort((a,b) => new Date(b.startDate) - new Date(a.startDate)).map(batch => (
-                        <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{batch.name}</p>
-                                    <p className="text-sm text-gray-600">Cost per Set: J${(batch.costPerSet || 0).toFixed(2)}</p>
-                                    <p className="text-xs text-gray-500">
-                                        {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                     <button onClick={() => setEditingBatch(batch)} className="p-1 text-blue-600 hover:text-blue-800"><EditIcon/></button>
-                                     <div className="flex items-center">
-                                        <span className={`text-xs mr-2 ${batch.isActive ? 'text-green-600 font-bold' : 'text-gray-500'}`}>{batch.isActive ? 'Active' : 'Inactive'}</span>
-                                        <button onClick={() => handleToggleBatchStatus(batch.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full ${batch.isActive ? 'bg-green-500' : 'bg-gray-300'}`}>
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${batch.isActive ? 'translate-x-6' : 'translate-x-1'}`}/>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
             </div>
         </div>
     )
@@ -1958,13 +1778,11 @@ const App = () => {
     const { isAdminMode, setIsAdminMode, handleLogin, handleLogout } = useContext(AuthContext);
 
     useEffect(() => {
-        // This effect manages the background gradient based on the current view
         if (isAdminMode) {
             setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)');
         } else if (view === 'shop') {
              // Let the ShopView component control its own gradient
         } else {
-            // Default gradient for other views like cart, checkout, etc.
             setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)');
         }
     }, [view, isAdminMode, setBgGradient]);
@@ -2088,7 +1906,6 @@ const DataProvider = ({ children }) => {
     const [inventory, setInventory] = useState({});
     const [inventoryLoaded, setInventoryLoaded] = useState(false);
     const [coupons, setCoupons] = useState([]);
-    const [costBatches, setCostBatches] = useState([]);
     const { isAuthReady } = useContext(AuthContext);
     const { showToast } = useContext(AppContext);
 
@@ -2117,20 +1934,19 @@ const DataProvider = ({ children }) => {
                 setInventoryLoaded(true);
             }),
             createSubscription('coupons', setCoupons),
-            createSubscription('costBatches', setCostBatches),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
     }, [isAuthReady, showToast]);
 
-    const value = { products, inventory, inventoryLoaded, coupons, costBatches };
+    const value = { products, inventory, inventoryLoaded, coupons };
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
 const CartProvider = ({ children }) => {
     const { setView, showToast, setOrderData } = useContext(AppContext);
     const [cart, setCart] = useState({});
-    const { inventory, costBatches } = useContext(DataContext);
+    const { inventory } = useContext(DataContext);
     const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
     const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
 
@@ -2157,14 +1973,12 @@ const CartProvider = ({ children }) => {
     };
     
     const placeOrder = async (order) => {
-        const activeCostBatch = costBatches.find(b => b.isActive);
         const orderId = doc(collection(db, '_')).id;
         const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
 
         const newOrder = {
             id: orderId,
             ...order,
-            costBatchId: activeCostBatch ? activeCostBatch.id : null,
             createdAt: new Date().toISOString(),
             paymentStatus: 'Pending',
             fulfillmentStatus: 'Pending'
@@ -2267,7 +2081,6 @@ const AuthProvider = ({ children }) => {
         await signOut(auth);
         setAdmin(false);
         setView('shop');
-        // Re-authenticate anonymously after admin logs out
         try {
             await signInAnonymously(auth);
         } catch (error) {
@@ -2304,7 +2117,6 @@ const AppProvider = ({ children }) => {
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
-// NEW: Modal provider and component for confirmations
 const ModalProvider = ({ children }) => {
     const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {} });
 
