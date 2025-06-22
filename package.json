@@ -1,14 +1,16 @@
 {
-  "name": "byot",
+  "name": "byot-ecommerce-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@headlessui/react": "^1.7.19",
-    "firebase": "^10.12.2",
+    "@headlessui/react": "^2.2.4",
+    "firebase": "^11.9.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "recharts": "^2.12.7",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
     "tailwindcss": "^3.4.3"
   },
   "scripts": {
