@@ -2271,4 +2271,4 @@ export default function AppWrapper() {
              )}
         </div>
     );
-  };
+}
