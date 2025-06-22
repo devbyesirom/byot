@@ -23,7 +23,7 @@ const COLLECTION_NAMES = {
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", // This is a public key
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ",
         authDomain: "byot-40fe2.firebaseapp.com",
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
@@ -36,6 +36,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2';
 
 // --- React Contexts for State Management ---
 const DataContext = createContext(null);
@@ -648,13 +649,13 @@ const AdminDashboard = ({ onLogout, onUpdate, onAdd, onDelete, onBatchUpdate, sh
 
     useEffect(() => {
         const unsubscribes = [
-            onSnapshot(collection(db, "orders"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
                 setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-            onSnapshot(collection(db, "coupons"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
                 setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-            onSnapshot(collection(db, "costBatches"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
                 setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
         ];
@@ -756,7 +757,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         })();
 
         const orderId = doc(collection(db, '_')).id; // Generate a new ID client-side
-        const newOrderRef = doc(db, "orders", orderId);
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
 
         const newOrder = {
             id: orderId,
@@ -793,7 +794,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                     }
 
                     const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-                    const productDocRef = doc(db, "inventory", item.productId);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.productId);
                     batch.set(productDocRef, { batches: newBatches }, { merge: true });
                 }
             }
@@ -1880,10 +1881,10 @@ const App = () => {
         view, setView, 
         toastMessage, toastType, 
         orderData, 
-        bgGradient, setBgGradient,
-        showToast
+        bgGradient, setBgGradient
     } = useContext(AppStateContext);
      const { isAdminMode, setIsAdminMode } = useContext(AuthContext);
+     const { showToast } = useContext(AppStateContext);
 
     useEffect(() => {
         if (!isAdminMode && view !== 'shop') {
@@ -1964,7 +1965,7 @@ const CartButtonWithCount = ({setView, view}) => {
 // --- Firestore CRUD Handlers ---
 const handleUpdateFirestore = async (collectionName, docId, data, showToast) => {
     try {
-        await setDoc(doc(db, collectionName, docId), data, { merge: true });
+        await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
         showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} updated!`);
     } 
     catch (error) {
@@ -1974,7 +1975,7 @@ const handleUpdateFirestore = async (collectionName, docId, data, showToast) => 
 
 const handleAddFirestore = async (collectionName, data, showToast) => {
     try {
-        await addDoc(collection(db, collectionName), data);
+        await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
         showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} added!`);
     } catch (error) {
         showToast(`Error adding ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
@@ -1983,7 +1984,7 @@ const handleAddFirestore = async (collectionName, data, showToast) => {
 
 const handleDeleteFirestore = async (collectionName, docId, showToast) => {
     try {
-        await deleteDoc(doc(db, collectionName, docId));
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
         showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
     } catch(error) {
         showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
@@ -1993,7 +1994,7 @@ const handleDeleteFirestore = async (collectionName, docId, showToast) => {
 const handleBatchUpdate = async (updates, showToast) => {
     const batch = writeBatch(db);
     updates.forEach(({collectionName, docId, data}) => {
-        const docRef = doc(db, collectionName, docId);
+        const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
         batch.update(docRef, data);
     });
     try {
@@ -2027,19 +2028,19 @@ const DataProvider = ({ children }) => {
         if (!isAuthReady) return;
 
         const unsubscribes = [
-            onSnapshot(collection(db, "products"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/products`), (snapshot) => {
                 setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-            onSnapshot(collection(db, "inventory"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/inventory`), (snapshot) => {
                 const invData = {};
                 snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
                 setInventory(invData);
                 setInventoryLoaded(true);
             }),
-            onSnapshot(collection(db, "coupons"), (snapshot) => {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
                 setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-             onSnapshot(collection(db, "costBatches"), (snapshot) => {
+             onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
                 setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
         ];
@@ -2083,7 +2084,7 @@ const CartProvider = ({ children }) => {
     const placeOrder = async (order) => {
         const activeCostBatch = costBatches.find(b => b.isActive);
         const orderId = doc(collection(db, '_')).id;
-        const newOrderRef = doc(db, "orders", orderId);
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
 
         const newOrder = {
             id: orderId,
@@ -2112,7 +2113,7 @@ const CartProvider = ({ children }) => {
                     }
 
                     const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-                    const productDocRef = doc(db, "inventory", item.id);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.id);
                     batch.set(productDocRef, { batches: newBatches }, { merge: true });
                 }
             }
