@@ -670,11 +670,16 @@ const AdminDashboard = ({ onLogout }) => {
     const { products, inventory } = useContext(DataContext);
     const { showToast } = useContext(AppContext);
     const showModal = useModal();
+    const { user, isAuthReady } = useContext(AuthContext); 
     // Admin-specific data fetching
     const [orders, setOrders] = useState([]);
     const [coupons, setCoupons] = useState([]);
 
     useEffect(() => {
+        if (!isAuthReady || !user || user.isAnonymous) {
+            return;
+        }
+
         const createSubscription = (collectionName, setter) => {
             const q = query(collection(db, `artifacts/${appId}/public/data/${collectionName}`));
             return onSnapshot(q, 
@@ -693,7 +698,7 @@ const AdminDashboard = ({ onLogout }) => {
             createSubscription('coupons', setCoupons),
         ];
         return () => unsubscribes.forEach(unsub => unsub());
-    }, [showToast]);
+    }, [isAuthReady, user, showToast]);
 
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
