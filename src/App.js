@@ -23,7 +23,7 @@ const COLLECTION_NAMES = {
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Replace with your actual Firebase API Key
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", // This is a public key
         authDomain: "byot-40fe2.firebaseapp.com",
         projectId: "byot-40fe2",
         storageBucket: "byot-40fe2.appspot.com",
@@ -648,13 +648,13 @@ const AdminDashboard = ({ onLogout, onUpdate, onAdd, onDelete, onBatchUpdate, sh
 
     useEffect(() => {
         const unsubscribes = [
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
+            onSnapshot(collection(db, "orders"), (snapshot) => {
                 setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
+            onSnapshot(collection(db, "coupons"), (snapshot) => {
                 setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
+            onSnapshot(collection(db, "costBatches"), (snapshot) => {
                 setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             }),
         ];
@@ -756,7 +756,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         })();
 
         const orderId = doc(collection(db, '_')).id; // Generate a new ID client-side
-        const newOrderRef = doc(db, `orders`, orderId);
+        const newOrderRef = doc(db, "orders", orderId);
 
         const newOrder = {
             id: orderId,
@@ -793,7 +793,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                     }
 
                     const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
-                    const productDocRef = doc(db, `inventory`, item.productId);
+                    const productDocRef = doc(db, "inventory", item.productId);
                     batch.set(productDocRef, { batches: newBatches }, { merge: true });
                 }
             }
@@ -1880,10 +1880,10 @@ const App = () => {
         view, setView, 
         toastMessage, toastType, 
         orderData, 
-        bgGradient, setBgGradient
+        bgGradient, setBgGradient,
+        showToast
     } = useContext(AppStateContext);
      const { isAdminMode, setIsAdminMode } = useContext(AuthContext);
-     const { showToast } = useContext(AppStateContext);
 
     useEffect(() => {
         if (!isAdminMode && view !== 'shop') {
