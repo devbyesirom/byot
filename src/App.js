@@ -1,5 +1,4 @@
 /* global __firebase_config, __app_id, __initial_auth_token */
-
 import React, { useState, useEffect, useMemo, useRef, useContext, createContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Disclosure } from '@headlessui/react';
@@ -7,10 +6,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously, signInWithCustomToken } from "firebase/auth";
 import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc, query } from "firebase/firestore";
 
-// ==================================================
-// 1. SETUP & CONFIGURATION
-// ==================================================
-
+// --- Constants ---
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
 const KNUTSFORD_FEE = 500;
 const KNUTSFORD_LOCATIONS = ["Angels (Spanish Town)", "Drax Hall", "Falmouth", "Gutters", "Harbour View", "New Kingston", "Luana", "Lucea", "Mandeville", "May Pen", "Montego Bay (Pier 1)", "Montego Bay Airport", "Negril", "Ocho Rios", "Port Antonio", "Port Maria", "Portmore", "Savanna-La-Mar", "Washington Boulevard"];
@@ -22,6 +18,7 @@ const COLLECTION_NAMES = {
     inventory: "Inventory",
 };
 
+// --- Firebase Configuration ---
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
@@ -34,21 +31,21 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         measurementId: "G-S8QD6WWN90"
     };
 
+// --- Firebase Initialization ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2';
 
-// ==================================================
-// 2. CONTEXTS, PROVIDERS & HELPER FUNCTIONS
-// ==================================================
 
-const AuthContext = createContext(null);
-const AppContext = createContext(null);
+// --- React Contexts for State Management ---
 const DataContext = createContext(null);
 const CartContext = createContext(null);
+const AuthContext = createContext(null);
+const AppContext = createContext(null);
 const ModalContext = createContext(null); 
 
+// --- Helper Hooks & Functions ---
 const useModal = () => useContext(ModalContext);
 
 const copyToClipboard = (text, showToast) => {
@@ -68,65 +65,8 @@ const copyToClipboard = (text, showToast) => {
     document.body.removeChild(textArea);
 };
 
-const handleUpdateFirestore = async (collectionName, docId, data, showToast) => {
-    try {
-        await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
-        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} updated!`);
-    } 
-    catch (error) {
-        console.error(`Error updating ${collectionName}:`, error);
-        showToast(`Error updating ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
-    }
-};
 
-const handleAddFirestore = async (collectionName, data, showToast) => {
-    try {
-        const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
-        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} added!`);
-        return docRef;
-    } catch (error) {
-        console.error(`Error adding ${collectionName}:`, error);
-        showToast(`Error adding ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
-    }
-};
-
-const handleDeleteFirestore = async (collectionName, docId, showToast, showModal, skipModal = false) => {
-    const performDelete = async () => {
-        try {
-            await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
-            showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
-        } catch(error) {
-            console.error(`Error deleting ${collectionName}:`, error);
-            showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
-        }
-    };
-
-    if (skipModal) {
-      await performDelete();
-    } else {
-      showModal(`Are you sure you want to delete this ${COLLECTION_NAMES[collectionName] || 'item'}?`, performDelete);
-    }
-};
-
-const handleBatchUpdate = async (updates, showToast) => {
-    if (updates.length === 0) return;
-    const batch = writeBatch(db);
-    updates.forEach(({collectionName, docId, data}) => {
-        const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
-        batch.update(docRef, data);
-    });
-    try {
-        await batch.commit();
-        showToast('Batch update successful!');
-    } catch (error) {
-        console.error('Batch update failed:', error);
-        showToast('Batch update failed.', 'error');
-    }
-};
-
-// ==================================================
-// 3. ICON & UI COMPONENTS
-// ==================================================
+// --- Icon Components ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
@@ -144,13 +84,10 @@ const BarChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" he
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
 const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
 
-const GlobalStyles = () => ( <style>{` body { background-color: #f3f4f6; } .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: auto; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
+// --- Global Styles Component ---
+const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: auto; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
-
-// ==================================================
-// 4. MAIN APPLICATION COMPONENTS
-// ==================================================
-
+// --- View Components (Customer Facing) ---
 const ShopView = () => {
     const { products, inventory, inventoryLoaded } = useContext(DataContext);
     const { addToCart, buyNow } = useContext(CartContext);
@@ -274,21 +211,15 @@ const ShopView = () => {
                     <ArrowDownIcon />
                 </button>}
             </div>
-             {products.length === 0 && inventoryLoaded ? (
-                 <div className="card bg-gray-700">
-                     <div className="card-content flex flex-col items-center justify-center text-center h-full">
-                         <p className="text-lg font-semibold">No products available.</p>
-                         <p className="text-sm text-gray-300">Please check your Firebase products collection or admin settings.</p>
-                     </div>
-                 </div>
-             ) : products.length === 0 && !inventoryLoaded ? (
+             {products.length === 0 ? (
                 <div className="card bg-gray-700">
                     <div className="card-content flex flex-col items-center justify-center text-center h-full">
                          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
                          <p className="text-lg font-semibold">Loading Products...</p>
+                         <p className="text-sm text-gray-300">If this takes too long, please check your connection or admin settings.</p>
                     </div>
                 </div>
-             ) : (
+            ) : (
                 sortedProducts.map((product) => (
                     <ProductCard key={product.id} product={product} onAddToCart={addToCart} onBuyNow={buyNow} inventory={inventory} inventoryLoaded={inventoryLoaded} />
                 ))
@@ -465,7 +396,7 @@ const CheckoutView = ({ onBack, showToast }) => {
         } else {
             setCouponMessage('');
         }
-    }, [appliedCoupon, discount, cart]);
+    }, [appliedCoupon, discount]);
 
 
     const handleCopyBankInfo = () => {
@@ -708,36 +639,1140 @@ const ConfirmationView = ({ order, onContinue }) => {
 };
 const CreditCardView = ({ order, onBack }) => { const totalQuantity = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0); const paymentUrl = totalQuantity === 1 ? "https://secure.ezeepayments.com/?CQY6un2" : "https://secure.ezeepayments.com/?kgRMTcZ"; return ( <div className="view active bg-gray-100"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Complete Payment</h1><div className="w-10"></div></header> <iframe title="Credit Card Payment" src={paymentUrl} className="w-full h-full border-0"></iframe> </div> ) };
 const AboutView = ({ onBack }) => { return ( <div className="view active bg-white"> <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">About Us</h1><div className="w-10"></div></header> <main className="flex-grow overflow-y-auto p-6 flex flex-col items-center justify-center text-center"> <img src="https://esiromfoundation.org/wp-content/uploads/2023/12/esirom-foundation-logo-icon.jpg" alt="Esirom Foundation Logo" className="h-24 w-auto mx-auto"/> <p className="mt-4 text-gray-600 max-w-sm">Bring Yuh Owna Tings (BYOT) is a movement to cut back on single-use plastics by making reusables part of everyday life. Our reusable utensil sets come with a fork, spoon, knife, and chopsticks in a compact case, perfect for life on the go. They come in a range of colours and can be customized with your name or logo.</p><p className="mt-4 text-gray-600 max-w-sm">The campaign is led by the Esirom Foundation, a Jamaican non-profit focused on solving environmental challenges in real, practical ways. We first kicked things off in December 2022 with our "Bring Your Own Cup" campaign where cafes across Kingston, including Cafe Blue and Starbucks, offered discounts to customers who brought their own reusable cup.</p><p className="mt-4 text-gray-600 max-w-sm">In January 2024, the campaign relaunched as BYOT with a wider push for all reusables. From containers and bottles, to thermoses and tumblers. So in April 2024, we launched our BYOT utensil sets, giving people a simple, tangible way to live the message, not just hear it.</p> </main> </div> ) }
+
+// --- Admin Components ---
 const AdminLoginView = ({ onLogin, showToast }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password, showToast); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
+const AdminDashboard = ({ onLogout }) => {
+    const [adminView, setAdminView] = useState('orders');
+    const { products, inventory } = useContext(DataContext);
+    const { showToast } = useContext(AppContext);
+    const showModal = useModal();
+    const { user, isAuthReady } = useContext(AuthContext); 
+    // Admin-specific data fetching
+    const [orders, setOrders] = useState([]);
+    const [coupons, setCoupons] = useState([]);
 
-// ... (Rest of Admin components follow)
-// ... (The corrected file will have the rest of the components)
+    useEffect(() => {
+        if (!isAuthReady || !user || user.isAnonymous) {
+            return;
+        }
 
-// ==================================================
-// 5. ROOT COMPONENT
-// ==================================================
-function App() {
-    const { view, setView, toastMessage, toastType, showToast } = useContext(AppContext);
-    const { isAdminMode, handleLogin, handleLogout } = useContext(AuthContext);
+        const createSubscription = (collectionName, setter) => {
+            const q = query(collection(db, `artifacts/${appId}/public/data/${collectionName}`));
+            return onSnapshot(q, 
+                (snapshot) => {
+                    setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                },
+                (error) => {
+                    console.error(`Error fetching ${collectionName}: `, error);
+                    showToast(`Could not load ${collectionName}.`, "error");
+                }
+            );
+        };
+
+        const unsubscribes = [
+            createSubscription('orders', setOrders),
+            createSubscription('coupons', setCoupons),
+        ];
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, [isAuthReady, user, showToast]);
+
+    const inventoryRef = useRef(inventory);
+    useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
+    const crudHandlers = {
+      onUpdate: (...args) => handleUpdateFirestore(...args, showToast),
+      onAdd: (...args) => handleAddFirestore(...args, showToast),
+      onDelete: (...args) => handleDeleteFirestore(...args, showToast, showModal),
+      onBatchUpdate: (updates) => handleBatchUpdate(updates, showToast),
+      showToast,
+      showModal
+    };
+
+    return (
+        <div className="view active bg-gray-200 flex-col h-full">
+            <aside className="w-full bg-gray-800 text-white flex-shrink-0 lg:h-16 lg:flex lg:flex-row lg:items-center lg:justify-between">
+                 <div className="p-4 font-bold border-b border-gray-700 lg:border-b-0 lg:p-0 lg:ml-6 hidden lg:block">Admin Panel</div>
+                 <nav className="p-2 flex-grow flex justify-around lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-2">
+                     <button onClick={() => setAdminView('orders')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'orders' ? 'bg-gray-700' : ''}`}><ClipboardListIcon/><span>Orders</span></button>
+                     <button onClick={() => setAdminView('inventory')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'inventory' ? 'bg-gray-700' : ''}`}><PackageIcon/><span>Inventory</span></button>
+                     <button onClick={() => setAdminView('products')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'products' ? 'bg-gray-700' : ''}`}><TagIcon/><span>Products</span></button>
+                     <button onClick={() => setAdminView('coupons')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'coupons' ? 'bg-gray-700' : ''}`}><TicketIcon/><span>Coupons</span></button>
+                     <button onClick={() => setAdminView('insights')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'insights' ? 'bg-gray-700' : ''}`}><BarChartIcon/><span>Insights</span></button>
+                 </nav>
+                 <button onClick={onLogout} className="p-4 text-sm text-red-400 hover:bg-red-500 hover:text-white hidden lg:block lg:mr-6">Logout</button>
+            </aside>
+            <main className="flex-1 flex flex-col overflow-y-hidden lg:flex-row">
+                 <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between lg:hidden">
+                    <h1 className="text-xl font-bold capitalize">{adminView}</h1>
+                    <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
+                 </header>
+                 <div className="flex-grow overflow-y-auto p-2 sm:p-6">
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} {...crudHandlers} inventory={inventoryRef} />}
+                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} products={products} {...crudHandlers} />}
+                    {adminView === 'products' && <AdminProductsView products={products} {...crudHandlers}/>}
+                    {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} {...crudHandlers} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} {...crudHandlers}/>}
+                 </div>
+            </main>
+        </div>
+    );
+}
+const AdminOrdersView = ({ orders, products, onUpdate, onDelete, showToast, showModal, inventory }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [paymentFilter, setPaymentFilter] = useState('all');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showManualForm, setShowManualForm] = useState(false);
+
+    const handleStatusUpdate = async (orderId, field, value) => {
+        await onUpdate('orders', orderId, { [field]: value });
+    };
+
+    const handleDeleteOrder = (orderId) => {
+        showModal('Are you sure you want to delete this order? This action cannot be undone.', () => {
+            onDelete('orders', orderId);
+            setSelectedOrder(null);
+        });
+    };
+
+    const handleManualSubmit = async (e, manualOrderItems) => {
+        e.preventDefault();
+
+        for (const item of manualOrderItems) {
+            if(!item.productId) continue;
+            const productInventory = inventory.current[item.productId];
+            if (!productInventory) {
+                 showToast(`Inventory data not found for product.`, 'error');
+                 return;
+            }
+            const availableStock = Array.isArray(productInventory.batches)
+                ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                : 0;
+            const product = products.find(p => p.id === item.productId);
+            if (!product) {
+                showToast(`Product with ID ${item.productId} not found.`, 'error');
+                continue;
+            }
+            if (item.quantity > availableStock) {
+                showToast(`Cannot add order: Quantity for ${product.name} exceeds available stock of ${availableStock}.`, 'error');
+                return;
+            }
+        }
+
+        const formData = new FormData(e.target);
+        const items = {};
+        let subtotal = 0;
+        manualOrderItems.forEach((itemInput) => {
+            if(itemInput.productId) {
+                const product = products.find(p => p.id === itemInput.productId);
+                if (product) {
+                    items[product.id] = { ...product, quantity: parseInt(itemInput.quantity) || 1 };
+                    subtotal += product.price * items[product.id].quantity;
+                }
+            }
+        });
+
+        const fulfillmentCost = (() => {
+            const method = formData.get('manualFulfillmentMethod');
+            if (method === 'pickup') return 0;
+            if (method === 'bearer') return DELIVERY_OPTIONS[formData.get('manualBearerLocation')];
+            if (method === 'knutsford') return KNUTSFORD_FEE;
+            return 0;
+        })();
+
+        const orderId = doc(collection(db, '_')).id;
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+
+        const newOrder = {
+            id: orderId,
+            customerInfo: { name: formData.get('customerName'), email: formData.get('customerEmail'), phone: formData.get('customerPhone')},
+            items, subtotal, fulfillmentCost, total: subtotal + fulfillmentCost,
+            createdAt: new Date().toISOString(),
+            paymentStatus: formData.get('paymentStatus'),
+            fulfillmentStatus: formData.get('fulfillmentStatus'),
+            fulfillmentMethod: formData.get('manualFulfillmentMethod'),
+            paymentMethod: formData.get('manualPaymentMethod'),
+            pickupDate: formData.get('manualFulfillmentMethod') === 'pickup' ? formData.get('manualPickupDate') : null,
+            pickupTime: formData.get('manualFulfillmentMethod') === 'pickup' ? formData.get('manualPickupTime') : null,
+            knutsfordLocation: formData.get('manualFulfillmentMethod') === 'knutsford' ? formData.get('manualKnutsfordLocation') : null,
+            bearerLocation: formData.get('manualFulfillmentMethod') === 'bearer' ? formData.get('manualBearerLocation') : null,
+        };
+        
+        const batch = writeBatch(db);
+        batch.set(newOrderRef, newOrder);
+
+        for (const item of manualOrderItems) {
+            if (item.productId && item.quantity > 0) {
+                const currentProductInv = inventory.current[item.productId];
+                if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                    let remainingToDeduct = item.quantity;
+                    const updatedBatches = [...currentProductInv.batches];
+
+                    updatedBatches.sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                    for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                        let batchEntry = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                        batchEntry.unengraved -= deductibleFromBatch;
+                        remainingToDeduct -= deductibleFromBatch;
+                    }
+
+                    const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.productId);
+                    batch.set(productDocRef, { batches: newBatches }, { merge: true });
+                }
+            }
+        }
+        try {
+            await batch.commit();
+            showToast("Manual order added and inventory updated!");
+        } catch (error) {
+            console.error("Failed to create manual order:", error);
+            showToast("Failed to create order and update inventory.", "error");
+        }
+        setShowManualForm(false);
+    };
+
+    const sortedOrders = useMemo(() => {
+        return orders.slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [orders]);
+
+    const filteredOrders = useMemo(() => {
+        return sortedOrders.filter(order => {
+            const searchMatch = !searchTerm || order.id.toLowerCase().includes(searchTerm.toLowerCase()) || (order.customerInfo.name && order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            const paymentStatusMatch = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
+            return searchMatch && paymentStatusMatch;
+        });
+    }, [sortedOrders, searchTerm, paymentFilter]);
+
+    const OrderModal = ({ order, onClose, onDeleteOrder }) => (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
+                    <h3 className="font-bold">Order #{order.id.slice(0, 8)}</h3>
+                    <button onClick={onClose} className="text-2xl font-bold p-1">&times;</button>
+                </div>
+                <div className="p-4 space-y-4 text-sm overflow-y-auto">
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Customer Details</h4>
+                        <p><strong>Name:</strong> {order.customerInfo.name}</p>
+                        {order.customerInfo.email && <p><strong>Email:</strong> {order.customerInfo.email}</p>}
+                        {order.customerInfo.phone && <p><strong>Phone:</strong> {order.customerInfo.phone}</p>}
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Fulfillment Details</h4>
+                        <p><strong>Method:</strong> <span className="capitalize">{order.fulfillmentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        {order.fulfillmentMethod === 'pickup' && (
+                            <p><strong>Details:</strong> {order.pickupDate ? new Date(order.pickupDate).toLocaleDateString() : 'N/A'} at {order.pickupTime || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'bearer' && (
+                            <p><strong>Location:</strong> {order.bearerLocation || 'N/A'}</p>
+                        )}
+                        {order.fulfillmentMethod === 'knutsford' && (
+                            <p><strong>Location:</strong> {order.knutsfordLocation || 'N/A'}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Order Status</h4>
+                         <p className="mb-2"><strong>Payment Method:</strong> <span className="capitalize">{order.paymentMethod?.replace('_', ' ') || 'N/A'}</span></p>
+                        <div className="flex items-center">
+                            <label className="w-32">Payment Status</label>
+                            <select defaultValue={order.paymentStatus} onChange={(e) => handleStatusUpdate(order.id, 'paymentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Paid</option>
+                                <option>Refunded</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center mt-2">
+                            <label className="w-32">Fulfillment</label>
+                            <select defaultValue={order.fulfillmentStatus} onChange={(e) => handleStatusUpdate(order.id, 'fulfillmentStatus', e.target.value)} className="p-1 border rounded-md">
+                                <option>Pending</option>
+                                <option>Completed</option>
+                                <option>Returned</option>
+                                <option>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2 border-b pb-1">Items</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                            {Object.values(order.items).map(item => (
+                                <li key={item.id}>
+                                    {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price * (item.quantity || 0)).toLocaleString()}
+                                </li>
+                            ))}
+                        </ul>
+                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed.code} (-J${order.discount.toLocaleString()})</p>}
+                        <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
+                    <button onClick={() => onDeleteOrder(order.id)} className="px-3 py-1 bg-red-600 text-white rounded-md flex items-center text-sm hover:bg-red-700">
+                        <TrashIcon className="mr-1"/> Delete Order
+                    </button>
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Close</button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const ManualOrderForm = () => {
+         const [manualOrderItems, setManualOrderItems] = useState([{ productId: '', quantity: 1 }]);
+         const [manualFulfillmentMethod, setManualFulfillmentMethod] = useState('pickup');
+         const [manualBearerLocation, setManualBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
+         const [manualKnutsfordLocation, setManualKnutsfordLocation] = useState(KNUTSFORD_LOCATIONS[0]);
+         const [manualPaymentMethod, setManualPaymentMethod] = useState('cod');
+         const [manualPickupDate, setManualPickupDate] = useState('');
+         const [manualPickupTime, setManualPickupTime] = useState(PICKUP_TIMES[0]);
+
+         const handleLocalManualItemChange = (index, field, value) => {
+            const updatedItems = [...manualOrderItems];
+            const currentItem = updatedItems[index];
+
+            if (field === 'productId') {
+                currentItem.productId = value;
+            } else if (field === 'quantity') {
+                const productId = currentItem.productId;
+                if (productId && inventory.current[productId]) {
+                    const productInventory = inventory.current[productId];
+                    const availableStock = productInventory && Array.isArray(productInventory.batches)
+                        ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                        : 0;
+
+                    let requestedQuantity = parseInt(value, 10);
+                    if (isNaN(requestedQuantity) || requestedQuantity < 1) {
+                        requestedQuantity = 1;
+                    }
+                    if (requestedQuantity > availableStock) {
+                        showToast(`Only ${availableStock} units available for this product.`, 'error');
+                        currentItem.quantity = availableStock;
+                    } else {
+                         currentItem.quantity = requestedQuantity;
+                    }
+                } else {
+                    currentItem.quantity = value;
+                }
+            }
+            setManualOrderItems(updatedItems);
+         };
+
+         const handleLocalAddItemRow = () => {
+            setManualOrderItems(prev => [...prev, { productId: '', quantity: 1 }]);
+         };
+
+         const handleLocalRemoveItemRow = (indexToRemove) => {
+            setManualOrderItems(prev => prev.filter((_, i) => i !== indexToRemove));
+         };
+
+        return (
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-6">Add Manual Order</h2>
+                <form onSubmit={(e) => handleManualSubmit(e, manualOrderItems)} className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Customer Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <input name="customerName" type="text" placeholder="Full Name" className="w-full p-2 border rounded" required />
+                           <input name="customerEmail" type="email" placeholder="Email Address" className="w-full p-2 border rounded" />
+                           <input name="customerPhone" type="tel" placeholder="Phone Number" className="w-full p-2 border rounded" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Items</h3>
+                        <div className="space-y-2">
+                            {manualOrderItems.map((item, index) => {
+                                const productInventory = item.productId ? inventory.current[item.productId] : null;
+                                const availableStock = productInventory && Array.isArray(productInventory.batches)
+                                    ? productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0)
+                                    : 0;
+
+                                return (
+                                    <div key={index} className="flex gap-2 items-center">
+                                        <select
+                                            name={`productId-${index}`}
+                                            className="w-full p-2 border rounded"
+                                            value={item.productId}
+                                            onChange={(e) => handleLocalManualItemChange(index, 'productId', e.target.value)}
+                                            required
+                                        >
+                                            <option value="">Select Product</option>
+                                            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        </select>
+                                        <div className="flex items-center border rounded">
+                                            <input
+                                                type="number"
+                                                placeholder="Qty"
+                                                className="w-20 p-2"
+                                                min="1"
+                                                max={availableStock}
+                                                value={item.quantity}
+                                                onChange={(e) => handleLocalManualItemChange(index, 'quantity', e.target.value)}
+                                                required
+                                            />
+                                            <span className="text-xs text-gray-500 pr-2">({availableStock} avail.)</span>
+                                        </div>
+                                        {manualOrderItems.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleLocalRemoveItemRow(index)}
+                                                className="p-2 text-red-500 rounded-md hover:bg-red-100"
+                                            >
+                                                <TrashIcon />
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            <button type="button" onClick={handleLocalAddItemRow} className="px-4 py-2 bg-gray-200 text-sm rounded-md mt-2">Add Another Item</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Fulfillment Details</h3>
+                        <div className="space-y-2">
+                            <select name="manualFulfillmentMethod" value={manualFulfillmentMethod} onChange={(e) => setManualFulfillmentMethod(e.target.value)} className="w-full p-2 border rounded">
+                                <option value="pickup">Pick Up</option>
+                                <option value="bearer">Bearer Delivery</option>
+                                <option value="knutsford">Knutsford Express</option>
+                            </select>
+                            {manualFulfillmentMethod === 'bearer' && (
+                                <div className="pl-2 pt-2">
+                                    <select name="manualBearerLocation" value={manualBearerLocation} onChange={(e) => setManualBearerLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {Object.entries(DELIVERY_OPTIONS).map(([loc, price]) => <option key={loc} value={loc}>{`${loc} - J$${price}`}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'knutsford' && (
+                                <div className="pl-2 pt-2">
+                                    <select name="manualKnutsfordLocation" value={manualKnutsfordLocation} onChange={(e) => setManualKnutsfordLocation(e.target.value)} className="w-full p-2 border rounded-md mt-1">
+                                        {KNUTSFORD_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            {manualFulfillmentMethod === 'pickup' && (
+                                <div className="pl-2 pt-2 grid grid-cols-2 gap-2">
+                                    <input type="date" name="manualPickupDate" value={manualPickupDate} onChange={(e) => setManualPickupDate(e.target.value)} className="p-2 border rounded-md" required />
+                                    <select name="manualPickupTime" value={manualPickupTime} onChange={(e) => setManualPickupTime(e.target.value)} className="p-2 border rounded-md" required>
+                                        {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                     <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">Payment and Status</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Method</label>
+                                <select name="manualPaymentMethod" value={manualPaymentMethod} onChange={e => setManualPaymentMethod(e.target.value)} className="w-full p-2 border rounded mt-1">
+                                    <option value="cod">Cash on Pickup</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="credit_card">Credit Card</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Payment Status</label>
+                                <select name="paymentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Paid</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600">Fulfillment</label>
+                                <select name="fulfillmentStatus" className="w-full p-2 border rounded mt-1">
+                                    <option>Pending</option>
+                                    <option>Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4 border-t mt-6">
+                        <button type="button" onClick={() => { setShowManualForm(false); }} className="px-4 py-2 bg-gray-300 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Add Order</button>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    if (showManualForm) {
+        return <ManualOrderForm />;
+    }
+
+    return(
+        <div>
+            {selectedOrder && <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onDeleteOrder={handleDeleteOrder} />}
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 className="text-2xl font-bold">Orders</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                        type="text"
+                        placeholder="Filter by ID or Name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="p-2 border rounded-md"
+                    />
+                     <select value={paymentFilter} onChange={e => setPaymentFilter(e.target.value)} className="p-2 border rounded-md">
+                        <option value="all">All Statuses</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Refunded">Refunded</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <button onClick={() => setShowManualForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm whitespace-nowrap">Add Manual Order</button>
+                </div>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfilled</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredOrders.map(order => (
+                            <tr key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap font-medium">{order.id.slice(0, 8)}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {order.createdAt && !isNaN(new Date(order.createdAt).getTime())
+                                        ? new Date(order.createdAt).toLocaleDateString()
+                                        : 'N/A'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {order.paymentStatus}
+                                    </span>
+                                </td><td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.fulfillmentStatus === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {order.fulfillmentStatus}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminInventoryView = ({ inventory, onSave, products, showToast, showModal }) => {
+    const [localInventory, setLocalInventory] = useState({});
+
+    useEffect(() => {
+        if (Object.keys(inventory).length > 0) {
+            setLocalInventory(JSON.parse(JSON.stringify(inventory))); // Deep copy
+        }
+    }, [inventory]);
+
+    const handleBatchValueChange = (productId, batchIndex, field, value) => {
+        const val = parseInt(value, 10) || 0;
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            if (updatedBatches[batchIndex]) {
+                updatedBatches[batchIndex] = { ...updatedBatches[batchIndex], [field]: val };
+            }
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleAddBatch = (productId) => {
+        setLocalInventory(prev => {
+            const productInv = { ...prev[productId] };
+            const updatedBatches = [...(productInv.batches || [])];
+            updatedBatches.push({
+                batchId: `manual_${Date.now()}`,
+                dateAdded: new Date().toISOString().split('T')[0],
+                engraved: 0,
+                unengraved: 0,
+                defective: 0
+            });
+            return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+        });
+    };
+
+    const handleRemoveBatch = (productId, batchIndex) => {
+        showModal('Are you sure you want to remove this batch entry?', () => {
+            setLocalInventory(prev => {
+                const productInv = { ...prev[productId] };
+                const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
+                return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
+            });
+        });
+    };
+
+    const handleSaveProductInventory = async (productId) => {
+        if(localInventory[productId]) {
+            await onSave('inventory', productId, { batches: localInventory[productId].batches || [] });
+            showToast('Inventory batches updated!');
+        }
+    };
+
+    if (products.length === 0) {
+        return <div>Loading inventory...</div>;
+    }
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">Inventory Management</h2>
+            <div className="space-y-4">
+                {products.map(p => {
+                    const productInventory = localInventory[p.id] || { batches: [] };
+                    const totalUnengravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.unengraved || 0), 0);
+                    const totalEngravedStock = productInventory.batches.reduce((sum, batch) => sum + (batch.engraved || 0), 0);
+                    const totalDefectiveStock = productInventory.batches.reduce((sum, batch) => sum + (batch.defective || 0), 0);
+                    const overallTotalStock = totalUnengravedStock + totalEngravedStock + totalDefectiveStock;
+
+                    return (
+                        <div key={p.id} className="bg-white rounded-lg shadow p-4">
+                            <h3 className="font-bold">{p.name}</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2 items-end">
+                                <div><label className="text-xs text-gray-500">Total Stock</label><input type="number" value={overallTotalStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Engraved</label><input type="number" value={totalEngravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Unengraved</label><input type="number" value={totalUnengravedStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <div><label className="text-xs text-gray-500">Defective</label><input type="number" value={totalDefectiveStock} readOnly className="w-full p-2 border rounded mt-1 bg-gray-100"/></div>
+                                <button onClick={() => handleSaveProductInventory(p.id)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Save All Changes</button>
+                            </div>
+                            {totalUnengravedStock <= 15 && <p className="text-xs text-red-500 mt-2 font-semibold">Low unengraved stock warning!</p>}
+
+                            <Disclosure>
+                                {({ open }) => (
+                                    <>
+                                        <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-blue-900 bg-blue-100 rounded-lg hover:bg-blue-200 focus:outline-none focus-visible:ring focus-visible:ring-blue-500 focus-visible:ring-opacity-75 mt-4">
+                                            <span>Stock Batches ({productInventory.batches.length})</span>
+                                            <ChevronUpIcon className={`${open ? '' : 'transform rotate-180'} w-5 h-5 text-blue-500`} />
+                                        </Disclosure.Button>
+                                        <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-gray-500 bg-white border border-t-0 rounded-b-lg">
+                                            <div className="space-y-3">
+                                                {productInventory.batches.map((batch, batchIndex) => (
+                                                    <div key={batch.batchId || batchIndex} className="flex items-center gap-2 p-2 border rounded-md bg-gray-50">
+                                                        <span className="font-semibold text-gray-800 text-xs truncate">Batch: {batch.batchId || `Batch ${batchIndex + 1}`} ({new Date(batch.dateAdded).toLocaleDateString()})</span>
+                                                        <input type="number" value={batch.engraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'engraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Engraved"/>
+                                                        <input type="number" value={batch.unengraved || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'unengraved', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Unengraved"/>
+                                                        <input type="number" value={batch.defective || 0} onChange={e => handleBatchValueChange(p.id, batchIndex, 'defective', e.target.value)} className="w-16 p-1 text-center border rounded-sm" placeholder="Defective"/>
+                                                        <button onClick={() => handleRemoveBatch(p.id, batchIndex)} className="text-red-500 hover:text-red-700 p-1"><TrashIcon /></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => handleAddBatch(p.id)} className="mt-2 px-3 py-1 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Add New Batch Entry</button>
+                                            </div>
+                                        </Disclosure.Panel>
+                                    </>
+                                )}
+                            </Disclosure>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+const AdminProductsView = ({products, onSave, onAdd, onDelete, showModal}) => {
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [isAddingNew, setIsAddingNew] = useState(false);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        let displayOrder = Number(formData.get('displayOrder'));
+
+        if (isAddingNew && isNaN(displayOrder)) {
+            displayOrder = products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1;
+        } else if (!isAddingNew && isNaN(displayOrder)) {
+             displayOrder = editingProduct.displayOrder;
+        }
+
+        const productData = {
+            name: formData.get('name'),
+            price: Number(formData.get('price')),
+            description: formData.get('description'),
+            image: formData.get('image'),
+            displayOrder
+        };
+
+        if (isAddingNew) {
+            await onAdd('products', productData)
+        } else {
+            await onSave('products', editingProduct.id, productData);
+        }
+        setEditingProduct(null);
+        setIsAddingNew(false);
+    };
+    
+    const handleDelete = (productId) => {
+        showModal('Are you sure? This will delete the product and its inventory data.', async () => {
+            await onDelete('products', productId);
+            await onDelete('inventory', productId, false); 
+        });
+    };
+
+    const sortedProducts = useMemo(() => {
+        return [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    }, [products]);
+
+
+    const formInitialData = editingProduct || (isAddingNew ? {name:'', price:0, description:'', image:'', displayOrder: products.length > 0 ? Math.max(...products.map(p => p.displayOrder || 0)) + 1 : 1} : null);
+
+    if (formInitialData) { return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Product" : "Edit Product"}</h2>
+            <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4">
+                <div>
+                    <label className="font-semibold">Product Name</label>
+                    <input name="name" defaultValue={formInitialData.name} className="w-full p-2 border rounded mt-1" required/>
+                </div>
+                <div>
+                    <label className="font-semibold">Price</label>
+                    <input name="price" type="number" defaultValue={formInitialData.price} className="w-full p-2 border rounded mt-1" required/>
+                </div>
+                <div>
+                    <label className="font-semibold">Description</label>
+                    <textarea name="description" defaultValue={formInitialData.description} className="w-full p-2 border rounded mt-1 h-24"></textarea>
+                </div>
+                <div>
+                    <label className="font-semibold">Image URL</label>
+                    <input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/>
+                </div>
+                 <div>
+                    <label className="font-semibold">Display Order</label>
+                    <input name="displayOrder" type="number" defaultValue={formInitialData.displayOrder} className="w-full p-2 border rounded mt-1"/>
+                    <p className="text-xs text-gray-500 mt-1">Products are ordered from smallest to largest display order.</p>
+                </div>
+                <div className="flex justify-between items-center">
+                    {!isAddingNew && (
+                         <button type="button" onClick={() => handleDelete(editingProduct.id)} className="px-4 py-2 bg-red-600 text-white rounded-md">Delete Product</button>
+                    )}
+                    <div className="flex justify-end space-x-2 w-full">
+                        <button type="button" onClick={() => { setEditingProduct(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    ) }
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Product Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Product</button>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {sortedProducts.map((p) => (
+                            <tr key={p.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{p.displayOrder || '-'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                                    <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name} onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/cccccc/ffffff?text=?'; }}/>
+                                    <p className="font-bold">{p.name}</p>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${p.price.toLocaleString()}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showModal, products }) => {
+    const [editingCoupon, setEditingCoupon] = useState(null);
+    const [isAddingNew, setIsAddingNew] = useState(false);
+    const [appliesToOption, setAppliesToOption] = useState('all');
+    const [selectedProductIds, setSelectedProductIds] = useState([]);
+
+    useEffect(() => {
+        if (editingCoupon) {
+            if (Array.isArray(editingCoupon.appliesTo)) {
+                setAppliesToOption('specific');
+                setSelectedProductIds(editingCoupon.appliesTo);
+            } else {
+                setAppliesToOption('all');
+                setSelectedProductIds([]);
+            }
+        } else {
+            setAppliesToOption('all');
+            setSelectedProductIds([]);
+        }
+    }, [editingCoupon]);
+
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        let appliesToValue = 'all';
+        if (appliesToOption === 'specific') {
+            appliesToValue = selectedProductIds;
+        }
+
+        const couponData = {
+            code: formData.get('code').toUpperCase(),
+            type: formData.get('type'),
+            value: Number(formData.get('value')),
+            isActive: formData.get('isActive') === 'on',
+            appliesTo: appliesToValue,
+            startDate: formData.get('startDate'),
+            endDate: formData.get('endDate'),
+        };
+
+        if (isAddingNew) {
+            await onAdd('coupons', couponData)
+        } else {
+            await onSave('coupons', editingCoupon.id, couponData);
+        }
+        setEditingCoupon(null);
+        setIsAddingNew(false);
+    };
+
+    const handleDelete = (couponId) => {
+        showModal('Are you sure you want to delete this coupon?', () => {
+             onDelete('coupons', couponId);
+             setEditingCoupon(null);
+             setIsAddingNew(false);
+        });
+    }
+
+    const handleProductSelection = (productId) => {
+        setSelectedProductIds(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
+    const formInitialData = editingCoupon || (isAddingNew ? { code: '', type: 'percentage', value: 0, isActive: true, appliesTo: 'all', startDate: '', endDate: '' } : null);
+
+    if (formInitialData) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-4">{isAddingNew ? "Add New Coupon" : "Edit Coupon"}</h2>
+                <form onSubmit={handleSave} className="bg-white p-6 rounded-lg shadow space-y-4">
+                    <div>
+                        <label className="font-semibold">Coupon Code</label>
+                        <input name="code" defaultValue={formInitialData.code} className="w-full p-2 border rounded mt-1 uppercase" required/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Type</label>
+                            <select name="type" defaultValue={formInitialData.type} className="w-full p-2 border rounded mt-1">
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (J$)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="font-semibold">Value</label>
+                            <input name="value" type="number" defaultValue={formInitialData.value} className="w-full p-2 border rounded mt-1" required/>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="font-semibold">Start Date</label>
+                            <input name="startDate" type="date" defaultValue={formInitialData.startDate} className="w-full p-2 border rounded mt-1" />
+                        </div>
+                        <div>
+                            <label className="font-semibold">End Date</label>
+                            <input name="endDate" type="date" defaultValue={formInitialData.endDate} className="w-full p-2 border rounded mt-1" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="font-semibold">Applies To</label>
+                        <select
+                            value={appliesToOption}
+                            onChange={(e) => setAppliesToOption(e.target.value)}
+                            className="w-full p-2 border rounded mt-1"
+                        >
+                            <option value="all">All Products (Store-wide)</option>
+                            <option value="specific">Specific Products</option>
+                        </select>
+                        {appliesToOption === 'specific' && (
+                            <div className="mt-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
+                                {products.map(p => (
+                                    <label key={p.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedProductIds.includes(p.id)}
+                                            onChange={() => handleProductSelection(p.id)}
+                                            className="h-4 w-4"
+                                        />
+                                        <span>{p.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center">
+                        <input name="isActive" type="checkbox" defaultChecked={formInitialData.isActive} className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"/>
+                        <label className="ml-2 block text-sm text-gray-900">Active</label>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        {!isAddingNew && (
+                            <button type="button" onClick={() => handleDelete(editingCoupon.id)} className="px-4 py-2 bg-red-600 text-white rounded-md">Delete Coupon</button>
+                        )}
+                        <div className="flex justify-end space-x-2 w-full">
+                            <button type="button" onClick={() => { setEditingCoupon(null); setIsAddingNew(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Save Changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Coupon Management</h2>
+                <button onClick={() => setIsAddingNew(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">Add New Coupon</button>
+            </div>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applies To</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {coupons.map(c => (
+                            <tr key={c.id}>
+                                <td className="px-6 py-4 whitespace-nowrap font-mono">{c.code}</td>
+                                <td className="px-6 py-4 whitespace-nowrap capitalize">{c.type}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
+                                <td className="px-6 py-4">
+                                    {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? `${c.appliesTo.length} Products` : 'N/A')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {c.startDate && new Date(c.startDate).toLocaleDateString()}
+                                    {c.startDate && c.endDate && ' - '}
+                                    {c.endDate && new Date(c.endDate).toLocaleDateString()}
+                                    {!c.startDate && !c.endDate && 'Always Active'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {c.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => setEditingCoupon(c)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+const AdminInsightsView = ({ orders }) => {
+
+    const getCurrentMonthDateRange = () => {
+        const date = new Date();
+        const from = new Date(date.getFullYear(), date.getMonth(), 1);
+        const to = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return {
+            from: from.toISOString().split('T')[0],
+            to: to.toISOString().split('T')[0]
+        };
+    };
+
+    const [dateRange, setDateRange] = useState(getCurrentMonthDateRange());
+    
+    const { reportData } = useMemo(() => {
+        const from = new Date(dateRange.from).setHours(0,0,0,0);
+        const to = new Date(dateRange.to).setHours(23,59,59,999);
+
+        const filtered = !dateRange.from || !dateRange.to
+            ? orders
+            : orders.filter(order => {
+                const orderDate = new Date(order.createdAt).getTime();
+                return orderDate >= from && orderDate <= to;
+            });
+
+        const data = {
+            totalIncome: 0, sales: 0,
+            returnedValue: 0, refundedValue: 0,
+            popularProducts: {}
+        };
+
+        filtered.forEach(order => {
+            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+            
+            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus !== 'Cancelled') {
+                data.totalIncome += order.total;
+                data.sales += orderQty;
+                 Object.values(order.items).forEach(item => {
+                    data.popularProducts[item.name] = (data.popularProducts[item.name] || 0) + item.quantity;
+                 });
+            }
+            if (order.fulfillmentStatus === 'Returned') {
+                data.returnedValue += order.total;
+            }
+            if (order.paymentStatus === 'Refunded') {
+                data.refundedValue += order.total;
+            }
+        });
+
+        return {
+            reportData: {
+                ...data,
+                popularProductsChartData: Object.entries(data.popularProducts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5) // Top 5
+            }
+        };
+    }, [orders, dateRange]);
+
+    const handleExport = () => {
+        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Payment Status", "Fulfillment Status"];
+        
+        const from = new Date(dateRange.from).setHours(0,0,0,0);
+        const to = new Date(dateRange.to).setHours(23,59,59,999);
+
+        const filtered = !dateRange.from || !dateRange.to
+            ? orders
+            : orders.filter(order => {
+                const orderDate = new Date(order.createdAt).getTime();
+                return orderDate >= from && orderDate <= to;
+            });
+
+        const rows = filtered.map(order => {
+            const orderDate = new Date(order.createdAt);
+            const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
+
+            return [
+                order.id,
+                orderDate.toLocaleDateString(),
+                order.customerInfo.name.replace(/,/g, ''),
+                `"${itemsString}"`,
+                order.subtotal || 0,
+                order.discount || 0,
+                order.fulfillmentCost || 0,
+                order.total,
+                order.paymentStatus,
+                order.fulfillmentStatus
+            ].join(',');
+        });
+
+        const csvString = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `byot_report_${dateRange.from}_to_${dateRange.to}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-6">Insights & Analytics</h2>
+
+            <div className="p-4 bg-white rounded-lg shadow mb-6">
+                <h3 className="font-bold mb-4">Export Report</h3>
+                <div className="flex items-end gap-4 flex-wrap">
+                    <div>
+                        <label className="text-sm font-medium">From</label>
+                        <input type="date" value={dateRange.from} onChange={e => setDateRange(prev => ({...prev, from: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">To</label>
+                        <input type="date" value={dateRange.to} onChange={e => setDateRange(prev => ({...prev, to: e.target.value}))} className="w-full p-2 border rounded-md mt-1"/>
+                    </div>
+                    <button onClick={handleExport} disabled={!dateRange.from || !dateRange.to} className="px-4 py-2 bg-green-600 text-white rounded-md disabled:bg-gray-400">Export CSV</button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Total Income</h3>
+                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Sales (Period)</h3>
+                    <p className="text-3xl font-bold">{reportData.sales}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Returned Value</h3>
+                    <p className="text-3xl font-bold text-orange-500">J${reportData.returnedValue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow">
+                    <h3 className="text-gray-500">Refunded Value</h3>
+                    <p className="text-3xl font-bold text-red-500">J${reportData.refundedValue.toLocaleString()}</p>
+                </div>
+            </div>
+
+            <div className="p-4 bg-white rounded-lg shadow mb-6">
+                <h3 className="font-bold mb-4">Most Popular Products (Period)</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={reportData.popularProductsChartData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis type="category" dataKey="name" width={80} />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#3b82f6" name="Units Sold" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    )
+}
+
+// --- App Structure & Providers ---
+const App = () => {
+    const { view, setView, toastMessage, toastType, orderData, bgGradient, setBgGradient, showToast } = useContext(AppContext);
+    const { isAdminMode, setIsAdminMode, handleLogin, handleLogout } = useContext(AuthContext);
+
+    useEffect(() => {
+        if (isAdminMode) {
+            setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)');
+        } else if (view === 'shop') {
+             // Let the ShopView component control its own gradient
+        } else {
+            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)');
+        }
+    }, [view, isAdminMode, setBgGradient]);
 
     const renderContent = () => {
         if (isAdminMode) {
-            return <AdminDashboard onLogout={() => handleLogout(setView)} />;
+            return <AdminDashboard onLogout={() => handleLogout(setView, setIsAdminMode)} />;
         }
         switch (view) {
-            case 'shop': return <ShopView />; 
+            case 'shop': return <div className="view active"><ShopView /></div>; 
             case 'cart': return <CartView onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} showToast={showToast}/>; 
             case 'checkout': return <CheckoutView onBack={() => setView('cart')} showToast={showToast} />;
-            case 'confirmation': return <ConfirmationView order={useContext(AppContext).orderData} onContinue={() => setView('shop')} />;
-            case 'payment': return <CreditCardView order={useContext(AppContext).orderData} onBack={() => { setView('checkout'); }} />;
+            case 'confirmation': return <ConfirmationView order={orderData} onContinue={() => setView('shop')} />;
+            case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); }} />;
             case 'about': return <AboutView onBack={() => setView('shop')} />;
-            case 'admin': return <AdminLoginView onLogin={(email, password) => handleLogin(email, password, showToast)} />;
+            case 'admin': return <AdminLoginView onLogin={(email, password) => handleLogin(email, password, showToast, setIsAdminMode)} />;
             default: return <div className="view active justify-center items-center"><p>Loading...</p></div>;
         }
     };
 
     return (
-        <div className="bg-gray-100 flex items-center justify-center p-0 md:p-4 h-screen w-screen">
+        <div style={{ background: bgGradient, transition: 'background 0.5s ease' }} className="flex items-center justify-center p-0 md:p-4 h-screen w-screen">
              <GlobalStyles />
              <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
                 {toastMessage}
@@ -762,7 +1797,7 @@ function App() {
              )}
         </div>
     );
-};
+}
 
 const CartButtonWithCount = ({setView, view}) => {
     const { cartCount } = useContext(CartContext);
@@ -775,6 +1810,316 @@ const CartButtonWithCount = ({setView, view}) => {
     );
 }
 
+// --- Firestore CRUD Handlers ---
+const handleUpdateFirestore = async (collectionName, docId, data, showToast) => {
+    try {
+        await setDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId), data, { merge: true });
+        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} updated!`);
+    } 
+    catch (error) {
+        console.error(`Error updating ${collectionName}:`, error);
+        showToast(`Error updating ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+    }
+};
+
+const handleAddFirestore = async (collectionName, data, showToast) => {
+    try {
+        const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} added!`);
+        return docRef;
+    } catch (error) {
+        console.error(`Error adding ${collectionName}:`, error);
+        showToast(`Error adding ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+    }
+};
+
+const handleDeleteFirestore = async (collectionName, docId, showToast, showModal, skipModal = false) => {
+    const performDelete = async () => {
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
+            showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
+        } catch(error) {
+            console.error(`Error deleting ${collectionName}:`, error);
+            showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+        }
+    };
+
+    if (skipModal) {
+      await performDelete();
+    } else {
+      showModal(`Are you sure you want to delete this ${COLLECTION_NAMES[collectionName] || 'item'}?`, performDelete);
+    }
+};
+
+const handleBatchUpdate = async (updates, showToast) => {
+    if (updates.length === 0) return;
+    const batch = writeBatch(db);
+    updates.forEach(({collectionName, docId, data}) => {
+        const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
+        batch.update(docRef, data);
+    });
+    try {
+        await batch.commit();
+        showToast('Batch update successful!');
+    } catch (error) {
+        console.error('Batch update failed:', error);
+        showToast('Batch update failed.', 'error');
+    }
+};
+
+
+// --- Context Provider Components ---
+const DataProvider = ({ children }) => {
+    const [products, setProducts] = useState([]);
+    const [inventory, setInventory] = useState({});
+    const [inventoryLoaded, setInventoryLoaded] = useState(false);
+    const [coupons, setCoupons] = useState([]);
+    const { user, isAuthReady } = useContext(AuthContext);
+    const { showToast } = useContext(AppContext);
+
+    useEffect(() => {
+        if (!isAuthReady) return;
+
+        const createSubscription = (collectionName, setter) => {
+            const q = query(collection(db, `artifacts/${appId}/public/data/${collectionName}`));
+            return onSnapshot(q, 
+                (snapshot) => {
+                    setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                },
+                (error) => {
+                    console.error(`Error fetching ${collectionName}: `, error);
+                    showToast(`Could not load ${collectionName}. Check Firestore rules and collection names.`, "error");
+                }
+            );
+        };
+        
+        const unsubscribes = [
+            createSubscription('products', setProducts),
+            createSubscription('inventory', (snapshot) => {
+                const invData = {};
+                snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
+                setInventory(invData);
+                setInventoryLoaded(true);
+            }),
+            createSubscription('coupons', setCoupons),
+        ];
+
+        return () => unsubscribes.forEach(unsub => unsub());
+    }, [isAuthReady, user, showToast]);
+
+    const value = { products, inventory, inventoryLoaded, coupons };
+    return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+};
+
+const CartProvider = ({ children }) => {
+    const { setView, showToast, setOrderData } = useContext(AppContext);
+    const [cart, setCart] = useState({});
+    const { inventory } = useContext(DataContext);
+    const subtotal = useMemo(() => Object.values(cart).reduce((s, i) => s + i.price * i.quantity, 0), [cart]);
+    const cartCount = useMemo(() => Object.values(cart).reduce((s, i) => s + i.quantity, 0), [cart]);
+
+    const addToCart = (product, quantity) => { 
+        setCart(p => ({ ...p, [product.id]: { ...product, quantity: (p[product.id]?.quantity || 0) + quantity } })); 
+        showToast(`${quantity} x ${product.name} added!`); 
+    };
+    
+    const buyNow = (product, quantity) => { 
+        setCart({ [product.id]: { ...product, quantity } }); 
+        setView('checkout'); 
+    };
+
+    const updateCartQuantity = (id, q) => { 
+        if (q < 1) { 
+            removeFromCart(id); 
+            return; 
+        } 
+        setCart(p => ({...p, [id]: {...p[id], quantity: q}})); 
+    };
+
+    const removeFromCart = (id) => { 
+        setCart(p => { const n = {...p}; delete n[id]; return n; }); 
+    };
+    
+    const placeOrder = async (order) => {
+        const orderId = doc(collection(db, '_')).id;
+        const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
+
+        const newOrder = {
+            id: orderId,
+            ...order,
+            createdAt: new Date().toISOString(),
+            paymentStatus: 'Pending',
+            fulfillmentStatus: 'Pending'
+        };
+
+        const batch = writeBatch(db);
+        batch.set(newOrderRef, newOrder);
+        
+        for (const item of Object.values(order.items)) {
+            if (item.id && item.quantity > 0) {
+                const currentProductInv = inventory[item.id];
+                if (currentProductInv && Array.isArray(currentProductInv.batches)) {
+                    let remainingToDeduct = item.quantity;
+                    const updatedBatches = [...currentProductInv.batches].sort((a, b) => new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+
+                    for (let i = 0; i < updatedBatches.length && remainingToDeduct > 0; i++) {
+                        let batchEntry = updatedBatches[i];
+                        const deductibleFromBatch = Math.min(remainingToDeduct, batchEntry.unengraved);
+                        batchEntry.unengraved -= deductibleFromBatch;
+                        remainingToDeduct -= deductibleFromBatch;
+                    }
+
+                    const newBatches = updatedBatches.filter(b => b.unengraved > 0 || b.engraved > 0 || b.defective > 0);
+                    const productDocRef = doc(db, `artifacts/${appId}/public/data/inventory`, item.id);
+                    batch.set(productDocRef, { batches: newBatches }, { merge: true });
+                }
+            }
+        }
+        try {
+            await batch.commit();
+            setOrderData({ ...newOrder, id: orderId }); 
+            showToast("Order placed and inventory updated!", "success");
+
+            if (order.paymentMethod === 'credit_card') {
+                setView('payment');
+            } else {
+                setView('confirmation');
+            }
+            setCart({});
+        } catch (error) {
+            console.error("Failed to place order:", error);
+            showToast('Failed to place order. ' + error.message, 'error');
+        }
+    };
+
+    const value = { cart, cartCount, subtotal, addToCart, buyNow, updateCartQuantity, removeFromCart, placeOrder };
+
+    return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+};
+
+const AuthProvider = ({ children }) => {
+    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [isAdminMode, setIsAdminMode] = useState(false);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser && !isAuthReady) {
+                setUser(currentUser);
+                if(!currentUser.isAnonymous) {
+                    setIsAdminMode(true);
+                }
+            }
+            setIsAuthReady(true);
+        });
+
+        const performSignIn = async () => {
+             try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+        
+        if (auth.currentUser === null) {
+            performSignIn();
+        } else {
+             setUser(auth.currentUser);
+             setIsAuthReady(true);
+        }
+
+        return () => unsubscribeAuth();
+    }, [isAuthReady]);
+
+    const handleLogin = async (email, password, showToast, setAdmin) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setAdmin(true);
+            showToast("Logged in as admin!");
+        } catch (error) {
+            showToast('Login Failed! ' + error.code, 'error');
+        }
+    };
+
+    const handleLogout = async (setView, setAdmin) => {
+        await signOut(auth);
+        setAdmin(false);
+        setView('shop');
+        try {
+            await signInAnonymously(auth);
+        } catch (error) {
+             console.error("Anonymous sign-in after logout failed:", error);
+        }
+    };
+
+
+    const value = { user, isAuthReady, isAdminMode, setIsAdminMode, handleLogin, handleLogout };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+const AppProvider = ({ children }) => {
+    const [view, setView] = useState('shop');
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastType, setToastType] = useState('success');
+    const [orderData, setOrderData] = useState(null);
+    const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
+    
+    const showToast = (message, type = 'success') => {
+        setToastMessage(message);
+        setToastType(type);
+        setTimeout(() => setToastMessage(''), 3000);
+    };
+
+    const value = {
+        view, setView,
+        toastMessage, toastType, showToast,
+        orderData, setOrderData,
+        bgGradient, setBgGradient,
+    };
+
+    return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+}
+
+const ModalProvider = ({ children }) => {
+    const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {} });
+
+    const showModal = (message, onConfirm) => {
+        setModalState({ isOpen: true, message, onConfirm });
+    };
+
+    const handleConfirm = () => {
+        modalState.onConfirm();
+        setModalState({ isOpen: false, message: '', onConfirm: () => {} });
+    };
+
+    const handleCancel = () => {
+        setModalState({ isOpen: false, message: '', onConfirm: () => {} });
+    };
+
+    return (
+        <ModalContext.Provider value={showModal}>
+            {children}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-4 z-[100]">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
+                        <p className="mb-6">{modalState.message}</p>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={handleCancel} className="px-6 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button onClick={handleConfirm} className="px-6 py-2 bg-red-600 text-white rounded-md">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </ModalContext.Provider>
+    );
+};
+
+// --- Root Component ---
 export default function AppWrapper() {
   return (
     <AuthProvider>
