@@ -20,17 +20,15 @@ const COLLECTION_NAMES = {
 };
 
 // --- Firebase Configuration ---
-const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config)
-    : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZD2pmLqvO8sgJuQ", // Fallback for local development
-        authDomain: "byot-40fe2.firebaseapp.com",
-        projectId: "byot-40fe2",
-        storageBucket: "byot-40fe2.appspot.com",
-        messagingSenderId: "643015540811",
-        appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
-        measurementId: "G-S8QD6WWN90"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", // Correct API Key
+  authDomain: "byot-40fe2.firebaseapp.com",
+  projectId: "byot-40fe2",
+  storageBucket: "byot-40fe2.appspot.com",
+  messagingSenderId: "643015540811",
+  appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
+  measurementId: "G-S8QD6WWN90"
+};
 
 // --- Firebase Initialization ---
 const app = initializeApp(firebaseConfig);
