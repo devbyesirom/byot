@@ -382,7 +382,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
 
     useEffect(() => {
         if (appliedCoupon) {
-            const currentDiscount = discount; // Use the memoized discount value
+            const currentDiscount = discount;
             if (currentDiscount > 0) {
                 setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
             } else {
@@ -1833,7 +1833,6 @@ export default function App() {
     const [orderData, setOrderData] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
 
-    // Handles authentication and sets a ready flag when a user is available.
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, user => {
             if (user) {
@@ -1848,7 +1847,6 @@ export default function App() {
         return () => unsubscribeAuth();
     }, []);
 
-    // Handles data fetching from Firestore, runs only when auth is ready.
     useEffect(() => {
         if (!isAuthReady) return;
 
