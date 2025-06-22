@@ -38,6 +38,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
     };
 
 // Determine appId for Firestore paths based on environment
+// This uses the __app_id global provided by Canvas, or falls back to projectId if not defined.
 const currentAppId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
 
 // Initialize Firebase
