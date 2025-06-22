@@ -1,10 +1,10 @@
-/* global __firebase_config, __app_id */
+/* global __firebase_config, __app_id, __initial_auth_token */
 import React, { useState, useEffect, useMemo, useRef, useContext, createContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Disclosure } from '@headlessui/react';
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously } from "firebase/auth";
-import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously, signInWithCustomToken } from "firebase/auth";
+import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc, query } from "firebase/firestore";
 
 // --- Constants ---
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -40,13 +40,37 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2';
 
+
 // --- React Contexts for State Management ---
 const DataContext = createContext(null);
 const CartContext = createContext(null);
 const AuthContext = createContext(null);
 const AppContext = createContext(null);
+const ModalContext = createContext(null); // NEW: Context for confirmation modals
 
-// --- Icon Components ---
+// --- Helper Hooks & Functions ---
+const useModal = () => useContext(ModalContext);
+
+// NEW: Improved clipboard copy function for better compatibility.
+const copyToClipboard = (text, showToast) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; 
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Bank info copied to clipboard!');
+    } catch (err) {
+        showToast('Failed to copy text.', 'error');
+    }
+    document.body.removeChild(textArea);
+};
+
+
+// --- Icon Components (No Changes) ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
@@ -55,7 +79,7 @@ const ArrowDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" h
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const TicketIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ticket"><path d="M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>;
-const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const WhatsAppIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.17.28-.3.4-.28.2-.45.28-.35.13-.53.13c-.18 0-.38-.04-.58-.13s-.43-.2-.65-.35-.45-.3-.68-.5-.45-.4-.68-.63c-.23-.23-.45-.48-.65-.75s-.38-.5-.53-.75c-.15-.25-.23-.5-.23-.78 0-.28.08-.53.23-.75s.33-.4.53-.53.4-.2.6-.23c.2-.03.4-.04.6-.04.2 0 .4.03.58.08s.35.13.5.22.28.2.4.33.2.25.25.4c.05.14.08.3.08.48s-.03.33-.08.45-.13.25-.23.38c-.1.13-.23.25-.38.38s-.3.25-.45.35-.3.18-.45.25c-.15.08-.3.12-.43.12-.13 0-.25-.02-.38-.08s-.25-.12-.35-.22-.2-.2-.28-.3c-.08-.1-.12-.23-.12-.38 0-.15.04-.28.12-.4.08-.12.2-.23.35-.32.15-.1.3-.15.48-.15.18 0 .35.04.5.13.15.08.3.2.43.32zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path></svg>;
 const ClipboardListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><line x1="12" y1="11" x2="12" y2="16"></line><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"></line></svg>;
@@ -66,12 +90,15 @@ const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height
 const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
 const ChevronUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>;
 
-const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: scroll; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
+// --- Global Styles Component ---
+const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-direction: column; height: 100%; max-height: 900px; width: 100%; max-width: 420px; margin: auto; border-radius: 2rem; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.2); } .view { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; } .view.active { display: flex; } .feed { flex-grow: 1; overflow-y: auto; scroll-snap-type: y mandatory; } .card { height: 100%; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; color: white; position: relative; background-size: cover; background-position: center; } .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%); z-index: 1; } .card-content { position: relative; z-index: 2; } .scroll-arrow { position: absolute; bottom: 7rem; left: 50%; animation: bounce 2.5s infinite; z-index: 2; } @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -20px); } 60% { transform: translate(-50%, -10px); } } input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type="number"] { -moz-appearance: textfield; } `}</style> );
 
 // --- View Components (Customer Facing) ---
-const ShopView = ({ setBgGradient, showToast }) => {
+const ShopView = () => {
     const { products, inventory, inventoryLoaded } = useContext(DataContext);
     const { addToCart, buyNow } = useContext(CartContext);
+    const { setBgGradient, showToast } = useContext(AppContext);
+
     const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
     const feedRef = useRef(null);
 
@@ -88,14 +115,15 @@ const ShopView = ({ setBgGradient, showToast }) => {
                 if(currentCard){
                     const { colorStart, colorEnd } = currentCard.dataset;
                     if (colorStart && colorEnd) {
-                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`;
+                         setBgGradient(`linear-gradient(to bottom, ${colorStart}, ${colorEnd})`);
                     }
                 }
             }, 50);
         };
+        handleScroll(); // Set initial gradient
         feedEl.addEventListener('scroll', handleScroll);
         return () => feedEl.removeEventListener('scroll', handleScroll);
-    }, [products]);
+    }, [products, setBgGradient]);
 
     const ProductCard = React.memo(({ product, onAddToCart, onBuyNow, inventory, inventoryLoaded }) => {
         const [quantity, setQuantity] = useState(1);
@@ -146,7 +174,7 @@ const ShopView = ({ setBgGradient, showToast }) => {
         };
 
         return (
-            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}>
+            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart || '#cccccc'} data-color-end={product.colorEnd || '#eeeeee'}>
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
                     <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
@@ -173,14 +201,14 @@ const ShopView = ({ setBgGradient, showToast }) => {
                     <div className="flex items-center space-x-2 mt-4">
                         <button
                             onClick={handleAddToCartClick}
-                            className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg"
+                            className="w-full bg-white/30 backdrop-blur-sm text-white font-bold py-3 rounded-lg text-lg disabled:bg-gray-500/50 disabled:cursor-not-allowed"
                             disabled={availableStock === 0 || quantity === 0}
                         >
                             Add to Cart
                         </button>
                         <button
                             onClick={handleBuyNowClick}
-                            className={`w-full bg-white ${product.buttonTextColor} font-bold py-3 rounded-lg text-lg shadow-lg`}
+                            className={`w-full bg-white ${product.buttonTextColor || 'text-gray-800'} font-bold py-3 rounded-lg text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed`}
                             disabled={availableStock === 0 || quantity === 0}
                         >
                             Buy Now
@@ -198,8 +226,8 @@ const ShopView = ({ setBgGradient, showToast }) => {
                     <h1 className="text-4xl font-extrabold text-white drop-shadow-md whitespace-nowrap">Bring Yuh Owna Tings</h1>
                     <p className="text-lg text-gray-200 mt-2">Reusable Utensil Sets for Everyday Use</p>
                 </div>
-                <button
-                    className="scroll-arrow absolute bottom-24 left-1/2 transform -translate-x-1/2 text-white"
+                 {sortedProducts.length > 0 && <button
+                    className="scroll-arrow text-white"
                     onClick={() => {
                         if (feedRef.current) {
                             feedRef.current.scrollTo({
@@ -210,12 +238,15 @@ const ShopView = ({ setBgGradient, showToast }) => {
                     }}
                 >
                     <ArrowDownIcon />
-                </button>
+                </button>}
             </div>
-            {sortedProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                    <p className="text-lg font-semibold">No products available.</p>
-                    <p className="text-sm">Please check your Firebase products collection or admin settings.</p>
+             {products.length === 0 ? (
+                <div className="card bg-gray-700">
+                    <div className="card-content flex flex-col items-center justify-center text-center h-full">
+                         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
+                         <p className="text-lg font-semibold">Loading Products...</p>
+                         <p className="text-sm text-gray-300">If this takes too long, please check your connection or admin settings.</p>
+                    </div>
                 </div>
             ) : (
                 sortedProducts.map((product) => (
@@ -252,7 +283,7 @@ const CartView = ({ onBack, onGoToCheckout, showToast }) => {
             <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header>
             <main className="flex-grow overflow-y-auto p-4 space-y-4">
                 {Object.keys(cart).length === 0 ? (
-                    <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
+                    <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500 h-full">
                         <CartIcon /><p className="text-lg font-semibold mt-4">Your cart is empty</p>
                     </div>
                 ) : (
@@ -389,6 +420,7 @@ const CheckoutView = ({ onBack, showToast }) => {
                 setCouponMessage(`Coupon "${appliedCoupon.code}" applied! You saved J$${currentDiscount.toLocaleString()}`);
             } else {
                 setCouponMessage('Coupon not applicable to items in your cart.');
+                 setAppliedCoupon(null); // Reset if not applicable
             }
         } else {
             setCouponMessage('');
@@ -398,11 +430,7 @@ const CheckoutView = ({ onBack, showToast }) => {
 
     const handleCopyBankInfo = () => {
         const bankInfo = `Company: Esirom Foundation Limited\nBank: Scotiabank\nBranch: Oxford Road\nAccount #: 846837, SAVINGS (JMD Account)`;
-        navigator.clipboard.writeText(bankInfo).then(() => {
-            showToast('Bank info copied to clipboard!');
-        }).catch(err => {
-            showToast('Failed to copy text.', 'error');
-        });
+        copyToClipboard(bankInfo, showToast);
     };
 
 
@@ -423,7 +451,7 @@ const CheckoutView = ({ onBack, showToast }) => {
             fulfillmentCost,
             discount,
             total,
-            couponUsed: appliedCoupon ? appliedCoupon.code : null,
+            couponUsed: appliedCoupon ? { code: appliedCoupon.code, value: discount } : null,
             fulfillmentMethod,
             paymentMethod,
             pickupDate: fulfillmentMethod === 'pickup' ? pickupDate : null,
@@ -502,6 +530,7 @@ const CheckoutView = ({ onBack, showToast }) => {
                                         min={getMinDate()}
                                     />
                                     <select name="pickup_time" className="p-2 border rounded-md" required value={pickupTime} onChange={(e) => setPickupTime(e.target.value)}>
+                                        <option value="">Select Time</option>
                                         {PICKUP_TIMES.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                     <p className="text-xs text-gray-500 mt-1 col-span-2">Pickups are available Monday - Friday.</p>
@@ -556,7 +585,7 @@ const CheckoutView = ({ onBack, showToast }) => {
                         {couponMessage && (
                              <p className={`text-sm mt-2 ${discount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                  {couponMessage}
-                                 {appliedCoupon && <button onClick={() => {setAppliedCoupon(null); setCouponCode(''); setCouponMessage('');}} className="ml-2 text-red-500 font-bold">[Remove]</button>}
+                                 {appliedCoupon && <button type="button" onClick={() => {setAppliedCoupon(null); setCouponCode(''); setCouponMessage('');}} className="ml-2 text-red-500 font-bold">[Remove]</button>}
                              </p>
                         )}
                     </div>
@@ -602,7 +631,7 @@ const CheckoutView = ({ onBack, showToast }) => {
                     <span>Total</span>
                     <span>J${total.toLocaleString()}</span>
                 </div>
-                <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg" disabled={isPlacingOrder}>
+                <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg disabled:bg-blue-300" disabled={isPlacingOrder}>
                     {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
                 </button>
             </footer>
@@ -616,7 +645,7 @@ const ConfirmationView = ({ order, onContinue }) => {
         <div className="view active bg-gray-100 p-4 flex flex-col items-center justify-center text-center">
             <CheckCircleIcon />
             <h1 className="text-2xl font-bold mt-4">Thank You!</h1>
-            <p className="text-gray-600">Your order <span className="font-bold">#{id}</span> has been placed.</p>
+            <p className="text-gray-600">Your order <span className="font-bold">#{id.slice(0, 8)}</span> has been placed.</p>
             <div className="text-left bg-white p-4 rounded-lg shadow-md w-full my-6 text-sm">
                 <h2 className="font-bold mb-2">Next Steps</h2>
                 {paymentMethod === 'bank_transfer' && <p>For bank transfer payments, orders will not be processed until proof of payment is sent via Whatsapp at 876-436-5244.</p>}
@@ -642,37 +671,56 @@ const AboutView = ({ onBack }) => { return ( <div className="view active bg-whit
 
 // --- Admin Components ---
 const AdminLoginView = ({ onLogin, showToast }) => { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const handleLogin = (e) => { e.preventDefault(); onLogin(email, password, showToast); }; return( <div className="view active bg-gray-100 p-4 justify-center"> <form onSubmit={handleLogin} className="w-full max-w-sm mx-auto bg-white p-8 rounded-lg shadow-md space-y-6"> <h2 className="text-2xl font-bold text-center">Admin Login</h2> <div><label className="block mb-1 font-semibold">Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 border rounded" required/></div> <div><label className="block mb-1 font-semibold">Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required/></div> <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Login</button> </form> </div> ); };
-const AdminDashboard = ({ onLogout, onUpdate, onAdd, onDelete, onBatchUpdate, showToast }) => {
+const AdminDashboard = ({ onLogout }) => {
     const [adminView, setAdminView] = useState('orders');
     const { products, inventory } = useContext(DataContext);
+    const { showToast } = useContext(AppContext);
+    const showModal = useModal();
     // Admin-specific data fetching
     const [orders, setOrders] = useState([]);
     const [coupons, setCoupons] = useState([]);
     const [costBatches, setCostBatches] = useState([]);
 
     useEffect(() => {
+        const createSubscription = (collectionName, setter) => {
+            const q = query(collection(db, `artifacts/${appId}/public/data/${collectionName}`));
+            return onSnapshot(q, 
+                (snapshot) => {
+                    setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                },
+                (error) => {
+                    console.error(`Error fetching ${collectionName}: `, error);
+                    showToast(`Could not load ${collectionName}.`, "error");
+                }
+            );
+        };
+
         const unsubscribes = [
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/orders`), (snapshot) => {
-                setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
-                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
-                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
+            createSubscription('orders', setOrders),
+            createSubscription('coupons', setCoupons),
+            createSubscription('costBatches', setCostBatches),
         ];
         return () => unsubscribes.forEach(unsub => unsub());
-    }, []);
+    }, [showToast]);
 
     const inventoryRef = useRef(inventory);
     useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
 
+    // Combine CRUD handlers into one object to pass down
+    const crudHandlers = {
+      onUpdate: (...args) => handleUpdateFirestore(...args, showToast),
+      onAdd: (...args) => handleAddFirestore(...args, showToast),
+      onDelete: (...args) => handleDeleteFirestore(...args, showToast, showModal),
+      onBatchUpdate: (updates) => handleBatchUpdate(updates, showToast),
+      showToast,
+      showModal
+    };
+
     return (
-        <div className="view active bg-gray-200 flex-col">
+        <div className="view active bg-gray-200 flex-col h-full">
             <aside className="w-full bg-gray-800 text-white flex-shrink-0 lg:h-16 lg:flex lg:flex-row lg:items-center lg:justify-between">
                  <div className="p-4 font-bold border-b border-gray-700 lg:border-b-0 lg:p-0 lg:ml-6 hidden lg:block">Admin Panel</div>
-                 <nav className="p-2 flex-grow flex flex-col justify-around lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-6">
+                 <nav className="p-2 flex-grow flex justify-around lg:flex-grow-0 lg:flex-row lg:justify-center lg:space-x-2">
                      <button onClick={() => setAdminView('orders')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'orders' ? 'bg-gray-700' : ''}`}><ClipboardListIcon/><span>Orders</span></button>
                      <button onClick={() => setAdminView('inventory')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'inventory' ? 'bg-gray-700' : ''}`}><PackageIcon/><span>Inventory</span></button>
                      <button onClick={() => setAdminView('products')} className={`flex flex-col items-center text-center w-full p-2 rounded-md space-x-2 lg:flex-row lg:text-left lg:w-auto ${adminView === 'products' ? 'bg-gray-700' : ''}`}><TagIcon/><span>Products</span></button>
@@ -687,17 +735,17 @@ const AdminDashboard = ({ onLogout, onUpdate, onAdd, onDelete, onBatchUpdate, sh
                     <button onClick={onLogout} className="text-sm text-red-600">Logout</button>
                  </header>
                  <div className="flex-grow overflow-y-auto p-2 sm:p-6">
-                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} onUpdate={onUpdate} onDelete={onDelete} onAdd={onAdd} showToast={showToast} inventory={inventoryRef} />}
-                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} onSave={onUpdate} products={products} showToast={showToast} />}
-                    {adminView === 'products' && <AdminProductsView products={products} onSave={onUpdate} onAdd={onAdd} onDelete={onDelete} showToast={showToast}/>}
-                    {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} onSave={onUpdate} onAdd={onAdd} onDelete={onDelete} showToast={showToast} />}
-                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} onAddBatch={onAdd} onBatchUpdate={onBatchUpdate} showToast={showToast} onUpdate={onUpdate} onAdd={onAdd}/>}
+                    {adminView === 'orders' && <AdminOrdersView orders={orders} products={products} {...crudHandlers} inventory={inventoryRef} />}
+                    {adminView === 'inventory' && <AdminInventoryView inventory={inventory} products={products} {...crudHandlers} />}
+                    {adminView === 'products' && <AdminProductsView products={products} {...crudHandlers}/>}
+                    {adminView === 'coupons' && <AdminCouponsView products={products} coupons={coupons} {...crudHandlers} />}
+                    {adminView === 'insights' && <AdminInsightsView orders={orders} costBatches={costBatches} {...crudHandlers}/>}
                  </div>
             </main>
         </div>
     );
 }
-const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToast, inventory }) => {
+const AdminOrdersView = ({ orders, products, onUpdate, onDelete, showToast, showModal, inventory }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -707,11 +755,11 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         await onUpdate('orders', orderId, { [field]: value });
     };
 
-    const handleDeleteOrder = async (orderId) => {
-        if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
-            await onDelete('orders', orderId);
+    const handleDeleteOrder = (orderId) => {
+        showModal('Are you sure you want to delete this order? This action cannot be undone.', () => {
+            onDelete('orders', orderId);
             setSelectedOrder(null);
-        }
+        });
     };
 
     const handleManualSubmit = async (e, manualOrderItems) => {
@@ -759,7 +807,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             return 0;
         })();
 
-        const orderId = doc(collection(db, '_')).id; // Generate a new ID client-side
+        const orderId = doc(collection(db, '_')).id;
         const newOrderRef = doc(db, `artifacts/${appId}/public/data/orders`, orderId);
 
         const newOrder = {
@@ -806,24 +854,29 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
             await batch.commit();
             showToast("Manual order added and inventory updated!");
         } catch (error) {
+            console.error("Failed to create manual order:", error);
             showToast("Failed to create order and update inventory.", "error");
         }
         setShowManualForm(false);
     };
 
+    const sortedOrders = useMemo(() => {
+        return orders.slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [orders]);
+
     const filteredOrders = useMemo(() => {
-        return orders.filter(order => {
-            const searchMatch = !searchTerm || order.id.toLowerCase().includes(searchTerm.toLowerCase()) || order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return sortedOrders.filter(order => {
+            const searchMatch = !searchTerm || order.id.toLowerCase().includes(searchTerm.toLowerCase()) || (order.customerInfo.name && order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase()));
             const paymentStatusMatch = paymentFilter === 'all' || order.paymentStatus === paymentFilter;
             return searchMatch && paymentStatusMatch;
         });
-    }, [orders, searchTerm, paymentFilter]);
+    }, [sortedOrders, searchTerm, paymentFilter]);
 
     const OrderModal = ({ order, onClose, onDeleteOrder }) => (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
                 <div className="p-4 border-b flex justify-between items-center flex-shrink-0">
-                    <h3 className="font-bold">Order #{order.id}</h3>
+                    <h3 className="font-bold">Order #{order.id.slice(0, 8)}</h3>
                     <button onClick={onClose} className="text-2xl font-bold p-1">&times;</button>
                 </div>
                 <div className="p-4 space-y-4 text-sm overflow-y-auto">
@@ -880,7 +933,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                                 </li>
                             ))}
                         </ul>
-                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed} (-J${order.discount.toLocaleString()})</p>}
+                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed.code} (-J${order.discount.toLocaleString()})</p>}
                         <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
                     </div>
                 </div>
@@ -1104,7 +1157,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                 </div>
             </div>
             <div className="bg-white rounded-lg shadow overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfilled</th>
@@ -1113,7 +1166,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredOrders.map(order => (
                             <tr key={order.id} onClick={() => setSelectedOrder(order)} className="cursor-pointer hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{order.id}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap font-medium">{order.id.slice(0, 8)}</td><td className="px-6 py-4 whitespace-nowrap">{order.customerInfo.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {order.createdAt && !isNaN(new Date(order.createdAt).getTime())
                                         ? new Date(order.createdAt).toLocaleDateString()
@@ -1124,11 +1177,9 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                                         {order.paymentStatus}
                                     </span>
                                 </td><td className="px-6 py-4 whitespace-nowrap">
-                                    {order.fulfillmentStatus === 'Completed' ? (
-                                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                                    ) : (
-                                        <XCircleIcon className="h-5 w-5 text-red-500" />
-                                    )}
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.fulfillmentStatus === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                        {order.fulfillmentStatus}
+                                    </span>
                                 </td>
                             </tr>
                         ))}
@@ -1138,12 +1189,12 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
         </div>
     )
 }
-const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
+const AdminInventoryView = ({ inventory, onSave, products, showToast, showModal }) => {
     const [localInventory, setLocalInventory] = useState({});
 
     useEffect(() => {
         if (Object.keys(inventory).length > 0) {
-            setLocalInventory(inventory);
+            setLocalInventory(JSON.parse(JSON.stringify(inventory))); // Deep copy
         }
     }, [inventory]);
 
@@ -1175,13 +1226,13 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
     };
 
     const handleRemoveBatch = (productId, batchIndex) => {
-        if(window.confirm('Are you sure you want to remove this batch entry?')) {
+        showModal('Are you sure you want to remove this batch entry?', () => {
             setLocalInventory(prev => {
                 const productInv = { ...prev[productId] };
                 const updatedBatches = (productInv.batches || []).filter((_, i) => i !== batchIndex);
                 return { ...prev, [productId]: { ...productInv, batches: updatedBatches } };
             });
-        }
+        });
     };
 
     const handleSaveProductInventory = async (productId) => {
@@ -1249,7 +1300,7 @@ const AdminInventoryView = ({ inventory, onSave, products, showToast }) => {
         </div>
     )
 }
-const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
+const AdminProductsView = ({products, onSave, onAdd, onDelete, showModal}) => {
     const [editingProduct, setEditingProduct] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -1270,9 +1321,9 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
             price: Number(formData.get('price')),
             description: formData.get('description'),
             image: formData.get('image'),
-            colorStart: '#cccccc',
-            colorEnd: '#eeeeee',
-            buttonTextColor: 'text-gray-800',
+            colorStart: formData.get('colorStart') || '#cccccc',
+            colorEnd: formData.get('colorEnd') || '#eeeeee',
+            buttonTextColor: formData.get('buttonTextColor') || 'text-gray-800',
             displayOrder
         };
 
@@ -1285,11 +1336,11 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
         setIsAddingNew(false);
     };
     
-    const handleDelete = async (productId) => {
-        if(window.confirm('Are you sure you want to delete this product? This will also remove associated inventory data.')) {
+    const handleDelete = (productId) => {
+        showModal('Are you sure? This will delete the product and its inventory data.', async () => {
             await onDelete('products', productId);
-            await onDelete('inventory', productId);
-        }
+            await onDelete('inventory', productId, false); // Don't show modal again
+        });
     };
 
     const sortedProducts = useMemo(() => {
@@ -1318,6 +1369,16 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
                 <div>
                     <label className="font-semibold">Image URL</label>
                     <input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="font-semibold">BG Color Start</label>
+                        <input name="colorStart" type="color" defaultValue={formInitialData.colorStart || '#cccccc'} className="w-full p-1 h-10 border rounded mt-1"/>
+                    </div>
+                    <div>
+                        <label className="font-semibold">BG Color End</label>
+                        <input name="colorEnd" type="color" defaultValue={formInitialData.colorEnd || '#eeeeee'} className="w-full p-1 h-10 border rounded mt-1"/>
+                    </div>
                 </div>
                  <div>
                     <label className="font-semibold">Display Order</label>
@@ -1357,10 +1418,10 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
                             <tr key={p.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{p.displayOrder || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap flex items-center">
-                                    <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name}/>
+                                    <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name} onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/40x40/cccccc/ffffff?text=?'; }}/>
                                     <p className="font-bold">{p.name}</p>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">J${p.price}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">J${p.price.toLocaleString()}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button>
                                 </td>
@@ -1372,7 +1433,7 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showToast}) => {
         </div>
     )
 }
-const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showToast, products }) => {
+const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showModal, products }) => {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [appliesToOption, setAppliesToOption] = useState('all');
@@ -1421,12 +1482,12 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showToast, product
         setIsAddingNew(false);
     };
 
-    const handleDelete = async (couponId) => {
-        if(window.confirm('Are you sure you want to delete this coupon?')) {
-            await onDelete('coupons', couponId);
-            setEditingCoupon(null);
-            setIsAddingNew(false);
-        }
+    const handleDelete = (couponId) => {
+        showModal('Are you sure you want to delete this coupon?', () => {
+             onDelete('coupons', couponId);
+             setEditingCoupon(null);
+             setIsAddingNew(false);
+        });
     }
 
     const handleProductSelection = (productId) => {
@@ -1541,13 +1602,13 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showToast, product
                                 <td className="px-6 py-4 whitespace-nowrap capitalize">{c.type}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">{c.type === 'percentage' ? `${c.value}%` : `J$${c.value.toLocaleString()}`}</td>
                                 <td className="px-6 py-4">
-                                    {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? 'Specific Products' : 'N/A')}
+                                    {c.appliesTo === 'all' ? 'Store-wide' : (Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? `${c.appliesTo.length} Products` : 'N/A')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                     {c.startDate && new Date(c.startDate).toLocaleDateString()}
                                     {c.startDate && c.endDate && ' - '}
                                     {c.endDate && new Date(c.endDate).toLocaleDateString()}
-                                    {!c.startDate && !c.endDate && 'N/A'}
+                                    {!c.startDate && !c.endDate && 'Always Active'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${c.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -1565,7 +1626,7 @@ const AdminCouponsView = ({ coupons, onSave, onAdd, onDelete, showToast, product
         </div>
     )
 }
-const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, showToast, onUpdate, onAdd }) => {
+const AdminInsightsView = ({ orders, costBatches, onAdd, onUpdate, onBatchUpdate, showToast }) => {
     const [editingBatch, setEditingBatch] = useState(null);
 
     const getCurrentMonthDateRange = () => {
@@ -1619,7 +1680,9 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                 data: { isActive: false, endDate: new Date().toISOString() }
             }));
 
-        await onBatchUpdate(updates);
+        if (updates.length > 0) {
+            await onBatchUpdate(updates);
+        }
         await onAdd('costBatches', newBatchData);
 
         setEditingBatch(null);
@@ -1647,10 +1710,12 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
             return null;
         }).filter(Boolean);
 
-        onBatchUpdate(updates);
+        if (updates.length > 0) {
+            onBatchUpdate(updates);
+        }
     };
 
-    const { filteredOrders, reportData } = useMemo(() => {
+    const { reportData } = useMemo(() => {
         const from = new Date(dateRange.from).setHours(0,0,0,0);
         const to = new Date(dateRange.to).setHours(23,59,59,999);
 
@@ -1664,63 +1729,89 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
         const data = {
             totalIncome: 0, totalProfit: 0, sales: 0,
             returnedValue: 0, refundedValue: 0,
-            monthlySales: { 'This Month': { sales: 0, income: 0, profit: 0 }, 'Last Month': { sales: 0, income: 0, profit: 0 } },
             popularColors: {}
         };
-        const now = new Date();
 
         filtered.forEach(order => {
+            const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
+            
+            // Find cost batch active at the time of the order
             const orderDate = new Date(order.createdAt);
-            const monthDiff = (now.getFullYear() - orderDate.getFullYear()) * 12 + now.getMonth() - orderDate.getMonth();
-            const key = monthDiff === 0 ? 'This Month' : (monthDiff === 1 ? 'Last Month' : null);
-            if (key && order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed') {
-                const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
-                const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
-                const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-                data.monthlySales[key].income += order.total;
-                data.monthlySales[key].profit += order.total - costOfGoods;
+            const costBatch = costBatches.find(b => {
+                const startDate = new Date(b.startDate);
+                const endDate = b.endDate ? new Date(b.endDate) : new Date(); // Use now if not ended
+                return orderDate >= startDate && orderDate <= endDate;
+            }) || costBatches.find(b => b.isActive); // Fallback to current active
+
+            const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
+            
+            if (order.paymentStatus === 'Paid' && order.fulfillmentStatus !== 'Cancelled') {
+                data.totalIncome += order.total;
+                data.sales += orderQty;
+                data.totalProfit += order.total - costOfGoods;
+                 Object.values(order.items).forEach(item => {
+                    data.popularColors[item.name] = (data.popularColors[item.name] || 0) + item.quantity;
+                 });
+            }
+            if (order.fulfillmentStatus === 'Returned') {
+                data.returnedValue += order.total;
+            }
+            if (order.paymentStatus === 'Refunded') {
+                data.refundedValue += order.total;
             }
         });
 
         return {
-            filteredOrders: filtered,
             reportData: {
                 ...data,
-                monthlyChartData: [
-                    { name: 'Last Month', Income: data.monthlySales['Last Month'].income, Profit: data.monthlySales['Last Month'].profit },
-                    { name: 'This Month', Income: data.monthlySales['This Month'].income, Profit: data.monthlySales['This Month'].profit },
-                ],
-                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+                popularColorsChartData: Object.entries(data.popularColors).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5) // Top 5
             }
         };
     }, [orders, costBatches, dateRange]);
 
     const handleExport = () => {
-        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit"];
+        const headers = ["Order ID", "Date", "Customer", "Items", "Subtotal", "Discount", "Shipping", "Total", "Profit", "Payment Status", "Fulfillment Status"];
+        
+        const from = new Date(dateRange.from).setHours(0,0,0,0);
+        const to = new Date(dateRange.to).setHours(23,59,59,999);
 
-        const rows = filteredOrders.map(order => {
+        const filtered = !dateRange.from || !dateRange.to
+            ? orders
+            : orders.filter(order => {
+                const orderDate = new Date(order.createdAt).getTime();
+                return orderDate >= from && orderDate <= to;
+            });
+
+        const rows = filtered.map(order => {
             const orderQty = Object.values(order.items).reduce((sum, i) => sum + i.quantity, 0);
-            const costBatch = costBatches.find(b => b.id === order.costBatchId) || costBatches.find(b => b.isActive);
+            const orderDate = new Date(order.createdAt);
+            const costBatch = costBatches.find(b => {
+                const startDate = new Date(b.startDate);
+                const endDate = b.endDate ? new Date(b.endDate) : new Date();
+                return orderDate >= startDate && orderDate <= endDate;
+            }) || costBatches.find(b => b.isActive);
             const costOfGoods = (costBatch?.costPerSet || 0) * orderQty;
-            const profit = order.paymentStatus === 'Paid' && order.fulfillmentStatus === 'Completed' ? order.total - costOfGoods : 0;
+            const profit = order.paymentStatus === 'Paid' ? order.total - costOfGoods : 0;
 
             const itemsString = Object.values(order.items).map(i => `${i.quantity}x ${i.name}`).join('; ');
 
             return [
                 order.id,
-                new Date(order.createdAt).toLocaleDateString(),
-                order.customerInfo.name,
+                orderDate.toLocaleDateString(),
+                order.customerInfo.name.replace(/,/g, ''),
                 `"${itemsString}"`,
                 order.subtotal || 0,
                 order.discount || 0,
                 order.fulfillmentCost || 0,
                 order.total,
-                profit.toFixed(2)
+                profit.toFixed(2),
+                order.paymentStatus,
+                order.fulfillmentStatus
             ].join(',');
         });
 
         const csvString = [headers.join(','), ...rows].join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1795,11 +1886,11 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Total Income</h3>
-                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Total Profit</h3>
-                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Sales (Period)</h3>
@@ -1815,33 +1906,17 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="p-4 bg-white rounded-lg shadow">
-                    <h3 className="font-bold mb-4">Monthly Profitability</h3>
-                    <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={reportData.monthlyChartData} >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => `J$${value.toLocaleString()}`} />
-                            <Legend />
-                            <Bar dataKey="Profit" fill="#8884d8" />
-                            <Bar dataKey="Income" fill="#82ca9d" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-                <div className="p-4 bg-white rounded-lg shadow">
-                    <h3 className="font-bold mb-4">Most Popular Colors (Period)</h3>
-                    <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={reportData.popularColorsChartData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis type="category" dataKey="name" width={80} />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="#3b82f6" name="Units Sold" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+            <div className="p-4 bg-white rounded-lg shadow mb-6">
+                <h3 className="font-bold mb-4">Most Popular Products (Period)</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={reportData.popularColorsChartData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis type="category" dataKey="name" width={80} />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#3b82f6" name="Units Sold" />
+                    </BarChart>
+                </ResponsiveContainer>
             </div>
 
             <div className="p-4 bg-white rounded-lg shadow">
@@ -1850,12 +1925,12 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                      <button onClick={() => setEditingBatch({ name: '', productCost: 0, alibabaShipping: 0, mailpacShipping: 0, numSets: 0, isNew: true })} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">Create New Batch</button>
                  </div>
                  <div className="space-y-2">
-                    {costBatches.slice().reverse().map(batch => (
+                    {costBatches.slice().sort((a,b) => new Date(b.startDate) - new Date(a.startDate)).map(batch => (
                         <div key={batch.id} className={`p-3 rounded-lg border ${batch.isActive ? 'border-green-500 bg-green-50' : 'bg-gray-100'}`}>
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{batch.name}</p>
-                                    <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
+                                    <p className="text-sm text-gray-600">Cost per Set: J${(batch.costPerSet || 0).toFixed(2)}</p>
                                     <p className="text-xs text-gray-500">
                                         {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
                                     </p>
@@ -1880,54 +1955,39 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
 
 // --- App Structure & Providers ---
 const App = () => {
-    const { 
-        view, setView, 
-        toastMessage, toastType, 
-        orderData, 
-        bgGradient, setBgGradient
-    } = useContext(AppContext);
-     const { isAdminMode, setIsAdminMode } = useContext(AuthContext);
-     const { showToast } = useContext(AppContext);
+    const { view, setView, toastMessage, toastType, orderData, bgGradient, setBgGradient, showToast } = useContext(AppContext);
+    const { isAdminMode, setIsAdminMode, handleLogin, handleLogout } = useContext(AuthContext);
 
     useEffect(() => {
-        if (!isAdminMode && view !== 'shop') {
-            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9faf6)');
-        } else if (isAdminMode) {
+        // This effect manages the background gradient based on the current view
+        if (isAdminMode) {
             setBgGradient('linear-gradient(to bottom, #e5e7eb, #f3f4f6)');
         } else if (view === 'shop') {
-            setBgGradient('linear-gradient(to bottom, #111827, #374151)');
+             // Let the ShopView component control its own gradient
+        } else {
+            // Default gradient for other views like cart, checkout, etc.
+            setBgGradient('linear-gradient(to bottom, #d1d5db, #f9fafb)');
         }
     }, [view, isAdminMode, setBgGradient]);
 
     const renderContent = () => {
         if (isAdminMode) {
-            return <AdminDashboard 
-                onLogout={async () => { 
-                    await signOut(auth);
-                    setIsAdminMode(false);
-                    setView('shop');
-                }} 
-                onUpdate={(...args) => handleUpdateFirestore(...args, showToast)}
-                onAdd={(...args) => handleAddFirestore(...args, showToast)}
-                onDelete={(...args) => handleDeleteFirestore(...args, showToast)}
-                onBatchUpdate={(updates) => handleBatchUpdate(updates, showToast)}
-                showToast={showToast}
-            />;
+            return <AdminDashboard onLogout={() => handleLogout(setView, setIsAdminMode)} />;
         }
         switch (view) {
-            case 'shop': return <div className="view active"><ShopView setBgGradient={setBgGradient} showToast={showToast} /></div>; 
+            case 'shop': return <div className="view active"><ShopView /></div>; 
             case 'cart': return <CartView onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} showToast={showToast}/>; 
             case 'checkout': return <CheckoutView onBack={() => setView('cart')} showToast={showToast} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={() => setView('shop')} />;
             case 'payment': return <CreditCardView order={orderData} onBack={() => { setView('checkout'); }} />;
             case 'about': return <AboutView onBack={() => setView('shop')} />;
             case 'admin': return <AdminLoginView onLogin={(email, password) => handleLogin(email, password, showToast, setIsAdminMode)} />;
-            default: return null;
+            default: return <div className="view active justify-center items-center"><p>Loading...</p></div>;
         }
     };
 
     return (
-        <div style={{ background: bgGradient }} className="flex items-center justify-center p-0 md:p-4 h-screen">
+        <div style={{ background: bgGradient, transition: 'background 0.5s ease' }} className="flex items-center justify-center p-0 md:p-4 h-screen w-screen">
              <GlobalStyles />
              <div className={`absolute top-0 left-1/2 -translate-x-1/2 mt-4 text-white text-center py-2 px-6 rounded-full shadow-lg transform z-50 transition-all duration-300 ${toastMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20'} ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
                 {toastMessage}
@@ -1972,29 +2032,42 @@ const handleUpdateFirestore = async (collectionName, docId, data, showToast) => 
         showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} updated!`);
     } 
     catch (error) {
+        console.error(`Error updating ${collectionName}:`, error);
         showToast(`Error updating ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
     }
 };
 
 const handleAddFirestore = async (collectionName, data, showToast) => {
     try {
-        await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+        const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
         showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} added!`);
+        return docRef;
     } catch (error) {
+        console.error(`Error adding ${collectionName}:`, error);
         showToast(`Error adding ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
     }
 };
 
-const handleDeleteFirestore = async (collectionName, docId, showToast) => {
-    try {
-        await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
-        showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
-    } catch(error) {
-        showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+const handleDeleteFirestore = async (collectionName, docId, showToast, showModal, skipModal = false) => {
+    const performDelete = async () => {
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId));
+            showToast(`${COLLECTION_NAMES[collectionName] || 'Item'} deleted!`);
+        } catch(error) {
+            console.error(`Error deleting ${collectionName}:`, error);
+            showToast(`Error deleting ${COLLECTION_NAMES[collectionName] || 'item'}`, 'error');
+        }
+    };
+
+    if (skipModal) {
+      await performDelete();
+    } else {
+      showModal(`Are you sure you want to delete this ${COLLECTION_NAMES[collectionName] || 'item'}?`, performDelete);
     }
 };
 
 const handleBatchUpdate = async (updates, showToast) => {
+    if (updates.length === 0) return;
     const batch = writeBatch(db);
     updates.forEach(({collectionName, docId, data}) => {
         const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, docId);
@@ -2004,19 +2077,11 @@ const handleBatchUpdate = async (updates, showToast) => {
         await batch.commit();
         showToast('Batch update successful!');
     } catch (error) {
+        console.error('Batch update failed:', error);
         showToast('Batch update failed.', 'error');
     }
 };
 
-const handleLogin = async (email, password, showToast, setIsAdminMode) => {
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        setIsAdminMode(true);
-        showToast("Logged in as admin!");
-    } catch (error) {
-        showToast('Login Failed! ' + error.message, 'error');
-    }
-}
 
 // --- Context Provider Components ---
 const DataProvider = ({ children }) => {
@@ -2026,30 +2091,38 @@ const DataProvider = ({ children }) => {
     const [coupons, setCoupons] = useState([]);
     const [costBatches, setCostBatches] = useState([]);
     const { isAuthReady } = useContext(AuthContext);
+    const { showToast } = useContext(AppContext);
 
     useEffect(() => {
         if (!isAuthReady) return;
 
+        const createSubscription = (collectionName, setter) => {
+            const q = query(collection(db, `artifacts/${appId}/public/data/${collectionName}`));
+            return onSnapshot(q, 
+                (snapshot) => {
+                    setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                },
+                (error) => {
+                    console.error(`Error fetching ${collectionName}: `, error);
+                    showToast(`Could not load ${collectionName}. Check Firestore rules and collection names.`, "error");
+                }
+            );
+        };
+        
         const unsubscribes = [
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/products`), (snapshot) => {
-                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/inventory`), (snapshot) => {
+            createSubscription('products', setProducts),
+            createSubscription('inventory', (snapshot) => {
                 const invData = {};
                 snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
                 setInventory(invData);
                 setInventoryLoaded(true);
             }),
-            onSnapshot(collection(db, `artifacts/${appId}/public/data/coupons`), (snapshot) => {
-                setCoupons(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
-             onSnapshot(collection(db, `artifacts/${appId}/public/data/costBatches`), (snapshot) => {
-                setCostBatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-            }),
+            createSubscription('coupons', setCoupons),
+            createSubscription('costBatches', setCostBatches),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
-    }, [isAuthReady]);
+    }, [isAuthReady, showToast]);
 
     const value = { products, inventory, inventoryLoaded, coupons, costBatches };
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
@@ -2133,6 +2206,7 @@ const CartProvider = ({ children }) => {
             }
             setCart({});
         } catch (error) {
+            console.error("Failed to place order:", error);
             showToast('Failed to place order. ' + error.message, 'error');
         }
     };
@@ -2148,29 +2222,62 @@ const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setUser(user);
-                // Persist admin state on refresh if user is not anonymous
-                if(!user.isAnonymous) {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser && !isAuthReady) {
+                setUser(currentUser);
+                if(!currentUser.isAnonymous) {
                     setIsAdminMode(true);
                 }
-                setIsAuthReady(true);
-            } else {
-                try {
-                    const anonUser = await signInAnonymously(auth);
-                    setUser(anonUser.user);
-                } catch(error) {
-                    console.error("Anonymous sign-in failed:", error);
-                }
-                setIsAdminMode(false);
-                setIsAuthReady(true);
             }
+            setIsAuthReady(true);
         });
-        return () => unsubscribeAuth();
-    }, []);
 
-    const value = { user, isAuthReady, isAdminMode, setIsAdminMode };
+        const performSignIn = async () => {
+             try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+        
+        if (auth.currentUser === null) {
+            performSignIn();
+        } else {
+             setUser(auth.currentUser);
+             setIsAuthReady(true);
+        }
+
+        return () => unsubscribeAuth();
+    }, [isAuthReady]);
+
+    const handleLogin = async (email, password, showToast, setAdmin) => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            setAdmin(true);
+            showToast("Logged in as admin!");
+        } catch (error) {
+            showToast('Login Failed! ' + error.code, 'error');
+        }
+    };
+
+    const handleLogout = async (setView, setAdmin) => {
+        await signOut(auth);
+        setAdmin(false);
+        setView('shop');
+        // Re-authenticate anonymously after admin logs out
+        try {
+            await signInAnonymously(auth);
+        } catch (error) {
+             console.error("Anonymous sign-in after logout failed:", error);
+        }
+    };
+
+
+    const value = { user, isAuthReady, isAdminMode, setIsAdminMode, handleLogin, handleLogout };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
@@ -2181,41 +2288,70 @@ const AppProvider = ({ children }) => {
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
-    const { setIsAdminMode } = useContext(AuthContext);
-
+    
     const showToast = (message, type = 'success') => {
         setToastMessage(message);
         setToastType(type);
         setTimeout(() => setToastMessage(''), 3000);
     };
 
-    const handleLoginSuccess = () => {
-        setIsAdminMode(true);
-        setView('orders');
-    }
-
     const value = {
         view, setView,
         toastMessage, toastType, showToast,
         orderData, setOrderData,
         bgGradient, setBgGradient,
-        handleLoginSuccess
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
+// NEW: Modal provider and component for confirmations
+const ModalProvider = ({ children }) => {
+    const [modalState, setModalState] = useState({ isOpen: false, message: '', onConfirm: () => {} });
+
+    const showModal = (message, onConfirm) => {
+        setModalState({ isOpen: true, message, onConfirm });
+    };
+
+    const handleConfirm = () => {
+        modalState.onConfirm();
+        setModalState({ isOpen: false, message: '', onConfirm: () => {} });
+    };
+
+    const handleCancel = () => {
+        setModalState({ isOpen: false, message: '', onConfirm: () => {} });
+    };
+
+    return (
+        <ModalContext.Provider value={showModal}>
+            {children}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-4 z-[100]">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 text-center">
+                        <p className="mb-6">{modalState.message}</p>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={handleCancel} className="px-6 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button onClick={handleConfirm} className="px-6 py-2 bg-red-600 text-white rounded-md">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </ModalContext.Provider>
+    );
+};
 
 // --- Root Component ---
 export default function AppWrapper() {
   return (
     <AuthProvider>
         <AppProvider>
-            <DataProvider>
-                <CartProvider>
-                    <App />
-                </CartProvider>
-            </DataProvider>
+            <ModalProvider>
+                <DataProvider>
+                    <CartProvider>
+                        <App />
+                    </CartProvider>
+                </DataProvider>
+            </ModalProvider>
         </AppProvider>
       </AuthProvider>
   );
