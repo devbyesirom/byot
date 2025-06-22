@@ -91,33 +91,10 @@ const GlobalStyles = () => ( <style>{` .app-shell { display: flex; flex-directio
 const ShopView = () => {
     const { products, inventory, inventoryLoaded } = useContext(DataContext);
     const { addToCart, buyNow } = useContext(CartContext);
-    const { setBgGradient, showToast } = useContext(AppContext);
+    const { showToast } = useContext(AppContext);
 
     const sortedProducts = useMemo(() => [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)), [products]);
     const feedRef = useRef(null);
-
-    useEffect(() => {
-        const feedEl = feedRef.current;
-        if (!feedEl) return;
-        let scrollTimeout;
-        const handleScroll = () => {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                const feedHeight = feedEl.clientHeight;
-                const currentIndex = Math.round(feedEl.scrollTop / feedHeight);
-                const currentCard = feedEl.children[currentIndex];
-                if(currentCard){
-                    const { colorStart, colorEnd } = currentCard.dataset;
-                    if (colorStart && colorEnd) {
-                         setBgGradient(`linear-gradient(to bottom, ${colorStart}, ${colorEnd})`);
-                    }
-                }
-            }, 50);
-        };
-        handleScroll(); 
-        feedEl.addEventListener('scroll', handleScroll);
-        return () => feedEl.removeEventListener('scroll', handleScroll);
-    }, [products, setBgGradient]);
 
     const ProductCard = React.memo(({ product, onAddToCart, onBuyNow, inventory, inventoryLoaded }) => {
         const [quantity, setQuantity] = useState(1);
@@ -168,7 +145,7 @@ const ShopView = () => {
         };
 
         return (
-            <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart || '#cccccc'} data-color-end={product.colorEnd || '#eeeeee'}>
+            <div className="card" style={{backgroundImage: `url('${product.image}')`}}>
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
                     <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
@@ -202,7 +179,7 @@ const ShopView = () => {
                         </button>
                         <button
                             onClick={handleBuyNowClick}
-                            className={`w-full bg-white ${product.buttonTextColor || 'text-gray-800'} font-bold py-3 rounded-lg text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed`}
+                            className={`w-full bg-white text-gray-800 font-bold py-3 rounded-lg text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed`}
                             disabled={availableStock === 0 || quantity === 0}
                         >
                             Buy Now
@@ -1317,9 +1294,6 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showModal}) => {
             price: Number(formData.get('price')),
             description: formData.get('description'),
             image: formData.get('image'),
-            colorStart: formData.get('colorStart') || '#cccccc',
-            colorEnd: formData.get('colorEnd') || '#eeeeee',
-            buttonTextColor: formData.get('buttonTextColor') || 'text-gray-800',
             displayOrder
         };
 
@@ -1365,16 +1339,6 @@ const AdminProductsView = ({products, onSave, onAdd, onDelete, showModal}) => {
                 <div>
                     <label className="font-semibold">Image URL</label>
                     <input name="image" defaultValue={formInitialData.image} className="w-full p-2 border rounded mt-1"/>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="font-semibold">BG Color Start</label>
-                        <input name="colorStart" type="color" defaultValue={formInitialData.colorStart || '#cccccc'} className="w-full p-1 h-10 border rounded mt-1"/>
-                    </div>
-                    <div>
-                        <label className="font-semibold">BG Color End</label>
-                        <input name="colorEnd" type="color" defaultValue={formInitialData.colorEnd || '#eeeeee'} className="w-full p-1 h-10 border rounded mt-1"/>
-                    </div>
                 </div>
                  <div>
                     <label className="font-semibold">Display Order</label>
@@ -1910,7 +1874,7 @@ const DataProvider = ({ children }) => {
     const [inventory, setInventory] = useState({});
     const [inventoryLoaded, setInventoryLoaded] = useState(false);
     const [coupons, setCoupons] = useState([]);
-    const { isAuthReady } = useContext(AuthContext);
+    const { user, isAuthReady } = useContext(AuthContext);
     const { showToast } = useContext(AppContext);
 
     useEffect(() => {
@@ -1941,7 +1905,7 @@ const DataProvider = ({ children }) => {
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
-    }, [isAuthReady, showToast]);
+    }, [isAuthReady, user, showToast]);
 
     const value = { products, inventory, inventoryLoaded, coupons };
     return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
@@ -2170,4 +2134,54 @@ export default function AppWrapper() {
         </AppProvider>
       </AuthProvider>
   );
+}
+
+```
+
+Most up-to-date Immersive Artifact for "firestore-rules-final" is:
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to identify an Admin user.
+    // An admin is someone who is logged in and is NOT an anonymous user.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.isAnonymous == false;
+    }
+
+    // --- Products Collection ---
+    // Anyone can view products to shop.
+    // Only admins can create, update, or delete products.
+    match /artifacts/{appId}/public/data/products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Inventory Collection ---
+    // Anyone can read inventory to check stock levels.
+    // Only admins can update inventory.
+    match /artifacts/{appId}/public/data/inventory/{inventoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Coupons Collection ---
+    // Anyone can read coupon details to apply them at checkout.
+    // Only admins can create, update, or delete coupons.
+    match /artifacts/{appId}/public/data/coupons/{couponId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Orders Collection ---
+    // Any authenticated user (including anonymous shoppers) can create an order.
+    // Only admins can view, update, or delete orders to protect customer privacy.
+    match /artifacts/{appId}/public/data/orders/{orderId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
+    }
+  }
 }
