@@ -27,15 +27,15 @@ import {
 // Determine Firebase config based on environment
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config) // Use provided config for deployed environment
-{
-  "apiKey": "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ",
-  "authDomain": "byot-40fe2.firebaseapp.com",
-  "projectId": "byot-40fe2",
-  "storageBucket": "byot-40fe2.appspot.com",
-  "messagingSenderId": "643015540811",
-  "appId": "1:643015540811:web:f8b609d7b2e6408607cdce",
-  "measurementId": "G-S8QD6WWN90"
-}
+    : { // This is the hardcoded fallback for local development if __firebase_config is not set
+        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ", // Your actual Web API Key from Firebase Project Settings
+        authDomain: "byot-40fe2.firebaseapp.com",
+        projectId: "byot-40fe2",
+        storageBucket: "byot-40fe2.appspot.com",
+        messagingSenderId: "643015540811",
+        appId: "1:643015540811:web:f8b609d7b2e6408607cdce", // Your actual App ID from Firebase Project Settings
+        measurementId: "G-S8QD6WWN90"
+    };
 
 // Determine appId for Firestore paths based on environment
 const currentAppId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
