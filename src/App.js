@@ -153,7 +153,7 @@ const ShopView = ({ products, onAddToCart, onBuyNow, setBgGradient, inventory, s
             <div className="card" style={{backgroundImage: `url('${product.image}')`}} data-color-start={product.colorStart} data-color-end={product.colorEnd}>
                 <div className="card-content">
                     <h2 className="text-3xl font-bold">{product.name}</h2>
-                    <p className="text-lg font-medium text-gray-200">J${product.price.toLocaleString()}</p>
+                    <p className="text-lg font-medium text-gray-200">J$${product.price.toLocaleString()}</p>
                     {availableStock <= 15 && availableStock > 0 && ( // Display warning if stock is low but not zero
                         <p className="text-sm text-yellow-300 font-semibold mt-1">Low stock! Only {availableStock} left.</p>
                     )}
@@ -260,7 +260,7 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
                     Object.values(cart).map(item => (
                         <div key={item.id} className="flex items-center bg-white p-2 rounded-lg shadow">
                             <img src={item.image} className="w-16 h-16 object-cover rounded-md mr-4" alt={item.name}/>
-                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J${item.price.toLocaleString()}</p></div>
+                            <div className="flex-grow"><p className="font-bold">{item.name}</p><p className="text-gray-600">J$${item.price.toLocaleString()}</p></div>
                             <input
                                 type="number"
                                 value={item.quantity || 0}
@@ -274,7 +274,7 @@ const CartView = ({ cart, updateCartQuantity, removeFromCart, onGoToCheckout, on
                     ))
                 )}
             </main>
-            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
+            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J$${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
         </div>
     );
 };
@@ -521,7 +521,7 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
                             <label className="flex items-center p-3 border rounded-lg bg-white has-[:checked]:border-blue-500">
                                 <input onChange={(e) => setFulfillmentMethod(e.target.value)} type="radio" name="fulfillment" value="knutsford" checked={fulfillmentMethod === 'knutsford'} />
                                 <span className="ml-2">Knutsford Express</span>
-                                <span className="ml-auto font-semibold">J${KNUTSFORD_FEE}</span>
+                                <span className="ml-auto font-semibold">J$${KNUTSFORD_FEE}</span>
                             </label>
                             {fulfillmentMethod === 'knutsford' && (
                                 <div className="pl-6 pt-2">
@@ -594,13 +594,13 @@ const CheckoutView = ({ cart, subtotal, placeOrder, onBack, coupons, showToast }
             </main>
             <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3">
                 <div className="text-right space-y-1">
-                    <p>Subtotal: <span className="font-semibold">J${subtotal.toLocaleString()}</span></p>
-                    <p>Shipping: <span className="font-semibold">J${fulfillmentCost.toLocaleString()}</span></p>
-                    {discount > 0 && <p className="text-green-600">Discount: <span className="font-semibold">-J${discount.toLocaleString()}</span></p>}
+                    <p>Subtotal: <span className="font-semibold">J$${subtotal.toLocaleString()}</span></p>
+                    <p>Shipping: <span className="font-semibold">J$${fulfillmentCost.toLocaleString()}</span></p>
+                    {discount > 0 && <p className="text-green-600">Discount: <span className="font-semibold">-J$${discount.toLocaleString()}</span></p>}
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
                     <span>Total</span>
-                    <span>J${total.toLocaleString()}</span>
+                    <span>J$${total.toLocaleString()}</span>
                 </div>
                 <button type="submit" form="checkout-form" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Place Order</button>
             </footer>
@@ -842,12 +842,12 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                         <ul className="list-disc pl-5 space-y-1">
                             {Object.values(order.items).map(item => (
                                 <li key={item.id}>
-                                    {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J${(item.price * (item.quantity || 0)).toLocaleString()}
+                                    {item.name || 'Unknown Product'} (x{item.quantity || 0}) - J$${(item.price * (item.quantity || 0)).toLocaleString()}
                                 </li>
                             ))}
                         </ul>
-                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed} (-J${order.discount.toLocaleString()})</p>}
-                        <p className="font-bold text-right mt-2">Total: J${order.total.toLocaleString()}</p>
+                        {order.couponUsed && <p className="text-green-600 font-semibold mt-2">Coupon Used: {order.couponUsed} (-J$${order.discount.toLocaleString()})</p>}
+                        <p className="font-bold text-right mt-2">Total: J$${order.total.toLocaleString()}</p>
                     </div>
                 </div>
 
@@ -1085,7 +1085,7 @@ const AdminOrdersView = ({ orders, products, onUpdate, onDelete, onAdd, showToas
                                         ? new Date(order.createdAt).toLocaleDateString()
                                         : 'N/A'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">J${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
+                                <td className="px-6 py-4 whitespace-nowrap">J$${order.total.toLocaleString()}</td><td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                         {order.paymentStatus}
                                     </span>
@@ -1312,7 +1312,7 @@ const AdminProductsView = ({products, onSave, onAdd, onBatchUpdate, showToast}) 
                                     <img src={p.image} className="w-10 h-10 object-cover rounded-md mr-4" alt={p.name}/>
                                     <p className="font-bold">{p.name}</p>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">J${p.price}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">J$${p.price}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => setEditingProduct(p)} className="px-4 py-1 bg-gray-200 text-sm rounded-md">Edit</button>
                                 </td>
@@ -1734,11 +1734,11 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Total Income</h3>
-                    <p className="text-3xl font-bold">J${reportData.totalIncome.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J$${reportData.totalIncome.toLocaleString()}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Total Profit</h3>
-                    <p className="text-3xl font-bold">J${reportData.totalProfit.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">J$${reportData.totalProfit.toLocaleString()}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Sales (Period)</h3>
@@ -1746,11 +1746,11 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Returned Value</h3>
-                    <p className="text-3xl font-bold text-orange-500">J${reportData.returnedValue.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-orange-500">J$${reportData.returnedValue.toLocaleString()}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg shadow">
                     <h3 className="text-gray-500">Refunded Value</h3>
-                    <p className="text-3xl font-bold text-red-500">J${reportData.refundedValue.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-red-500">J$${reportData.refundedValue.toLocaleString()}</p>
                 </div>
             </div>
 
@@ -1794,7 +1794,7 @@ const AdminInsightsView = ({ orders, costBatches, onAddBatch, onBatchUpdate, sho
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{batch.name}</p>
-                                    <p className="text-sm text-gray-600">Cost per Set: J${batch.costPerSet.toFixed(2)}</p>
+                                    <p className="text-sm text-gray-600">Cost per Set: J$${batch.costPerSet.toFixed(2)}</p>
                                     <p className="text-xs text-gray-500">
                                         {new Date(batch.startDate).toLocaleDateString()} - {batch.endDate ? new Date(batch.endDate).toLocaleDateString() : 'Present'}
                                     </p>
