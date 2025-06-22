@@ -2142,7 +2142,7 @@ Most up-to-date Immersive Artifact for "firestore-rules-final" is:
 
 ```
 rules_version = '2';
-
+;
 service cloud.firestore {
   match /databases/{database}/documents {
 
