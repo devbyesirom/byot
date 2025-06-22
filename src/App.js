@@ -1895,9 +1895,9 @@ const DataProvider = ({ children }) => {
         
         const unsubscribes = [
             createSubscription('products', setProducts),
-            createSubscription('inventory', (snapshot) => {
+            createSubscription('inventory', (docs) => {
                 const invData = {};
-                snapshot.forEach(doc => { invData[doc.id] = doc.data(); });
+                docs.forEach(doc => { invData[doc.id] = doc; });
                 setInventory(invData);
                 setInventoryLoaded(true);
             }),
