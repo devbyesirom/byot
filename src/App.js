@@ -44,7 +44,6 @@ const CartContext = createContext(null);
 const AuthContext = createContext(null);
 const AppStateContext = createContext(null);
 
-
 // --- Icon Components ---
 const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
@@ -88,14 +87,14 @@ const ShopView = () => {
                 if(currentCard){
                     const { colorStart, colorEnd } = currentCard.dataset;
                     if (colorStart && colorEnd) {
-                        document.body.style.background = `linear-gradient(to bottom, ${colorStart}, ${colorEnd})`;
+                        setBgGradient(`linear-gradient(to bottom, ${colorStart}, ${colorEnd})`);
                     }
                 }
             }, 50);
         };
         feedEl.addEventListener('scroll', handleScroll);
         return () => feedEl.removeEventListener('scroll', handleScroll);
-    }, [products]);
+    }, [products, setBgGradient]);
 
     const ProductCard = React.memo(({ product, onAddToCart, onBuyNow, inventory, inventoryLoaded }) => {
         const [quantity, setQuantity] = useState(1);
@@ -225,9 +224,10 @@ const ShopView = () => {
         </main>
     );
 };
-const CartView = ({ onBack, onGoToCheckout, showToast }) => {
+const CartView = () => {
     const { cart, updateCartQuantity, removeFromCart, subtotal } = useContext(CartContext);
     const { inventory } = useContext(DataContext);
+    const { setView, showToast } = useContext(AppStateContext);
 
     const handleUpdateCartQuantityWithStock = (id, newQuantity) => {
         const productInventory = inventory[id];
@@ -249,7 +249,7 @@ const CartView = ({ onBack, onGoToCheckout, showToast }) => {
 
     return (
         <div className="view active bg-gray-100">
-            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header>
+            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={() => setView('shop')} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">My Cart</h1><div className="w-10"></div></header>
             <main className="flex-grow overflow-y-auto p-4 space-y-4">
                 {Object.keys(cart).length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
@@ -273,13 +273,14 @@ const CartView = ({ onBack, onGoToCheckout, showToast }) => {
                     ))
                 )}
             </main>
-            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={onGoToCheckout} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
+            {Object.keys(cart).length > 0 && <footer className="flex-shrink-0 bg-white border-t p-4 space-y-3"><div className="flex justify-between font-bold text-lg"><span>Subtotal</span><span>J${subtotal.toLocaleString()}</span></div><button onClick={() => setView('checkout')} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg">Proceed to Checkout</button></footer>}
         </div>
     );
 };
-const CheckoutView = ({ onBack, showToast }) => {
+const CheckoutView = () => {
     const { cart, subtotal, placeOrder } = useContext(CartContext);
     const { coupons } = useContext(DataContext);
+    const { setView, showToast } = useContext(AppStateContext);
     const [fulfillmentMethod, setFulfillmentMethod] = useState('pickup');
     const [bearerLocation, setBearerLocation] = useState(Object.keys(DELIVERY_OPTIONS)[0]);
     const [paymentMethod, setPaymentMethod] = useState('cod');
@@ -467,7 +468,7 @@ const CheckoutView = ({ onBack, showToast }) => {
 
     return (
         <div className="view active bg-gray-100">
-            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={onBack} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Checkout</h1><div className="w-10"></div></header>
+            <header className="flex-shrink-0 bg-white shadow-sm p-4 flex items-center justify-between"><button onClick={() => setView('cart')} className="p-2"><BackArrowIcon /></button><h1 className="text-xl font-bold">Checkout</h1><div className="w-10"></div></header>
             <main className="flex-grow overflow-y-auto p-4">
                 <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
                     <div>
@@ -1911,7 +1912,7 @@ const App = () => {
             />;
         }
         switch (view) {
-            case 'shop': return <div className="view active"><ShopView setBgGradient={setBgGradient} showToast={showToast} /></div>; 
+            case 'shop': return <div className="view active"><ShopView /></div>; 
             case 'cart': return <CartView onGoToCheckout={() => setView('checkout')} onBack={() => setView('shop')} showToast={showToast}/>; 
             case 'checkout': return <CheckoutView onBack={() => setView('cart')} showToast={showToast} />;
             case 'confirmation': return <ConfirmationView order={orderData} onContinue={() => setView('shop')} />;
@@ -2177,7 +2178,7 @@ const AppStateProvider = ({ children }) => {
     const [toastType, setToastType] = useState('success');
     const [orderData, setOrderData] = useState(null);
     const [bgGradient, setBgGradient] = useState('linear-gradient(to bottom, #111827, #374151)');
-    const { setIsAdminMode } = useContext(AuthContext);
+    const authContext = useContext(AuthContext);
 
     const showToast = (message, type = 'success') => {
         setToastMessage(message);
@@ -2186,7 +2187,9 @@ const AppStateProvider = ({ children }) => {
     };
 
     const handleLoginSuccess = () => {
-        setIsAdminMode(true);
+        if(authContext) {
+            authContext.setIsAdminMode(true);
+        }
         setView('orders');
     }
 
@@ -2206,13 +2209,13 @@ const AppStateProvider = ({ children }) => {
 export default function AppWrapper() {
   return (
     <AuthProvider>
-      <DataProvider>
-        <AppStateProvider>
+      <AppStateProvider>
+        <DataProvider>
           <CartProvider>
             <App />
           </CartProvider>
-        </AppStateProvider>
-      </DataProvider>
+        </DataProvider>
+      </AppStateProvider>
     </AuthProvider>
   );
 }
