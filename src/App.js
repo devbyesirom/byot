@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useMemo, useRef, useContext, createContext } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Disclosure } from '@headlessui/react';
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously } from "firebase/auth";
-import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc } from "firebase/firestore";
+
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously } from "firebase/auth";
+import { auth, db, appId } from "./firebase";
+import { collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, setDoc } from "firebase/firestore";
 
 // --- Constants ---
 const DELIVERY_OPTIONS = { 'Kingston (10, 11)': 700, 'Portmore': 800 };
@@ -19,24 +20,7 @@ const COLLECTION_NAMES = {
     costBatches: "Cost Batch",
 };
 
-// --- Firebase Configuration ---
-const firebaseConfig = typeof __firebase_config !== 'undefined'
-    ? JSON.parse(__firebase_config)
-    : {
-        apiKey: "AIzaSyCBv6J7ZInJ2-CX57ksZDjpmLqvO8sgJuQ",
-        authDomain: "byot-40fe2.firebaseapp.com",
-        projectId: "byot-40fe2",
-        storageBucket: "byot-40fe2.appspot.com",
-        messagingSenderId: "643015540811",
-        appId: "1:643015540811:web:f8b609d7b2e6408607cdce",
-        measurementId: "G-S8QD6WWN90"
-    };
 
-// --- Firebase Initialization ---
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'byot-40fe2';
 
 // --- React Contexts for State Management ---
 const DataContext = createContext(null);
